@@ -1,0 +1,78 @@
+<mxfile host="65bd71144e">
+    <diagram id="ciclo-vida" name="Ciclo de Vida">
+        <mxGraphModel dx="3564" dy="563" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2200" pageHeight="850" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="A" value="Especificação" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F1FF;strokeColor=#4A90E2;" parent="1" vertex="1">
+                    <mxGeometry x="-10" y="180" width="180" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="B" value="Revisão da SPEC" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F1FF;strokeColor=#4A90E2;" parent="1" vertex="1">
+                    <mxGeometry x="320" y="180" width="220" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="C" value="Implementação" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F1FF;strokeColor=#4A90E2;" parent="1" vertex="1">
+                    <mxGeometry x="650" y="180" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="D" value="Revisão da implementação" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F1FF;strokeColor=#4A90E2;" parent="1" vertex="1">
+                    <mxGeometry x="980" y="70" width="280" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="E" value="Validação" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F1FF;strokeColor=#4A90E2;" parent="1" vertex="1">
+                    <mxGeometry x="1380" y="180" width="180" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="F" value="Aprovação formal" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F1FF;strokeColor=#4A90E2;" parent="1" vertex="1">
+                    <mxGeometry x="1360" y="340" width="220" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="G" value="Encerramento e arquivamento" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F1FF;strokeColor=#4A90E2;" parent="1" vertex="1">
+                    <mxGeometry x="1720" y="340" width="320" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="e1" value="" style="endArrow=block;strokeWidth=2;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="170" y="222" as="sourcePoint"/>
+                        <mxPoint x="320" y="222" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e2" value="Aprovada" style="endArrow=block;strokeColor=#008000;fontColor=#008000;strokeWidth=2;" parent="1" source="B" target="C" edge="1">
+                    <mxGeometry x="-0.2727" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e3" value="Reprovada" style="endArrow=block;strokeColor=#C00000;fontColor=#C00000;strokeWidth=2;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="B" target="A" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="317" y="199" as="sourcePoint"/>
+                        <mxPoint x="167" y="199" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e4" value="" style="endArrow=block;strokeWidth=2;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" target="D" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="840" y="190" as="sourcePoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e5" value="Aprovada" style="endArrow=block;strokeColor=#008000;fontColor=#008000;strokeWidth=2;" parent="1" source="D" target="E" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e6" value="Reprovada" style="endArrow=block;strokeColor=#C00000;fontColor=#C00000;strokeWidth=2;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" parent="1" source="D" target="C" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="750" y="100"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e7" value="Aprovada" style="endArrow=block;strokeColor=#008000;fontColor=#008000;strokeWidth=2;" parent="1" source="E" target="F" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e8" value="Reprovada" style="endArrow=block;strokeColor=#C00000;fontColor=#C00000;strokeWidth=2;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" parent="1" source="E" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1380" y="209" as="sourcePoint"/>
+                        <mxPoint x="850" y="209" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e9" value="Aprovada" style="endArrow=block;strokeColor=#008000;fontColor=#008000;strokeWidth=2;" parent="1" source="F" target="G" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e10" value="Reprovada" style="endArrow=block;strokeColor=#C00000;fontColor=#C00000;strokeWidth=2;" parent="1" source="F" target="C" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
