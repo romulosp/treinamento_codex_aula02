@@ -4,6 +4,8 @@
 !*.md
 !*.txt
 !/.gitignore
+!/.png
+!/.jpg
 
 # Artefatos locais explicitamente documentados (também abrangidos pela regra geral).
 **/target/
