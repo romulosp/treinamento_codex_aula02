@@ -25,6 +25,7 @@
 
 ## Processo de mudança
 
+- A fonte canônica de fluxo, estados, gates e evidências é `specs/shared/process/workflow.md`; as Skills são o mecanismo operacional das fases.
 - O prompt executável `.github/prompts/executar-mudanca-spec-driven.prompt.md` identifica a primeira fase pendente e conduz automaticamente as fases posteriores somente quando seus gates são aprovados.
 - Em reprovação, falha ou bloqueio, o fluxo é interrompido com indicação da evidência e da primeira fase de retorno.
 
