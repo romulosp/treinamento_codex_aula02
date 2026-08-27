@@ -1,0 +1,1 @@
+O prompt está em [executar-mudanca-spec-driven.prompt.md](file:///c%3A/Desenvolvimento/ia/treinamento_codex/aula02/.github/prompts/executar-mudanca-spec-driven.prompt.md) e só avança nas etapas permitidas pelos gates da SPEC.

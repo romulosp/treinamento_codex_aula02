@@ -1,0 +1,13 @@
+No Copilot Chat, execute o prompt e informe o caminho da mudança:
+
+```text
+/Executar mudança Spec Driven specs/changes/003-gerenciar-categorias
+```
+
+O prompt completo, com todas as fases, gates e Skills, está em executar-mudanca-spec-driven.prompt.md.
+
+Para outra mudança, substitua o último argumento, por exemplo:
+
+```text
+/Executar mudança Spec Driven specs/changes/<id>-<nome-da-mudanca>
+```

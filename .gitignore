@@ -1,0 +1,13 @@
+# Artefatos de compilação e arquivos locais
+**/target/
+**/.quarkus/
+**/*.log
+.env
+.env.*
+
+# IDEs e sistema operacional
+.idea/
+.vscode/
+*.iml
+Thumbs.db
+Desktop.ini
