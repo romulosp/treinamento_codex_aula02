@@ -17,11 +17,15 @@
 - Estão disponíveis os endpoints `GET /categorias/`, `GET /categorias/{id_categoria}`, `POST /categorias/add`, `PUT /categorias/{id_categoria}` e `DELETE /categorias/deletar/{id_categoria}`.
 - Entradas inválidas retornam HTTP `400` com `mensagem`; categorias inexistentes retornam HTTP `404` com `mensagem`.
 - Os contratos públicos são documentados em OpenAPI e possuem testes de integração Quarkus automatizados.
+- Todas as operações de categorias exigem token Bearer validado por OAuth 2.0/OIDC e retornam HTTP `401` quando não autenticadas.
+- Clientes autenticados são autorizados pelo claim `azp`, comparado com a lista de `CLIENTS-AUTHORIZED`; clientes ausentes ou não autorizados recebem HTTP `403`.
+- OIDC é configurado exclusivamente por `AUTH-SERVER-URL`, `CLIENT-ID` e `SECRET`; a lista de clientes autorizados é configurada por `CLIENTS-AUTHORIZED`.
+- A infraestrutura inclui `FiservFiltroAutenticacao` para clientes REST externos, que adiciona os cabeçalhos `Content-Type: application/json` e `Capture-Network-Code` com base em `ambiente`.
 
 ## Limitações atuais
 
 - As categorias não são persistidas e retornam à massa inicial quando a aplicação é reiniciada.
-- Não há autenticação, autorização, paginação, filtros, ordenação ou versionamento de API para categorias.
+- Não há paginação, filtros, ordenação, versionamento de API ou autorização granular por papel para categorias.
 
 ## Processo de mudança
 

@@ -2,6 +2,8 @@ package br.com.romulopenha.nomedaapigerada.api;
 
 import br.com.romulopenha.nomedaapigerada.application.CategoriaApplicationService;
 import br.com.romulopenha.nomedaapigerada.domain.Categoria;
+import br.com.romulopenha.nomedaapigerada.infrastructure.security.ClienteAutorizado;
+import io.quarkus.security.Authenticated;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -25,6 +27,8 @@ import java.util.List;
 @Path("/categorias")
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "Categorias", description = "Operações para categorias mantidas em memória")
+@Authenticated
+@ClienteAutorizado
 public class CategoriaResource {
 
     private static final String MENSAGEM_NAO_ENCONTRADA = "Categoria não encontrada";
@@ -34,7 +38,11 @@ public class CategoriaResource {
 
     @GET
     @Operation(summary = "Lista as categorias")
-    @APIResponse(responseCode = "200", description = "Lista de categorias", content = @Content(schema = @Schema(implementation = CategoriaListaResponse.class)))
+        @APIResponses({
+            @APIResponse(responseCode = "200", description = "Lista de categorias", content = @Content(schema = @Schema(implementation = CategoriaListaResponse.class))),
+            @APIResponse(responseCode = "401", description = "Token Bearer ausente ou inválido"),
+            @APIResponse(responseCode = "403", description = "Cliente não autorizado", content = @Content(schema = @Schema(implementation = MensagemResponse.class)))
+        })
     public CategoriaListaResponse listar() {
         List<CategoriaResponse> categorias = service.listar().stream()
                 .map(CategoriaResponse::de)
@@ -47,7 +55,9 @@ public class CategoriaResource {
     @Operation(summary = "Detalha uma categoria")
         @APIResponses({
             @APIResponse(responseCode = "200", description = "Categoria encontrada", content = @Content(schema = @Schema(implementation = CategoriaResponse.class))),
-            @APIResponse(responseCode = "404", description = "Categoria não encontrada", content = @Content(schema = @Schema(implementation = MensagemResponse.class)))
+            @APIResponse(responseCode = "404", description = "Categoria não encontrada", content = @Content(schema = @Schema(implementation = MensagemResponse.class))),
+            @APIResponse(responseCode = "401", description = "Token Bearer ausente ou inválido"),
+            @APIResponse(responseCode = "403", description = "Cliente não autorizado", content = @Content(schema = @Schema(implementation = MensagemResponse.class)))
         })
     public Response detalhar(@PathParam("id_categoria") long idCategoria) {
         return service.detalhar(idCategoria)
@@ -61,7 +71,9 @@ public class CategoriaResource {
     @Operation(summary = "Adiciona uma categoria")
         @APIResponses({
             @APIResponse(responseCode = "201", description = "Categoria criada", content = @Content(schema = @Schema(implementation = CategoriaResponse.class))),
-            @APIResponse(responseCode = "400", description = "Entrada inválida", content = @Content(schema = @Schema(implementation = MensagemResponse.class)))
+            @APIResponse(responseCode = "400", description = "Entrada inválida", content = @Content(schema = @Schema(implementation = MensagemResponse.class))),
+            @APIResponse(responseCode = "401", description = "Token Bearer ausente ou inválido"),
+            @APIResponse(responseCode = "403", description = "Cliente não autorizado", content = @Content(schema = @Schema(implementation = MensagemResponse.class)))
         })
     public Response adicionar(CategoriaRequest request) {
         MensagemResponse erro = validar(request);
@@ -79,7 +91,9 @@ public class CategoriaResource {
         @APIResponses({
             @APIResponse(responseCode = "200", description = "Categoria atualizada", content = @Content(schema = @Schema(implementation = CategoriaResponse.class))),
             @APIResponse(responseCode = "400", description = "Entrada inválida", content = @Content(schema = @Schema(implementation = MensagemResponse.class))),
-            @APIResponse(responseCode = "404", description = "Categoria não encontrada", content = @Content(schema = @Schema(implementation = MensagemResponse.class)))
+            @APIResponse(responseCode = "404", description = "Categoria não encontrada", content = @Content(schema = @Schema(implementation = MensagemResponse.class))),
+            @APIResponse(responseCode = "401", description = "Token Bearer ausente ou inválido"),
+            @APIResponse(responseCode = "403", description = "Cliente não autorizado", content = @Content(schema = @Schema(implementation = MensagemResponse.class)))
         })
     public Response atualizar(@PathParam("id_categoria") long idCategoria, CategoriaRequest request) {
         MensagemResponse erro = validar(request);
@@ -96,7 +110,9 @@ public class CategoriaResource {
     @Operation(summary = "Exclui uma categoria")
         @APIResponses({
             @APIResponse(responseCode = "200", description = "Categoria excluída", content = @Content(schema = @Schema(implementation = ResultadoExclusaoResponse.class))),
-            @APIResponse(responseCode = "404", description = "Categoria não encontrada", content = @Content(schema = @Schema(implementation = MensagemResponse.class)))
+            @APIResponse(responseCode = "404", description = "Categoria não encontrada", content = @Content(schema = @Schema(implementation = MensagemResponse.class))),
+            @APIResponse(responseCode = "401", description = "Token Bearer ausente ou inválido"),
+            @APIResponse(responseCode = "403", description = "Cliente não autorizado", content = @Content(schema = @Schema(implementation = MensagemResponse.class)))
         })
     public Response excluir(@PathParam("id_categoria") long idCategoria) {
         if (!service.excluir(idCategoria)) {
