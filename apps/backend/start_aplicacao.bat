@@ -7,7 +7,7 @@ set MAVEN_HOME=C:\Desenvolvimento\apache-maven-3.8.8
 set PATH=%JAVA_HOME%\bin;%MAVEN_HOME%\bin;%PATH%
 
 rem ===== CONFIGURACAO DA APLICACAO =====
-set "AUTH-SERVER-URL=https://logindes.caixa.gov.br/auth/realms/internet"
+set "AUTH-SERVER-URL=https://login2des.caixa.gov.br/auth/realms/internet"
 set "CLIENT-ID=cli-ser-spl"
 set "SECRET=77a26834-9534-4693-8363-264d213b5fc4"
 set "CLIENTS-AUTHORIZED=cli-ser-spl"
