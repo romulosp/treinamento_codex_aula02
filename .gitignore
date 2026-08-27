@@ -1,11 +1,18 @@
-# Artefatos de compilação e arquivos locais
+# Política documental: qualquer arquivo não textual é local e não deve ser versionado.
+*
+!*/
+!*.md
+!*.txt
+!/.gitignore
+
+# Artefatos locais explicitamente documentados (também abrangidos pela regra geral).
 **/target/
 **/.quarkus/
 **/*.log
 .env
 .env.*
 
-# IDEs e sistema operacional
+# Arquivos de IDE e sistema operacional.
 .idea/
 .vscode/
 *.iml
