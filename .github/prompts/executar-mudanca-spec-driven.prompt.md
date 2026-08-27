@@ -11,11 +11,25 @@ Execute a mudança indicada em `${input:changePath}` de ponta a ponta, obedecend
 
 ## Objetivo
 
-Conduza a mudança pelas sete fases obrigatórias, sempre respeitando os gates:
+Conduza a mudança pelas sete fases obrigatórias, sempre respeitando os gates e sem solicitar ao usuário uma nova instrução entre fases aprovadas:
 
 `SPEC → revisão da SPEC → implementação → revisão da implementação → validação → aprovação → commit`.
 
-A SPEC é a fonte da verdade. Execute somente a primeira fase ainda pendente e, quando ela for aprovada, continue para a fase seguinte. Interrompa imediatamente se um gate for reprovado, falhar ou estiver bloqueado.
+A SPEC é a fonte da verdade. Identifique a primeira fase pendente, execute-a e avance automaticamente para a seguinte quando o respectivo gate for aprovado. Interrompa imediatamente se um gate for reprovado, falhar ou estiver bloqueado.
+
+## Modo de execução automática
+
+1. Trate este prompt como o orquestrador do fluxo completo; não peça que o usuário escreva separadamente “revisão”, “implementação”, “validação” ou “aprovação”.
+2. Quando a mudança estiver em `RASCUNHO` e o contrato estiver completo, execute a revisão da SPEC diretamente. Se a SPEC for aprovada, continue na mesma conversa para a implementação.
+3. Após registrar `IMPLEMENTADA`, execute a revisão da implementação. Se aprovada, execute a validação com os testes aplicáveis. Se validada, produza a aprovação formal e execute o encerramento com commit rastreável.
+4. Ao encontrar um gate reprovado, pare no mesmo turno, informe a evidência objetiva e a primeira fase à qual a mudança deve retornar. Não avance nem tente contornar a pendência.
+5. Antes de encerrar, informe a última fase alcançada, status, arquivos atualizados, comandos e códigos de saída, bloqueios e hash do commit, quando aplicável.
+
+Exemplo de uso:
+
+```text
+/Executar mudança Spec Driven specs/changes/004-parametrizar-nome-projeto-gerado
+```
 
 ## Preparação obrigatória
 
@@ -67,6 +81,30 @@ Execute a Skill `spec-review`. Avalie exclusivamente clareza, completude, consis
 ### 3. Implementação — cumprir o contrato aprovado
 
 Somente com `proposal.md` e `spec.md` em `SPEC_APROVADA`, execute a Skill `spec-implement`. Implemente exclusivamente os artefatos, contratos e comportamentos aprovados. Crie ou atualize testes de comportamento observável e atualize `tasks.md`.
+
+Para projetos Java Quarkus gerados, crie `apps/backend/start_aplicacao.bat` com o conteúdo abaixo, preservando a configuração temporária de Java 17.0.11 e Maven 3.8.8:
+
+```bat
+@echo off
+setlocal
+
+rem ===== CONFIGURACAO DO AMBIENTE =====
+set JAVA_HOME=C:\Desenvolvimento\jdk-17.0.11
+set MAVEN_HOME=C:\Desenvolvimento\apache-maven-3.8.8
+set PATH=%JAVA_HOME%\bin;%MAVEN_HOME%\bin;%PATH%
+
+echo ==========================================
+echo Java em uso:
+"%JAVA_HOME%\bin\java.exe" -version
+echo ==========================================
+echo.
+
+
+mvn quarkus:dev
+
+pause
+endlocal
+```
 
 - Concluída: registre `IMPLEMENTADA` e avance.
 - Bloqueada: registre `BLOQUEADA`, a causa e a fase de retorno; encerre.

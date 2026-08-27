@@ -4,6 +4,9 @@
 
 - Backend Java 17 baseado em Quarkus e Maven, organizado nas camadas `api`, `application`, `domain` e `infrastructure`.
 - Os recursos REST usam DTOs como contratos públicos e não expõem modelos de persistência.
+- O nome público da aplicação e o `artifactId` Maven são `gerenciar-categorias`; o OpenAPI é disponibilizado em `/swagger_gerenciar-categorias.json`.
+- O perfil de teste usa o schema H2 `GERENCIAR_CATEGORIAS`.
+- O script `apps/backend/start_aplicacao.bat` inicia o Quarkus com Java 17.0.11 e Maven 3.8.8 configurados somente para a sessão do script.
 
 ## Gerenciamento de categorias
 
@@ -17,3 +20,8 @@
 
 - As categorias não são persistidas e retornam à massa inicial quando a aplicação é reiniciada.
 - Não há autenticação, autorização, paginação, filtros, ordenação ou versionamento de API para categorias.
+
+## Processo de mudança
+
+- O prompt executável `.github/prompts/executar-mudanca-spec-driven.prompt.md` identifica a primeira fase pendente e conduz automaticamente as fases posteriores somente quando seus gates são aprovados.
+- Em reprovação, falha ou bloqueio, o fluxo é interrompido com indicação da evidência e da primeira fase de retorno.
