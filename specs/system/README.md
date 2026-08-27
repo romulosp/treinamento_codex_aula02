@@ -3,6 +3,8 @@
 ## Backend
 
 - Backend Java 17 baseado em Quarkus e Maven, organizado nas camadas `api`, `application`, `domain` e `infrastructure`.
+- A base Maven usa Quarkus 3.2.10.Final e o espelho `NEXUS_INTERNO`; o datasource DB2 de produção é configurado exclusivamente por variáveis de ambiente.
+- O perfil de teste usa H2 em memória com schema isolado, sem depender de uma instância DB2 externa.
 - Os recursos REST usam DTOs como contratos públicos e não expõem modelos de persistência.
 - O nome público da aplicação e o `artifactId` Maven são `gerenciar-categorias`; o OpenAPI é disponibilizado em `/swagger_gerenciar-categorias.json`.
 - O perfil de teste usa o schema H2 `GERENCIAR_CATEGORIAS`.

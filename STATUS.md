@@ -2,7 +2,7 @@
 
 | Mudança | Fase atual | Última atualização |
 | --- | --- | --- |
-| `001-criar-projeto-java` | `EM_APROVACAO` | 2026-08-26 |
+| `001-criar-projeto-java` | `APROVADA` | 2026-08-27 |
 | `002-consolidar-governanca-spec-driven` | `EM_APROVACAO` | 2026-08-26 |
 | `003-gerenciar-categorias` | `ARQUIVADA` | 2026-08-26 |
 | `004-parametrizar-nome-projeto-gerado` | `ARQUIVADA` | 2026-08-26 |
