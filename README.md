@@ -69,5 +69,5 @@ Consulte [NotasProjeto.md](NotasProjeto.md) para instruções completas de cria�
 
 ## Créditos
 
-**Autor:** f744113
+**Autor:** f744113 - Rômulo Penha
 **Projeto:** Treinamento Codex — Aula 02
