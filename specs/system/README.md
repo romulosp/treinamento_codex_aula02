@@ -25,3 +25,8 @@
 
 - O prompt executável `.github/prompts/executar-mudanca-spec-driven.prompt.md` identifica a primeira fase pendente e conduz automaticamente as fases posteriores somente quando seus gates são aprovados.
 - Em reprovação, falha ou bloqueio, o fluxo é interrompido com indicação da evidência e da primeira fase de retorno.
+
+## Limpeza de artefatos
+
+- `deletar-arquivos-gerados.bat` remove, após confirmação, somente diretórios `target`, diretórios `.quarkus` e arquivos `*.log` localizados abaixo de `apps/`.
+- A limpeza preserva fontes, recursos, testes, scripts, configurações, documentos e metadados Git.
