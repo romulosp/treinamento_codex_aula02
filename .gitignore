@@ -4,7 +4,6 @@
 **/*.log
 .env
 .env.*
-apps/backend/start_aplicacao.local.bat
 
 # IDEs e sistema operacional
 .idea/

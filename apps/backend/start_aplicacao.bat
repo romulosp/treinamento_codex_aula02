@@ -6,44 +6,14 @@ set JAVA_HOME=C:\Desenvolvimento\jdk-17.0.11
 set MAVEN_HOME=C:\Desenvolvimento\apache-maven-3.8.8
 set PATH=%JAVA_HOME%\bin;%MAVEN_HOME%\bin;%PATH%
 
-rem Configuracao exclusiva da maquina local (arquivo ignorado pelo Git).
-if exist "%~dp0start_aplicacao.local.bat" call "%~dp0start_aplicacao.local.bat"
-
-set "CONFIGURACAO_INVALIDA="
-if not defined AUTH-SERVER-URL (
-	echo ERRO: a variavel AUTH-SERVER-URL deve estar configurada.
-	set "CONFIGURACAO_INVALIDA=1"
-)
-if not defined CLIENT-ID (
-	echo ERRO: a variavel CLIENT-ID deve estar configurada.
-	set "CONFIGURACAO_INVALIDA=1"
-)
-if not defined SECRET (
-	echo ERRO: a variavel SECRET deve estar configurada.
-	set "CONFIGURACAO_INVALIDA=1"
-)
-if not defined CLIENTS-AUTHORIZED (
-	echo ERRO: a variavel CLIENTS-AUTHORIZED deve estar configurada.
-	set "CONFIGURACAO_INVALIDA=1"
-)
-if not defined DB2_JDBC_URL (
-	echo ERRO: a variavel DB2_JDBC_URL deve estar configurada.
-	set "CONFIGURACAO_INVALIDA=1"
-)
-if not defined DB2_USERNAME (
-	echo ERRO: a variavel DB2_USERNAME deve estar configurada.
-	set "CONFIGURACAO_INVALIDA=1"
-)
-if not defined DB2_PASSWORD (
-	echo ERRO: a variavel DB2_PASSWORD deve estar configurada.
-	set "CONFIGURACAO_INVALIDA=1"
-)
-
-if defined CONFIGURACAO_INVALIDA (
-	echo.
-	echo Configure as variaveis no ambiente ou em start_aplicacao.local.bat.
-	exit /b 1
-)
+rem ===== CONFIGURACAO DA APLICACAO =====
+set "AUTH-SERVER-URL=https://logindes.caixa.gov.br/auth/realms/internet"
+set "CLIENT-ID=cli-ser-spl"
+set "SECRET=77a26834-9534-4693-8363-264d213b5fc4"
+set "CLIENTS-AUTHORIZED=cli-ser-spl"
+set "DB2_JDBC_URL=jdbc:db2://10.192.224.76:5021/CSD1"
+set "DB2_USERNAME=SSPLDB01"
+set "DB2_PASSWORD=SSPLDB01"
 
 echo ==========================================
 echo Java em uso:

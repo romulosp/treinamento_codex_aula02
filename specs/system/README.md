@@ -8,8 +8,7 @@
 - Os recursos REST usam DTOs como contratos públicos e não expõem modelos de persistência.
 - O nome público da aplicação e o `artifactId` Maven são `gerenciar-categorias`; o OpenAPI é disponibilizado em `/swagger_gerenciar-categorias.json`.
 - O perfil de teste usa o schema H2 `GERENCIAR_CATEGORIAS`.
-- O script `apps/backend/start_aplicacao.bat` inicia o Quarkus com Java 17.0.11 e Maven 3.8.8 configurados somente para a sessão do script. Antes da inicialização, ele carrega opcionalmente `start_aplicacao.local.bat`, valida as variáveis OIDC e DB2 obrigatórias e falha sem expor valores quando a configuração estiver incompleta.
-- `apps/backend/start_aplicacao.local.bat` é uma configuração exclusiva da máquina, ignorada pelo Git, para `AUTH-SERVER-URL`, `CLIENT-ID`, `SECRET`, `CLIENTS-AUTHORIZED`, `DB2_JDBC_URL`, `DB2_USERNAME` e `DB2_PASSWORD`; as mesmas variáveis também podem ser fornecidas pelo ambiente do terminal.
+- O script `apps/backend/start_aplicacao.bat` é o único script de inicialização local do backend. Ele configura Java 17.0.11, Maven 3.8.8 e as variáveis `AUTH-SERVER-URL`, `CLIENT-ID`, `SECRET`, `CLIENTS-AUTHORIZED`, `DB2_JDBC_URL`, `DB2_USERNAME` e `DB2_PASSWORD` exclusivamente para a sessão do script antes de iniciar o Quarkus.
 
 ## Gerenciamento de categorias
 
