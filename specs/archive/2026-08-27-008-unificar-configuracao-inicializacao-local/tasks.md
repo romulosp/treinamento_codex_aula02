@@ -19,4 +19,4 @@
 
 ## Situação
 
-`APROVADA`
+`ARQUIVADA`
