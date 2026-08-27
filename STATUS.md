@@ -8,6 +8,6 @@
 | `004-parametrizar-nome-projeto-gerado` | `ARQUIVADA` | 2026-08-26 |
 | `005-limpar-artefatos-gerados` | `ARQUIVADA` | 2026-08-26 |
 | `006-proteger-categorias-oauth2` | `ARQUIVADA` | 2026-08-27 |
-| `007-configurar-inicializacao-local-segura` | `APROVADA` | 2026-08-27 |
+| `007-configurar-inicializacao-local-segura` | `ARQUIVADA` | 2026-08-27 |
 
 As mudanças 003, 004 e 005 foram arquivadas.
