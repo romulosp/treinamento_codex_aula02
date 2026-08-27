@@ -1,7 +1,7 @@
 # Proposta: 010-reinicializar-workspace-documentado
 
 ## Status
-`APROVADA`
+`ARQUIVADA`
 
 ## Responsável e data
 
