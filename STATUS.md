@@ -12,6 +12,6 @@
 | `008-unificar-configuracao-inicializacao-local` | `ARQUIVADA` | 2026-08-27 |
 | `009-atualizar-url-oidc-desenvolvimento` | `ARQUIVADA` | 2026-08-27 |
 | `010-reinicializar-workspace-documentado` | `ARQUIVADA` | 2026-08-27 |
-| `011-reescrever-readme-profissional` | `APROVADA` | 2026-08-27 |
+| `011-reescrever-readme-profissional` | `ARQUIVADA` | 2026-08-27 |
 
 As mudanças 003, 004 e 005 foram arquivadas.

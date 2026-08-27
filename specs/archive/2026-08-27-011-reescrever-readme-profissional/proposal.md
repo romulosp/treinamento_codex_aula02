@@ -1,7 +1,7 @@
 # Proposta: 011-reescrever-readme-profissional
 
 ## Status
-`APROVADA`
+`ARQUIVADA`
 
 ## Responsável e data
 
