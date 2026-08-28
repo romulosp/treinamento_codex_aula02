@@ -4,7 +4,7 @@
 
 Este repositório é um laboratório de geração de APIs Java orientado a especificações. O objetivo não é manter o código gerado como ativo permanente: a documentação descreve o resultado esperado, o processo registra as decisões e o módulo executável pode ser recriado do zero para demonstrar repetibilidade.
 
-Em 2026-08-27, a aplicação que estava funcional foi removida intencionalmente para reinicialização. Permanecem versionados os documentos Markdown e texto, além de `.gitignore`, que é a exceção técnica necessária para aplicar esta política. Assim, não há backend executável em `apps/backend/` até que uma nova mudança gere esse módulo.
+Em 2026-08-27, a aplicação que estava funcional foi removida intencionalmente para reinicialização. Permanecem versionados os documentos Markdown e texto, além de `.gitignore`, que é a exceção técnica necessária para aplicar esta política. Assim, não há projetos backend executáveis sob `apps/backend/` até que uma nova mudança gere uma pasta específica de projeto.
 
 ## 2. O que foi desenvolvido antes da reinicialização
 
@@ -29,6 +29,7 @@ Em 2026-08-27, a aplicação que estava funcional foi removida intencionalmente 
 | 017 — fallback repositório Maven | Configuração de settings com fallback automático para Maven Central quando fora do Nexus. |
 | 018 — suportar API sem banco | Adição da opção SEM_BANCO para geração de APIs desacopladas de persistência. |
 | 019 — gerenciar tarefas | Criação da API independente de tarefas com persistência em PostgreSQL via Hibernate Panache e testes H2. |
+| 021 — diretório por projeto | Cada aplicação independente é gerada em `apps/backend/<artifactId-sem-hifens>/`, preservando `apps/backend/` como contêiner local. |
 
 ### API que existia no módulo gerado
 
@@ -94,18 +95,18 @@ Reprovação, falha ou bloqueio interrompe o fluxo e retorna à primeira fase ad
 2. Defina os contratos HTTP, validações, respostas de erro, segurança, persistência e critérios de aceite em `spec.md`. Não escreva código antes de obter `SPEC_APROVADA`.
 3. Para um módulo Quarkus, use `br.com.romulopenha` seguido do `artifactId` sem hífens como pacote-base (por exemplo, `gerenciar-tarefas` gera `br.com.romulopenha.gerenciartarefas`), Java 17 e as camadas `api`, `application`, `domain` e `infrastructure`.
 4. Derive o nome público pelo sufixo após o primeiro hífen do diretório da mudança. Por exemplo, `010-consultar-pedidos` gera `consultar-pedidos`; o schema de teste correspondente é `CONSULTAR_PEDIDOS`.
-5. Gere localmente o módulo em `apps/backend/`. Configure o `artifactId`, `quarkus.application.name`, o caminho OpenAPI e o schema H2 com o nome derivado. Como arquivos de módulo são ignorados, eles não devem ser adicionados ao Git.
+5. Crie `apps/backend/<artifactId-sem-hifens>/` antes de gerar o módulo e gere todos os arquivos dentro dela. Configure o `artifactId`, `quarkus.application.name`, o caminho OpenAPI e o schema H2 com o nome derivado. Como arquivos de módulo são ignorados, eles não devem ser adicionados ao Git.
 6. Implemente DTOs na fronteira HTTP, delegação para a camada de aplicação e testes automatizados para cada comportamento observável aprovado. Não exponha entidades JPA como contratos REST.
 7. Execute as fases de revisão, validação, aprovação e arquivamento. O resultado documental deve permitir recriar o mesmo módulo e reproduzir a mesma suíte de testes.
 
 ## 6. Como testar e executar um módulo específico após gerá-lo
 
-Os exemplos abaixo valem **somente após** a regeneração de `apps/backend/`.
+Os exemplos abaixo valem **somente após** a regeneração da pasta específica do projeto, como `apps/backend/gerenciarcategorias/`.
 
 1. Instale ou selecione JDK 17 e Maven compatível com o módulo. Confirme que `java -version` e `mvn -version` apontam para as versões esperadas.
-2. A partir de `apps/backend/`, execute `mvn test`. Os testes devem usar o perfil de teste com H2 em memória e não depender de DB2 ou de servidor OIDC externo.
+2. A partir de `apps/backend/<artifactId-sem-hifens>/`, execute `mvn test`. Os testes devem usar o perfil de teste com H2 em memória e não depender de DB2 ou de servidor OIDC externo.
 3. Para executar em desenvolvimento, defina no ambiente do processo os valores necessários para OIDC e DB2: `AUTH-SERVER-URL`, `CLIENT-ID`, `SECRET`, `CLIENTS-AUTHORIZED`, `DB2_JDBC_URL`, `DB2_USERNAME` e `DB2_PASSWORD`. Nunca registre os valores em documentos, commits ou scripts versionados.
-4. No mesmo diretório, execute `mvn quarkus:dev` ou use o script local gerado para o módulo, se a SPEC aprovada o prever. O processo deve manter variáveis apenas na sessão local.
+4. No mesmo diretório específico do projeto, execute `mvn quarkus:dev` ou use o script local gerado para o módulo, se a SPEC aprovada o prever. O processo deve manter variáveis apenas na sessão local.
 5. Consulte a interface Swagger no endereço exposto pelo Quarkus e o documento OpenAPI no caminho definido para a API. Para o exemplo histórico, o caminho era `/swagger_gerenciar-categorias.json`.
 
 Para testar somente uma classe Maven após a geração, execute `mvn -Dtest=NomeDoTeste test` dentro do módulo. Registre o comando, ambiente, código de saída, número de testes e quaisquer avisos relevantes em `validation.md`.

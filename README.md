@@ -10,7 +10,7 @@ O projeto mantém a documentação como fonte de verdade. O módulo executável 
 
 ## Estado atual
 
-O workspace está intencionalmente em estado documental: não há um backend executável em `apps/backend/`. A última aplicação gerada, `gerenciar-categorias`, suas funcionalidades e suas evidências permanecem documentadas no histórico.
+O workspace está intencionalmente em estado documental: os backends executáveis são gerados localmente dentro de pastas próprias sob `apps/backend/`, como `apps/backend/gerenciarcategorias/`. As aplicações e suas evidências permanecem documentadas no histórico.
 
 A política do repositório permite versionar documentos `.md` e `.txt`, além do próprio `.gitignore`. Código, configurações, scripts e artefatos gerados são mantidos apenas no ambiente local durante uma execução aprovada.
 

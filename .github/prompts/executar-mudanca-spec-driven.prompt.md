@@ -82,11 +82,13 @@ Execute a Skill `spec-review`. Avalie exclusivamente clareza, completude, consis
 
 Somente com `proposal.md` e `spec.md` em `SPEC_APROVADA`, execute a Skill `spec-implement`. Implemente exclusivamente os artefatos, contratos e comportamentos aprovados. Crie ou atualize testes de comportamento observável e atualize `tasks.md`.
 
-Para projetos Java Quarkus gerados, crie `apps/backend/start_aplicacao.bat` com o conteúdo abaixo, preservando a configuração temporária de Java 17.0.11 e Maven 3.8.8:
+Para projetos Java Quarkus gerados, derive `PROJETO_DIR=apps/backend/<artifactId-sem-hifens>/`, crie essa pasta antes de gerar qualquer arquivo e crie `PROJETO_DIR/start_aplicacao.bat` com o conteúdo abaixo, preservando a configuração temporária de Java 17.0.11 e Maven 3.8.8. Execute Maven a partir de `PROJETO_DIR`:
 
 ```bat
 @echo off
 setlocal
+
+cd /d "%~dp0"
 
 rem ===== CONFIGURACAO DO AMBIENTE =====
 set JAVA_HOME=C:\Desenvolvimento\jdk-17.0.11

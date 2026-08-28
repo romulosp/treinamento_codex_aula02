@@ -8,7 +8,7 @@ Esta é a mudança inicial do laboratório. Os parâmetros fornecidos definem Ma
 
 | Assunto | Decisão |
 | --- | --- |
-| Módulo | `apps/backend` é o único módulo executável inicial. |
+| Módulo | Cada projeto é autônomo em `apps/backend/<artifactId-sem-hifens>/`; `apps/backend/` é apenas o contêiner local. |
 | Maven | `br.com.romulopenha:<artifactId>:1.0.0.1`; o pacote usa `<artifactId>` sem hífens. |
 | Java | Release 17, conforme ADR-001. |
 | Framework | Quarkus 3.2.10.Final e extensões RESTEasy clássicas solicitadas. |
@@ -22,7 +22,7 @@ Esta é a mudança inicial do laboratório. Os parâmetros fornecidos definem Ma
 ## Estrutura
 
 ```text
-apps/backend/
+apps/backend/<artifactId-sem-hifens>/
 ├── pom.xml
 └── src/
     ├── main/

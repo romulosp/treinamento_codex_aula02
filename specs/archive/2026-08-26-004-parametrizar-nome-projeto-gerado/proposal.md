@@ -9,7 +9,7 @@ O backend criado anteriormente ainda utiliza os placeholders `nome_da_api_gerada
 
 ## Escopo
 
-- Definir a regra de derivação do nome do projeto a partir do diretório da mudança.
+- Definir a regra de derivação do nome do projeto e da pasta `apps/backend/<artifactId-sem-hifens>/` a partir do diretório da mudança.
 - Aplicar a regra ao projeto atual da mudança `003-gerenciar-categorias`.
 - Atualizar o prompt de execução para exigir a substituição nos futuros projetos gerados.
 - Ajustar `pom.xml` e `application.properties` apenas nos campos definidos pela SPEC.

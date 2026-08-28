@@ -8,11 +8,11 @@ O prompt será o orquestrador do ciclo de vida: identificará a primeira fase pe
 
 ## Componentes afetados
 
-- `apps/backend/pom.xml`: `artifactId`.
-- `apps/backend/src/main/resources/application.properties`: nome da aplicação, caminho OpenAPI e identificadores H2 de teste.
+- `apps/backend/gerenciarcategorias/pom.xml`: `artifactId`; o diretório é derivado do `artifactId` sem hífens.
+- `apps/backend/gerenciarcategorias/src/main/resources/application.properties`: nome da aplicação, caminho OpenAPI e identificadores H2 de teste.
 - `.github/prompts/executar-mudanca-spec-driven.prompt.md`: regra de substituição para gerações futuras.
 - `.github/prompts/executar-mudanca-spec-driven.prompt.md`: orquestração automática das fases do processo Spec Driven.
-- `apps/backend/start_aplicacao.bat`: inicialização local do Quarkus com Java 17.0.11 e Maven 3.8.8 configurados somente durante a execução do script.
+- `apps/backend/gerenciarcategorias/start_aplicacao.bat`: inicialização local do Quarkus com Java 17.0.11 e Maven 3.8.8 configurados somente durante a execução do script.
 - Teste de configuração para os critérios de aceite observáveis.
 
 ## Consequências

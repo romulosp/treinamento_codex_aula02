@@ -9,7 +9,7 @@ O laboratório não possui uma aplicação executável que materialize as especi
 
 ## Escopo
 
-- Criar o módulo `apps/backend`.
+- Criar o módulo em `apps/backend/<artifactId-sem-hifens>/`, mantendo `apps/backend/` como contêiner local de projetos.
 - Configurar Maven, Quarkus 3.2.10.Final, Java 17 e as dependências fornecidas.
 - Configurar perfis de produção e teste.
 - Criar teste de inicialização Quarkus.
