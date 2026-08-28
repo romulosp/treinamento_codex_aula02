@@ -24,5 +24,6 @@
 | `020-corrigir-pacote-java-artifactid` | `ARQUIVADA` | 2026-08-28 |
 | `021-definir-diretorio-projeto-gerado` | `ARQUIVADA` | 2026-08-28 |
 | `022-corrigir-inicializacao-quarkus` | `ARQUIVADA` | 2026-08-28 |
+| `023-conectar-postgresql-e-teste-manual` | `ARQUIVADA` | 2026-08-28 |
 
 As mudanças de 001 a 019 foram arquivadas.
