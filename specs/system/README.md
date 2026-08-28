@@ -15,7 +15,7 @@
 - As mudanças arquivadas registram a base Java 17 com Maven e Quarkus 3.2.10.Final, organizada nas camadas `api`, `application`, `domain` e `infrastructure`.
 - A última API gerada era `gerenciar-categorias`, com categorias em memória, DTOs, OpenAPI, testes de integração, OAuth 2.0/OIDC e autorização de clientes pelo claim `azp`.
 - Os contratos, a massa inicial, as configurações parametrizadas, a estratégia de teste com H2 e as evidências estão preservados em `specs/archive/` e resumidos em `NotasProjeto.md`.
-- As mudanças 013, 016 e 017 registram a regeneração local, a seleção de banco e o fallback Maven, com testes e evidências no arquivo histórico.
+- As mudanças 013, 014, 015, 016 e 017 registram a regeneração local, as opções de banco consolidadas em uma matriz exclusiva e o fallback Maven, com testes e evidências no arquivo histórico.
 - Uma nova mudança aprovada deve regerar localmente o módulo, executar testes e registrar as evidências, sem versionar os arquivos produzidos.
 
 ## Processo de mudança
