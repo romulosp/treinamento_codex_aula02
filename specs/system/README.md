@@ -5,7 +5,7 @@
 - O workspace mantém localmente o módulo executável `apps/backend/` para a API `gerenciar-categorias`; seus arquivos de código, configuração, scripts e produtos de build continuam ignorados pela política documental do repositório.
 - A política no `.gitignore` permite versionar somente arquivos `.md` e `.txt`, com a exceção técnica do próprio `.gitignore`.
 - A API local de categorias usa armazenamento em memória, possui massa inicial e expõe os contratos REST documentados na mudança 013.
-- A geração local aceita `bancoDados` com DB2 como padrão e PostgreSQL ou MySQL como escolhas explícitas, renderizando um único driver JDBC e um único bloco produtivo de datasource por artefato.
+- A geração local aceita `bancoDados` com DB2 como padrão, PostgreSQL ou MySQL como bancos relacionais e `SEM_BANCO` para APIs sem persistência, renderizando dependências e propriedades de forma exclusiva ou omitindo totalmente blocos de datasource.
 - A inicialização local prioriza o Nexus corporativo e utiliza Maven Central quando o Nexus não está alcançável, sem alterar a configuração Maven global.
 - A estratégia compartilhada de testes define inventário, cobertura e isolamento de testes unitários Java; mudanças Java usam a Skill `java-unit-test` quando aplicável.
 - O documento `NotasProjeto.md` na raiz consolida a visão do projeto e o procedimento para reproduzir um módulo localmente.
@@ -16,7 +16,7 @@
 - As mudanças arquivadas registram a base Java 17 com Maven e Quarkus 3.2.10.Final, organizada nas camadas `api`, `application`, `domain` e `infrastructure`.
 - A última API gerada era `gerenciar-categorias`, com categorias em memória, DTOs, OpenAPI, testes de integração, OAuth 2.0/OIDC e autorização de clientes pelo claim `azp`.
 - Os contratos, a massa inicial, as configurações parametrizadas, a estratégia de teste com H2 e as evidências estão preservados em `specs/archive/` e resumidos em `NotasProjeto.md`.
-- As mudanças 013, 014, 015, 016 e 017 registram a regeneração local, as opções de banco consolidadas em uma matriz exclusiva e o fallback Maven, com testes e evidências no arquivo histórico.
+- As mudanças 013, 014, 015, 016, 017 e 018 registram a regeneração local, as opções de banco consolidadas em uma matriz exclusiva (incluindo `SEM_BANCO`) e o fallback Maven, com testes e evidências no arquivo histórico.
 - Uma nova mudança aprovada deve regerar localmente o módulo, executar testes e registrar as evidências, sem versionar os arquivos produzidos.
 
 ## Processo de mudança
