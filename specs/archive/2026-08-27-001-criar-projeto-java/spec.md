@@ -7,12 +7,13 @@
 
 1. O módulo deve ser Maven, com `groupId` `br.com.romulopenha`, `artifactId` derivado do nome público e versão `1.0.0.1`; o pacote-base deve ser o `groupId` seguido do `artifactId` com hífens removidos.
 2. O projeto deve ser criado em `apps/backend/<artifactId-sem-hifens>/`; `apps/backend/` é apenas o contêiner local e não recebe diretamente o `pom.xml` ou `src/`.
-3. Deve usar Quarkus `3.2.10.Final`, RESTEasy clássico com Jackson e JAXB, OpenAPI, Health, Panache, Agroal, JDBC DB2 e Rest Client.
-4. Deve incluir MapStruct e Application Insights nas versões informadas.
-5. Deve conter dependências de teste Quarkus JUnit 5, Mockito, Rest Assured e JDBC H2.
-6. Deve conter configuração padrão de log, CORS, ambiente local, Swagger UI, OpenAPI, portas HTTP, proxy e pool de conexões.
-7. Deve conter configuração de produção DB2 baseada em variáveis de ambiente e uma configuração de teste H2 com o schema `NOME_SCHEMA`.
-8. O módulo deve usar por padrão o espelho Maven `NEXUS_INTERNO` em `http://binario.caixa:8081/repository/caixa-group`.
+3. O `quarkus-maven-plugin` deve usar `extensions=true` e conter uma execução com o goal `build`, permitindo a execução de `mvn quarkus:dev`.
+4. Deve usar Quarkus `3.2.10.Final`, RESTEasy clássico com Jackson e JAXB, OpenAPI, Health, Panache, Agroal, JDBC DB2 e Rest Client.
+5. Deve incluir MapStruct e Application Insights nas versões informadas.
+6. Deve conter dependências de teste Quarkus JUnit 5, Mockito, Rest Assured e JDBC H2.
+7. Deve conter configuração padrão de log, CORS, ambiente local, Swagger UI, OpenAPI, portas HTTP, proxy e pool de conexões.
+8. Deve conter configuração de produção DB2 baseada em variáveis de ambiente e uma configuração de teste H2 com o schema `NOME_SCHEMA`.
+9. O módulo deve usar por padrão o espelho Maven `NEXUS_INTERNO` em `http://binario.caixa:8081/repository/caixa-group`.
 
 ## Requisitos não funcionais
 

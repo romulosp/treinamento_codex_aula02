@@ -9,6 +9,7 @@
 - A inicialização local prioriza o Nexus corporativo e utiliza Maven Central quando o Nexus não está alcançável, sem alterar a configuração Maven global.
 - Projetos Java gerados preservam o `artifactId` com hífens no Maven, mas derivam o pacote-base removendo esses hífens; por exemplo, `gerenciar-tarefas` usa `br.com.romulopenha.gerenciartarefas`.
 - O diretório de cada projeto também remove os hífens do `artifactId`, sem alterar o `artifactId` declarado no `pom.xml`.
+- O `quarkus-maven-plugin` dos projetos gerados usa `extensions=true` e uma execução com o goal `build`, permitindo que `mvn quarkus:dev` inicie a aplicação.
 - A estratégia compartilhada de testes define inventário, cobertura e isolamento de testes unitários Java; mudanças Java usam a Skill `java-unit-test` quando aplicável.
 - O documento `NotasProjeto.md` na raiz consolida a visão do projeto e o procedimento para reproduzir um módulo localmente.
 - A pasta `apps/frontend/` permanece reservada para uma futura aplicação frontend e contém somente sua documentação.

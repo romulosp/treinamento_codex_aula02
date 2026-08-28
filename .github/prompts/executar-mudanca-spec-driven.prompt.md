@@ -84,6 +84,8 @@ Somente com `proposal.md` e `spec.md` em `SPEC_APROVADA`, execute a Skill `spec-
 
 Para projetos Java Quarkus gerados, derive `PROJETO_DIR=apps/backend/<artifactId-sem-hifens>/`, crie essa pasta antes de gerar qualquer arquivo e crie `PROJETO_DIR/start_aplicacao.bat` com o conteúdo abaixo, preservando a configuração temporária de Java 17.0.11 e Maven 3.8.8. Execute Maven a partir de `PROJETO_DIR`:
 
+No `pom.xml`, o `quarkus-maven-plugin` deve conter uma execução com o goal `build`, além de `extensions=true`, para que `mvn quarkus:dev` seja reconhecido como aplicação Quarkus e permaneça em execução.
+
 ```bat
 @echo off
 setlocal
