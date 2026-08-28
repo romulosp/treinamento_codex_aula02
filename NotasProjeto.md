@@ -28,6 +28,7 @@ Em 2026-08-27, a aplicação que estava funcional foi removida intencionalmente 
 | 016 — renderizar configuração banco selecionado | Script e automação para renderização exclusiva do banco no pom.xml e application.properties. |
 | 017 — fallback repositório Maven | Configuração de settings com fallback automático para Maven Central quando fora do Nexus. |
 | 018 — suportar API sem banco | Adição da opção SEM_BANCO para geração de APIs desacopladas de persistência. |
+| 019 — gerenciar tarefas | Criação da API independente de tarefas com persistência em PostgreSQL via Hibernate Panache e testes H2. |
 
 ### API que existia no módulo gerado
 

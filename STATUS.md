@@ -20,5 +20,6 @@
 | `016-renderizar-configuracao-banco-selecionado` | `ARQUIVADA` | 2026-08-27 |
 | `017-configurar-fallback-repositorio-maven` | `ARQUIVADA` | 2026-08-27 |
 | `018-suportar-api-sem-banco` | `ARQUIVADA` | 2026-08-27 |
+| `019-gerenciar-tarefas` | `ARQUIVADA` | 2026-08-28 |
 
-As mudanças de 001 a 018 foram arquivadas.
+As mudanças de 001 a 019 foram arquivadas.
