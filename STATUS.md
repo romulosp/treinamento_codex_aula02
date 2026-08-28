@@ -21,4 +21,4 @@
 | `017-configurar-fallback-repositorio-maven` | `ARQUIVADA` | 2026-08-27 |
 | `018-suportar-api-sem-banco` | `ARQUIVADA` | 2026-08-27 |
 
-As mudanças 003, 004 e 005 foram arquivadas.
+As mudanças de 001 a 018 foram arquivadas.
