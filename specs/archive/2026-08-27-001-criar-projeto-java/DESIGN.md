@@ -9,7 +9,7 @@ Esta é a mudança inicial do laboratório. Os parâmetros fornecidos definem Ma
 | Assunto | Decisão |
 | --- | --- |
 | Módulo | `apps/backend` é o único módulo executável inicial. |
-| Maven | `br.com.romulopenha:nome_da_api_gerada:1.0.0.1`. |
+| Maven | `br.com.romulopenha:<artifactId>:1.0.0.1`; o pacote usa `<artifactId>` sem hífens. |
 | Java | Release 17, conforme ADR-001. |
 | Framework | Quarkus 3.2.10.Final e extensões RESTEasy clássicas solicitadas. |
 | Persistência | Panache, Agroal e DB2 em produção; H2 apenas no perfil de teste. |
@@ -26,9 +26,9 @@ apps/backend/
 ├── pom.xml
 └── src/
     ├── main/
-    │   ├── java/br/com/romulopenha/nomedaapigerada/
+    │   ├── java/br/com/romulopenha/<artifactId-sem-hifens>/
     │   └── resources/application.properties
-    └── test/java/br/com/romulopenha/nomedaapigerada/
+    └── test/java/br/com/romulopenha/<artifactId-sem-hifens>/
 ```
 
 ## Fluxo de configuração

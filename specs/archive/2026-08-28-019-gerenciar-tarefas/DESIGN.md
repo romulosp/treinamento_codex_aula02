@@ -15,16 +15,16 @@ A API `gerenciar-tarefas` é um serviço REST independente para gestão do ciclo
 ## Decisões
 
 1. **Camadas Arquiteturais e Responsabilidades:**
-   - `br.com.romulopenha.nomedaapigerada.api`:
+   - `br.com.romulopenha.gerenciartarefas.api`:
      - `TarefaResource`: Endpoints REST (`GET`, `POST`, `PUT`, `DELETE`).
      - DTOs: `TarefaRequest`, `TarefaResponse`, `ListaTarefasResponse`, `ResultadoExclusaoResponse`, `MensagemResponse`.
      - Exception Mappers: Mapeamento de exceções de domínio para respostas HTTP 400 e 404 padronizadas.
-   - `br.com.romulopenha.nomedaapigerada.application`:
+   - `br.com.romulopenha.gerenciartarefas.application`:
      - `TarefaService`: Casos de uso de negócio (criar, listar, buscar por id, atualizar, excluir), validação de regras e conversão entre entidade/domínio e DTOs.
-   - `br.com.romulopenha.nomedaapigerada.domain`:
+   - `br.com.romulopenha.gerenciartarefas.domain`:
      - `StatusTarefa` (Enum: `PENDENTE`, `EM_ANDAMENTO`, `CONCLUIDA`).
      - Exceções: `TarefaNaoEncontradaException`, `TarefaInvalidaException`.
-   - `br.com.romulopenha.nomedaapigerada.infrastructure`:
+   - `br.com.romulopenha.gerenciartarefas.infrastructure`:
      - `TarefaEntity`: Entidade JPA anotada com `@Entity`, `@Table(name = "tarefas")`.
      - `TarefaRepository`: Repositório Panache implementando `PanacheRepositoryBase<TarefaEntity, Long>`.
 

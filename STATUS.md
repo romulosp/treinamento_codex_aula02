@@ -21,5 +21,6 @@
 | `017-configurar-fallback-repositorio-maven` | `ARQUIVADA` | 2026-08-27 |
 | `018-suportar-api-sem-banco` | `ARQUIVADA` | 2026-08-27 |
 | `019-gerenciar-tarefas` | `ARQUIVADA` | 2026-08-28 |
+| `020-corrigir-pacote-java-artifactid` | `ARQUIVADA` | 2026-08-28 |
 
 As mudanças de 001 a 019 foram arquivadas.

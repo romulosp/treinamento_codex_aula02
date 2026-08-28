@@ -5,7 +5,7 @@
 
 ## Requisitos funcionais
 
-1. O módulo deve ser Maven, com `groupId` `br.com.romulopenha`, `artifactId` `nome_da_api_gerada` e versão `1.0.0.1`.
+1. O módulo deve ser Maven, com `groupId` `br.com.romulopenha`, `artifactId` derivado do nome público e versão `1.0.0.1`; o pacote-base deve ser o `groupId` seguido do `artifactId` com hífens removidos.
 2. Deve usar Quarkus `3.2.10.Final`, RESTEasy clássico com Jackson e JAXB, OpenAPI, Health, Panache, Agroal, JDBC DB2 e Rest Client.
 3. Deve incluir MapStruct e Application Insights nas versões informadas.
 4. Deve conter dependências de teste Quarkus JUnit 5, Mockito, Rest Assured e JDBC H2.

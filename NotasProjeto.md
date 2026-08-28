@@ -92,7 +92,7 @@ Reprovação, falha ou bloqueio interrompe o fluxo e retorna à primeira fase ad
 
 1. Escolha o próximo identificador livre e crie `specs/changes/<id>-<nome-da-api>/` usando os modelos em `specs/templates/`.
 2. Defina os contratos HTTP, validações, respostas de erro, segurança, persistência e critérios de aceite em `spec.md`. Não escreva código antes de obter `SPEC_APROVADA`.
-3. Para um módulo Quarkus, use o pacote-base `br.com.romulopenha.nomedaapigerada`, Java 17 e as camadas `api`, `application`, `domain` e `infrastructure`.
+3. Para um módulo Quarkus, use `br.com.romulopenha` seguido do `artifactId` sem hífens como pacote-base (por exemplo, `gerenciar-tarefas` gera `br.com.romulopenha.gerenciartarefas`), Java 17 e as camadas `api`, `application`, `domain` e `infrastructure`.
 4. Derive o nome público pelo sufixo após o primeiro hífen do diretório da mudança. Por exemplo, `010-consultar-pedidos` gera `consultar-pedidos`; o schema de teste correspondente é `CONSULTAR_PEDIDOS`.
 5. Gere localmente o módulo em `apps/backend/`. Configure o `artifactId`, `quarkus.application.name`, o caminho OpenAPI e o schema H2 com o nome derivado. Como arquivos de módulo são ignorados, eles não devem ser adicionados ao Git.
 6. Implemente DTOs na fronteira HTTP, delegação para a camada de aplicação e testes automatizados para cada comportamento observável aprovado. Não exponha entidades JPA como contratos REST.

@@ -11,7 +11,7 @@
 
 ## Backend
 
-- Use Quarkus, Maven e o pacote-base `br.com.romulopenha.nomedaapigerada`.
+- Use Quarkus e Maven. O pacote-base deve ser `br.com.romulopenha` seguido do `artifactId` com os hífens removidos; por exemplo, `gerenciar-tarefas` gera `br.com.romulopenha.gerenciartarefas`.
 - Não exponha entidades de persistência diretamente em recursos REST.
 - Separe API, aplicação, domínio e infraestrutura conforme `specs/shared/architecture/backend-java.md`.
 - Use Java 17: Quarkus 3.2 requer Java 17 ou superior. Não reduza o release para 11 sem trocar a plataforma Quarkus e registrar um ADR.

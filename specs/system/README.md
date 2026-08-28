@@ -7,6 +7,7 @@
 - A API de tarefas utiliza persistência relacional com PostgreSQL via Hibernate ORM Panache (Repository pattern) e H2 em memória para testes automatizados, expondo os contratos REST documentados na mudança 019.
 - A geração local aceita `bancoDados` com DB2 como padrão, PostgreSQL ou MySQL como bancos relacionais e `SEM_BANCO` para APIs sem persistência, renderizando dependências e propriedades de forma exclusiva ou omitindo totalmente blocos de datasource.
 - A inicialização local prioriza o Nexus corporativo e utiliza Maven Central quando o Nexus não está alcançável, sem alterar a configuração Maven global.
+- Projetos Java gerados preservam o `artifactId` com hífens no Maven, mas derivam o pacote-base removendo esses hífens; por exemplo, `gerenciar-tarefas` usa `br.com.romulopenha.gerenciartarefas`.
 - A estratégia compartilhada de testes define inventário, cobertura e isolamento de testes unitários Java; mudanças Java usam a Skill `java-unit-test` quando aplicável.
 - O documento `NotasProjeto.md` na raiz consolida a visão do projeto e o procedimento para reproduzir um módulo localmente.
 - A pasta `apps/frontend/` permanece reservada para uma futura aplicação frontend e contém somente sua documentação.
