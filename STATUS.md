@@ -13,5 +13,11 @@
 | `009-atualizar-url-oidc-desenvolvimento` | `ARQUIVADA` | 2026-08-27 |
 | `010-reinicializar-workspace-documentado` | `ARQUIVADA` | 2026-08-27 |
 | `011-reescrever-readme-profissional` | `ARQUIVADA` | 2026-08-27 |
+| `012-estabelecer-diretrizes-testes-unitarios` | `ARQUIVADA` | 2026-08-27 |
+| `013-gerenciar-categorias` | `ARQUIVADA` | 2026-08-27 |
+| `014-suportar-db2-e-postgresql` | `ARQUIVADA` | 2026-08-27 |
+| `015-adicionar-mysql-como-opcao` | `ARQUIVADA` | 2026-08-27 |
+| `016-renderizar-configuracao-banco-selecionado` | `ARQUIVADA` | 2026-08-27 |
+| `017-configurar-fallback-repositorio-maven` | `ARQUIVADA` | 2026-08-27 |
 
 As mudanças 003, 004 e 005 foram arquivadas.
