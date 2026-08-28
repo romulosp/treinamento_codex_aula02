@@ -21,3 +21,4 @@
 - Responda e documente em português do Brasil.
 - Não amplie o escopo definido pela SPEC.
 - Crie ou atualize testes ao implementar comportamento observável.
+- Em mudanças Java, siga obrigatoriamente `specs/shared/testing/testing-strategy.md` para criar, refatorar e revisar testes unitários; use a Skill `java-unit-test` quando aplicável.

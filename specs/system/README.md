@@ -7,6 +7,7 @@
 - A API local de categorias usa armazenamento em memória, possui massa inicial e expõe os contratos REST documentados na mudança 013.
 - A geração local aceita `bancoDados` com DB2 como padrão e PostgreSQL ou MySQL como escolhas explícitas, renderizando um único driver JDBC e um único bloco produtivo de datasource por artefato.
 - A inicialização local prioriza o Nexus corporativo e utiliza Maven Central quando o Nexus não está alcançável, sem alterar a configuração Maven global.
+- A estratégia compartilhada de testes define inventário, cobertura e isolamento de testes unitários Java; mudanças Java usam a Skill `java-unit-test` quando aplicável.
 - O documento `NotasProjeto.md` na raiz consolida a visão do projeto e o procedimento para reproduzir um módulo localmente.
 - A pasta `apps/frontend/` permanece reservada para uma futura aplicação frontend e contém somente sua documentação.
 
