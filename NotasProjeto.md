@@ -19,6 +19,15 @@ Em 2026-08-27, a aplicação que estava funcional foi removida intencionalmente 
 | 007 — inicialização local segura | Evolução temporária do carregamento e validação de variáveis de ambiente sem versionar arquivo local sensível. |
 | 008 — unificar inicialização | Script único de inicialização com Java e Maven configurados apenas para a sessão do processo. |
 | 009 — URL OIDC de desenvolvimento | Atualização isolada da URL de desenvolvimento, com regressão aprovada sem serviços externos. |
+| 010 — reinicializar workspace documentado | Aplicação da política documental estrita, preservando apenas documentação versionada. |
+| 011 — reescrever readme profissional | Atualização do README com visão do ciclo Spec Driven e arquitetura de referência. |
+| 012 — diretrizes de testes unitários | Estabelece estratégia de testes unitários com JUnit 5, Mockito e JaCoCo. |
+| 013 — gerenciar categorias | Regeneração da API de categorias em memória com suíte de testes completa. |
+| 014 — suportar DB2 e PostgreSQL | Adição de suporte e matriz para PostgreSQL e DB2. |
+| 015 — adicionar MySQL | Extensão da matriz de bancos relacionais suportados com MySQL. |
+| 016 — renderizar configuração banco selecionado | Script e automação para renderização exclusiva do banco no pom.xml e application.properties. |
+| 017 — fallback repositório Maven | Configuração de settings com fallback automático para Maven Central quando fora do Nexus. |
+| 018 — suportar API sem banco | Adição da opção SEM_BANCO para geração de APIs desacopladas de persistência. |
 
 ### API que existia no módulo gerado
 
