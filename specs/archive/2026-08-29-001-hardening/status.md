@@ -1,6 +1,6 @@
 # Status da mudança 001-hardening
 
-**Fase atual:** `VALIDADA`
+**Fase atual:** `ARQUIVADA`
 
 **Última atualização:** 2026-08-28
 

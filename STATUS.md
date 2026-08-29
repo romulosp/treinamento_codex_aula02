@@ -25,7 +25,7 @@
 | `021-definir-diretorio-projeto-gerado` | `ARQUIVADA` | 2026-08-28 |
 | `022-corrigir-inicializacao-quarkus` | `ARQUIVADA` | 2026-08-28 |
 | `023-conectar-postgresql-e-teste-manual` | `ARQUIVADA` | 2026-08-28 |
-| `001-hardening` | `APROVADA` | 2026-08-29 |
-| `024-auditar-seguranca` | `APROVADA` | 2026-08-29 |
+| `001-hardening` | `ARQUIVADA` | 2026-08-29 |
+| `024-auditar-seguranca` | `ARQUIVADA` | 2026-08-29 |
 
 As mudanças de 001 a 019 foram arquivadas.

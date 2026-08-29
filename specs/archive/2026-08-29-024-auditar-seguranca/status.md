@@ -1,6 +1,6 @@
 # Status da mudança 024-auditar-seguranca
 
-**Fase atual:** `VALIDADA`
+**Fase atual:** `ARQUIVADA`
 
 **Última atualização:** 2026-08-28
 
