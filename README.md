@@ -6,13 +6,13 @@
 
 Este repositório demonstra uma abordagem **Spec Driven** para criação de APIs. Antes de qualquer implementação, os requisitos, decisões técnicas, tarefas, critérios de aceite e evidências de validação são registrados e revisados.
 
-O projeto mantém a documentação como fonte de verdade. O módulo executável é gerado localmente a partir de uma mudança aprovada, validado e pode ser removido para que o processo seja reproduzido do zero.
+O projeto mantém a documentação como fonte de verdade. Módulos executáveis são gerados a partir de mudanças aprovadas e, quando a própria mudança exigir rastreabilidade da implementação, os arquivos necessários podem ser versionados explicitamente.
 
 ## Estado atual
 
-O workspace está intencionalmente em estado documental: os backends executáveis são gerados localmente dentro de pastas próprias sob `apps/backend/`, como `apps/backend/gerenciarcategorias/`. As aplicações e suas evidências permanecem documentadas no histórico.
+O workspace preserva aplicações independentes em pastas próprias sob `apps/backend/`, como `apps/backend/gerenciarcategorias/`. O backend `gerenciartarefas` e sua evidência de hardening foram versionados pela mudança aprovada `001-hardening`; os demais artefatos gerados continuam locais quando não fizerem parte do escopo aprovado.
 
-A política do repositório permite versionar documentos `.md` e `.txt`, além do próprio `.gitignore`. Código, configurações, scripts e artefatos gerados são mantidos apenas no ambiente local durante uma execução aprovada.
+A política padrão do repositório permite versionar documentos `.md` e `.txt`, além do próprio `.gitignore`. Código, configurações, scripts e artefatos gerados permanecem locais por padrão; uma mudança aprovada pode selecionar explicitamente os arquivos necessários para sua rastreabilidade. Segredos reais nunca são versionados.
 
 ## Principais características
 
@@ -66,6 +66,7 @@ Consulte [NotasProjeto.md](NotasProjeto.md) para instruções completas de cria�
 - [Estratégia de testes](specs/shared/testing/testing-strategy.md)
 - [Estado vigente do sistema](specs/system/README.md)
 - [Histórico das mudanças](specs/archive/)
+- [Auditoria de segurança](docs/security-audit/relatorio-auditoria-seguranca.pdf)
 
 ## Créditos
 

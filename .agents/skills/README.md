@@ -17,5 +17,6 @@
 - `java-panache-repository`: persistência com JPA e Panache.
 - `java-integration-test`: testes de integração Quarkus.
 - `java-unit-test`: criar, refatorar e revisar testes unitários Java com JUnit 5 e Mockito, validando regra de negócio e cobertura.
+- `security-audit`: auditar segurança pós-implementação com evidências verificáveis, histórico de segredos e relatório PDF opcional.
 
 As Skills de processo seguem `specs/shared/process/workflow.md`.
