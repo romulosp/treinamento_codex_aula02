@@ -11,6 +11,10 @@
 **/target/
 **/.quarkus/
 **/*.log
+apps/backend/gerenciartarefas/start_aplicacao.bat
+apps/backend/gerenciarcategorias/start_aplicacao.bat
+!scripts/
+!scripts/**
 .env
 .env.*
 

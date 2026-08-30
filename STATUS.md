@@ -28,5 +28,6 @@
 | `001-hardening` | `ARQUIVADA` | 2026-08-29 |
 | `024-auditar-seguranca` | `ARQUIVADA` | 2026-08-29 |
 | `025-provedor-fila-mq` | `ARQUIVADA` | 2026-08-30 |
+| `026-chaves-aplicacao` | `APROVADA` | 2026-08-30 |
 
 As mudanças de 001 a 019 foram arquivadas.
