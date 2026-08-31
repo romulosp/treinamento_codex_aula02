@@ -1,4 +1,4 @@
-# Aula 02 — Laboratório de Gerador de Còdigo
+# Aula 02 — Laboratório de Gerador de Codigo
 
 > Projeto educacional para construção de APIs Java por meio de especificações, evidências e ciclos de entrega rastreáveis.
 
