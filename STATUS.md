@@ -32,5 +32,6 @@
 | `027-importar-skills-estudo` | `ARQUIVADA` | 2026-08-30 |
 | `028-exemplo-site-web-001` | `ARQUIVADA` | 2026-08-30 |
 | `029-criar-agente-implementacao-para-teste` | `ARQUIVADA` | 2026-08-30 |
+| `030-template-ecommercer-001` | `IMPLEMENTADA — aguardando nova revisão` | 2026-08-31 |
 
 As mudanças de 001 a 019 foram arquivadas.

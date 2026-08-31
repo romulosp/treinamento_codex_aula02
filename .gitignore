@@ -7,6 +7,9 @@
 !/.png
 !/.jpg
 
+# Aplicações geradas são locais e não devem ser adicionadas ao repositório.
+/apps/**
+
 # Artefatos locais explicitamente documentados (também abrangidos pela regra geral).
 **/target/
 **/.quarkus/
