@@ -1,0 +1,22 @@
+﻿{
+    "SourceSkills":  42,
+    "TargetSkills":  53,
+    "MissingImportedSkills":  [
+
+                              ],
+    "PathMismatches":  [
+
+                       ],
+    "LicenseCount":  4,
+    "LicensesMissingInTarget":  [
+
+                                ],
+    "PreexistingMissing":  [
+
+                           ],
+    "ReadmeChecks":  {
+                         "SkillsReadmeHasImportedSection":  true,
+                         "SkillsReadmeHasExamples":  true,
+                         "RootReadmeHasCatalogLink":  true
+                     }
+}

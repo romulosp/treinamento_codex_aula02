@@ -21,6 +21,7 @@ A política padrão do repositório permite versionar documentos `.md` e `.txt`,
 - **Qualidade desde o início:** critérios de aceite verificáveis, testes unitários e integração Quarkus como parte do ciclo de mudança.
 - **Segurança por configuração:** credenciais e dados de infraestrutura devem ser fornecidos pelo ambiente local, nunca registrados em documentos ou commits.
 - **Reprodutibilidade:** a documentação permite gerar novamente o mesmo módulo e comprovar o resultado com evidências objetivas.
+- **Skills locais:** o acervo em [.agents/skills/](.agents/skills/) inclui skills de processo, backend Java e estudo reutilizável.
 
 ## Estrutura do repositório
 
@@ -33,7 +34,7 @@ A política padrão do repositório permite versionar documentos `.md` e `.txt`,
 | [specs/shared/](specs/shared/) | Convenções de arquitetura, API, testes e processo. |
 | [specs/system/](specs/system/) | Descrição vigente do estado do sistema. |
 | [docs/adr/](docs/adr/) | Decisões arquiteturais duradouras. |
-| [.agents/skills/](.agents/skills/) | Procedimentos especializados utilizados pelo agente. |
+| [.agents/skills/](.agents/skills/) | Catálogo completo das skills locais utilizadas pelo agente. |
 
 ## Ciclo de entrega
 
@@ -64,6 +65,7 @@ Consulte [NotasProjeto.md](NotasProjeto.md) para instruções completas de cria�
 - [Arquitetura do backend Java](specs/shared/architecture/backend-java.md)
 - [Convenções REST](specs/shared/api/rest-conventions.md)
 - [Estratégia de testes](specs/shared/testing/testing-strategy.md)
+- [Catálogo de skills locais](.agents/skills/README.md)
 - [Estado vigente do sistema](specs/system/README.md)
 - [Histórico das mudanças](specs/archive/)
 - [Auditoria de segurança](docs/security-audit/relatorio-auditoria-seguranca.pdf)

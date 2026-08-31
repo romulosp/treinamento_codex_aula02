@@ -1,0 +1,57 @@
+﻿[
+    {
+        "Skill":  "change-approve",
+        "RelativePath":  "SKILL.md",
+        "Hash":  "A27ECC694FDFDEC0C2FFFE7231359EC6D14443DEFBB1A67FBC090EDF18C9DAE7"
+    },
+    {
+        "Skill":  "git-commit",
+        "RelativePath":  "SKILL.md",
+        "Hash":  "72422161E5804F038AFBCF514285FF6C94699C7A7D0215BBE308B8C252EB3AA0"
+    },
+    {
+        "Skill":  "implementation-review",
+        "RelativePath":  "SKILL.md",
+        "Hash":  "3E25E210EF0243D74CD3129086AD3695B6E46A6E9CFE6D453521D68DFEF68687"
+    },
+    {
+        "Skill":  "implementation-validate",
+        "RelativePath":  "SKILL.md",
+        "Hash":  "1C505BD12DB525AA5FE2EF3586416CF55C350F3C5976C7B08DBB95F90BEFFD69"
+    },
+    {
+        "Skill":  "java-integration-test",
+        "RelativePath":  "SKILL.md",
+        "Hash":  "FF61654DD2670BCE36C40706A0B16DFF5054754955317E119EAE82923EFFB25E"
+    },
+    {
+        "Skill":  "java-panache-repository",
+        "RelativePath":  "SKILL.md",
+        "Hash":  "B032ACECF7D55AFB7A0522FB4EC959474A1305F56F4003EE0DCCA1847FD4160E"
+    },
+    {
+        "Skill":  "java-quarkus-resource",
+        "RelativePath":  "SKILL.md",
+        "Hash":  "9AD2D47121F4E3CC353913857A89463E9ABB0066B0C5195B6D03B936D2B3464C"
+    },
+    {
+        "Skill":  "java-unit-test",
+        "RelativePath":  "SKILL.md",
+        "Hash":  "C24A72A81B30A43C4CB3658F5CE6835EC0F177757A7C4C5A9AC45BC3834A8FB3"
+    },
+    {
+        "Skill":  "security-audit",
+        "RelativePath":  "SKILL.md",
+        "Hash":  "B52DE153D4B284FE7A89385D81FFE5243467E888F515FF600D7A1BB863AF2AD0"
+    },
+    {
+        "Skill":  "spec-implement",
+        "RelativePath":  "SKILL.md",
+        "Hash":  "6038CF2FC217115FCE7E2B469D238962C42B9DD46197F1408D2824C5DE4BC781"
+    },
+    {
+        "Skill":  "spec-review",
+        "RelativePath":  "SKILL.md",
+        "Hash":  "EDC490E8E77E392D725B1D1029F199BABD66B455A609B995EF45027A6FB739DC"
+    }
+]
