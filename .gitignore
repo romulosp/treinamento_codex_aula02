@@ -6,6 +6,7 @@
 !/.gitignore
 !/.png
 !/.jpg
+!/.drawio
 
 # Artefatos locais explicitamente documentados (também abrangidos pela regra geral).
 **/target/
