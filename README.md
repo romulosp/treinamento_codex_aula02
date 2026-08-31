@@ -51,6 +51,14 @@ Cada alteração segue o fluxo abaixo:
 
 As entradas, saídas e regras de retorno estão definidas em [specs/shared/process/workflow.md](specs/shared/process/workflow.md).
 
+## Testar antes do commit
+
+Use [Implementar mudança para teste humano](.github/prompts/implementar-mudanca-para-teste.prompt.md) para executar uma mudança somente até `IMPLEMENTADA`. Ele cria ou revisa a SPEC, implementa e executa verificações técnicas, mas não revisa, valida formalmente, aprova, arquiva nem cria commit.
+
+Exemplo: `/Implementar mudança para teste humano specs/changes/029-minha-mudanca`.
+
+Depois do seu teste, use [Executar mudança Spec Driven](.github/prompts/executar-mudanca-spec-driven.prompt.md) para continuar a mesma mudança pelas fases restantes até o commit.
+
 ## Como contribuir ou iniciar uma nova API
 
 1. Crie uma pasta em [specs/changes/](specs/changes/) com o próximo identificador e um nome descritivo.

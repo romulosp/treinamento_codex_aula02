@@ -15,6 +15,7 @@
 - A configuração de fila de mensagens usa seleção exclusiva em build time (`filaMq`), com RabbitMQ como padrão e opções Kafka, IBM MQ e Redis; dependência Maven e propriedades são renderizadas apenas para o provedor selecionado. Redis é reservado à fila e não ao cache.
 - O documento `NotasProjeto.md` na raiz consolida a visão do projeto e o procedimento para reproduzir um módulo localmente.
 - As aplicações frontend são organizadas por plataforma em `apps/frontend/web/`, `apps/frontend/smartphone/` e `apps/frontend/desktop/`. A vitrine React demonstrativa Terra & Torra está em `apps/frontend/web/exemplo-site-web-001/`; smartphone e desktop estão documentados e reservados para aplicações futuras.
+- O agente `implementador-para-teste`, em `.github/agents/`, executa mudanças até `IMPLEMENTADA` e para para avaliação humana; o prompt integral permanece responsável pelas fases de encerramento e commit.
 
 ## Estado histórico reproduzível
 
