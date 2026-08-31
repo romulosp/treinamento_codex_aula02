@@ -10,7 +10,7 @@ O projeto mantém a documentação como fonte de verdade. Módulos executáveis 
 
 ## Estado atual
 
-O workspace preserva aplicações independentes em pastas próprias sob `apps/backend/`, como `apps/backend/gerenciarcategorias/`. O backend `gerenciartarefas` e sua evidência de hardening foram versionados pela mudança aprovada `001-hardening`; os demais artefatos gerados continuam locais quando não fizerem parte do escopo aprovado.
+O workspace preserva aplicações independentes em pastas próprias sob `apps/backend/`, como `apps/backend/gerenciarcategorias/`, e organiza o frontend por plataforma em `apps/frontend/web/`, `apps/frontend/smartphone/` e `apps/frontend/desktop/`. A vitrine demonstrativa Terra & Torra está em `apps/frontend/web/exemplo-site-web-001/`.
 
 A política padrão do repositório permite versionar documentos `.md` e `.txt`, além do próprio `.gitignore`. Código, configurações, scripts e artefatos gerados permanecem locais por padrão; uma mudança aprovada pode selecionar explicitamente os arquivos necessários para sua rastreabilidade. Segredos reais nunca são versionados.
 
@@ -33,6 +33,7 @@ A política padrão do repositório permite versionar documentos `.md` e `.txt`,
 | [specs/archive/](specs/archive/) | Histórico de mudanças concluídas, com decisões e evidências. |
 | [specs/shared/](specs/shared/) | Convenções de arquitetura, API, testes e processo. |
 | [specs/system/](specs/system/) | Descrição vigente do estado do sistema. |
+| [apps/frontend/](apps/frontend/) | Aplicações frontend organizadas por web, smartphone e desktop. |
 | [docs/adr/](docs/adr/) | Decisões arquiteturais duradouras. |
 | [.agents/skills/](.agents/skills/) | Catálogo completo das skills locais utilizadas pelo agente. |
 

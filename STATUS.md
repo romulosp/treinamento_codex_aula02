@@ -30,5 +30,6 @@
 | `025-provedor-fila-mq` | `ARQUIVADA` | 2026-08-30 |
 | `026-chaves-aplicacao` | `ARQUIVADA` | 2026-08-30 |
 | `027-importar-skills-estudo` | `ARQUIVADA` | 2026-08-30 |
+| `028-exemplo-site-web-001` | `ARQUIVADA` | 2026-08-30 |
 
 As mudanças de 001 a 019 foram arquivadas.
