@@ -3,7 +3,7 @@ package br.com.romulopenha.gerenciartarefas.domain;
 import java.time.LocalDateTime;
 
 /**
- * Representa a entidade de tarefa incluindo o tenantId para isolamento multi‑tenant.
+ * Representa uma tarefa de domínio, incluindo o identificador do tenant para isolamento entre clientes.
  */
 public record Tarefa(Long id,
                      String titulo,

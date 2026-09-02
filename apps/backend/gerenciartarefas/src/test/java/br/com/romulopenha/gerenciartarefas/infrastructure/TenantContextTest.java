@@ -6,7 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests for {@link TenantContext}.
+ * Testes unitários de {@link TenantContext}.
  */
 public class TenantContextTest {
 

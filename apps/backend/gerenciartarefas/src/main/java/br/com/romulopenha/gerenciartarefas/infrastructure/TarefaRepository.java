@@ -5,6 +5,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Fornece consultas Panache de tarefas filtradas pelo tenant.
+ */
 @ApplicationScoped
 public class TarefaRepository implements PanacheRepositoryBase<TarefaEntity, Long> {
     public List<TarefaEntity> listarPorTenant(String tenantId) {

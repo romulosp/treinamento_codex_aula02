@@ -11,6 +11,7 @@
 - O diretório de cada projeto também remove os hífens do `artifactId`, sem alterar o `artifactId` declarado no `pom.xml`.
 - O `quarkus-maven-plugin` dos projetos gerados usa `extensions=true` e uma execução com o goal `build`, permitindo que `mvn quarkus:dev` inicie a aplicação.
 - A estratégia compartilhada de testes define inventário, cobertura e isolamento de testes unitários Java; mudanças Java usam a Skill `java-unit-test` quando aplicável.
+- Os 40 arquivos Java atualmente presentes nos módulos backend estão documentados em JavaDoc em português do Brasil, conforme a change arquivada `2026-09-01-032-documentar-java`.
 - O acervo local em `.agents/skills/` contém 54 skills com `SKILL.md`: 11 skills de processo/backend já existentes, 42 skills importadas do diretório de estudo e a Skill local `java-javadoc`, catalogadas em `.agents/skills/README.md`. A Skill `java-javadoc` orienta a criação e a atualização de JavaDoc em português do Brasil com base apenas em contratos comprovados.
 - A configuração de fila de mensagens usa seleção exclusiva em build time (`filaMq`), com RabbitMQ como padrão e opções Kafka, IBM MQ e Redis; dependência Maven e propriedades são renderizadas apenas para o provedor selecionado. Redis é reservado à fila e não ao cache.
 - O documento `NotasProjeto.md` na raiz consolida a visão do projeto e o procedimento para reproduzir um módulo localmente.

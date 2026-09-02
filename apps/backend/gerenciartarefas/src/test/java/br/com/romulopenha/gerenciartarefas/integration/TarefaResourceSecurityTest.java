@@ -9,7 +9,7 @@ import jakarta.ws.rs.core.MediaType;
 import org.junit.jupiter.api.Test;
 
 /**
- * Integration tests covering security (authentication/authorization) and tenant isolation.
+ * Testes de integração que cobrem segurança (autenticação/autorização) e isolamento por tenant.
  */
 @QuarkusTest
 public class TarefaResourceSecurityTest {

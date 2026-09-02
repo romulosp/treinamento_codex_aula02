@@ -16,6 +16,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * Conjunto de testes automatizados para TarefaResourceUnitTest.
+ */
 class TarefaResourceUnitTest {
     private TarefaService service;
     private TarefaResource resource;

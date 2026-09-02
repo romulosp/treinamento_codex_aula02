@@ -1,8 +1,8 @@
 package br.com.romulopenha.gerenciartarefas.infrastructure;
 
 /**
- * Simple ThreadLocal storage for the current tenant identifier.
- * The value is set by {@link TenantFilter} for each incoming request and cleared afterwards.
+ * Armazena temporariamente o identificador do tenant corrente no contexto da thread.
+ * O valor é definido por {@link TenantFilter} para cada requisição e removido ao final dela.
  */
 public class TenantContext {
     private static final ThreadLocal<String> CURRENT_TENANT = new ThreadLocal<>();

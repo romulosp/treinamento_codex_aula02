@@ -3,6 +3,9 @@ package br.com.romulopenha.gerenciartarefas.api;
 import br.com.romulopenha.gerenciartarefas.domain.Tarefa;
 import java.time.LocalDateTime;
 
+/**
+ * Representa uma tarefa no formato de resposta da API.
+ */
 public record TarefaResponse(Long id, String titulo, String descricao, String status,
                              LocalDateTime data_criacao, LocalDateTime data_conclusao) {
     public static TarefaResponse from(Tarefa tarefa) {

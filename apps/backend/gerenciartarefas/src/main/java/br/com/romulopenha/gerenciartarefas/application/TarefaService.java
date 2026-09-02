@@ -12,10 +12,14 @@ import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Coordena operações de tarefas no tenant corrente e aplica transações nas alterações persistentes.
+ */
 @ApplicationScoped
 public class TarefaService {
     private final TarefaRepository repository;
 
+    /** Cria o serviço usando o repositório de tarefas informado. */
     public TarefaService(TarefaRepository repository) { this.repository = repository; }
 
     private String currentTenant() {
@@ -24,6 +28,7 @@ public class TarefaService {
         return tenant;
     }
 
+    /** @return tarefas do tenant corrente; pode ser uma lista vazia. */
     public List<Tarefa> listar() {
         String tenant = currentTenant();
         return repository.listarPorTenant(tenant).stream()
@@ -31,12 +36,22 @@ public class TarefaService {
                 .toList();
     }
 
+    /** @param id identificador da tarefa no tenant corrente
+     *  @return tarefa encontrada
+     *  @throws TarefaNaoEncontradaException se o identificador não existir no tenant corrente */
     public Tarefa buscar(Long id) {
         TarefaEntity entity = localizar(id);
         return entity.toDomain();
     }
 
     @Transactional
+    /** Cria e persiste uma tarefa no tenant corrente.
+     *  @param titulo título não vazio com no máximo 100 caracteres
+     *  @param descricao descrição da tarefa
+     *  @param status status textual; quando vazio, usa {@link StatusTarefa#PENDENTE}
+     *  @return tarefa persistida
+     *  @throws TarefaInvalidaException se o título ou status forem inválidos
+     *  @throws RuntimeException se não houver tenant no contexto */
     public Tarefa criar(String titulo, String descricao, String status) {
         validarTitulo(titulo);
         StatusTarefa statusTarefa = converterStatus(status);
@@ -49,6 +64,14 @@ public class TarefaService {
     }
 
     @Transactional
+    /** Atualiza e persiste os dados da tarefa no tenant corrente.
+     *  @param id identificador da tarefa
+     *  @param titulo título não vazio com no máximo 100 caracteres
+     *  @param descricao nova descrição
+     *  @param status novo status textual
+     *  @return tarefa atualizada
+     *  @throws TarefaNaoEncontradaException se a tarefa não existir no tenant corrente
+     *  @throws TarefaInvalidaException se o título ou status forem inválidos */
     public Tarefa atualizar(Long id, String titulo, String descricao, String status) {
         var entity = localizar(id);
         validarTitulo(titulo);
@@ -62,6 +85,9 @@ public class TarefaService {
     }
 
     @Transactional
+    /** Exclui a tarefa do tenant corrente.
+     *  @param id identificador da tarefa
+     *  @throws TarefaNaoEncontradaException se a tarefa não existir no tenant corrente */
     public void excluir(Long id) { repository.delete(localizar(id)); }
 
     private TarefaEntity localizar(Long id) {

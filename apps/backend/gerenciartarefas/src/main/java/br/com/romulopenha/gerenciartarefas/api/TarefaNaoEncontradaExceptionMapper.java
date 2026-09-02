@@ -5,6 +5,9 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 
+/**
+ * Converte ausência de tarefa em resposta HTTP 404.
+ */
 @Provider
 public class TarefaNaoEncontradaExceptionMapper implements ExceptionMapper<TarefaNaoEncontradaException> {
     @Override

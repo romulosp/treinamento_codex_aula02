@@ -12,6 +12,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 
+/**
+ * Representa a tarefa persistida no banco relacional e sua conversão para o modelo de domínio.
+ */
 @Entity
 @Table(name = "tarefas")
 public class TarefaEntity {

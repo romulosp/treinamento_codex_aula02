@@ -5,8 +5,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
- * Valida a configuracao obrigatoria do OIDC.
- * A autenticacao e a validacao criptografica do JWT sao executadas pela extensao quarkus-oidc.
+ * Valida a configuração obrigatória do OIDC.
+ * A autenticação e a validação criptográfica do JWT são executadas pela extensão quarkus-oidc.
  */
 @ApplicationScoped
 public class SecurityConfig {

@@ -5,6 +5,9 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+/**
+ * Conjunto de testes automatizados para SecurityConfigTest.
+ */
 class SecurityConfigTest {
     @Test
     void aceitaConfiguracaoCompleta() {

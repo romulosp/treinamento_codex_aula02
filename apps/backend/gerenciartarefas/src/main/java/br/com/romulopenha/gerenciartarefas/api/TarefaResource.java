@@ -15,6 +15,9 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+/**
+ * Expõe os endpoints REST de consulta e manutenção de tarefas, protegendo operações de escrita por papel.
+ */
 @Path("/tarefas")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -23,14 +26,19 @@ public class TarefaResource {
 
     public TarefaResource(TarefaService service) { this.service = service; }
 
+    /** @return lista de tarefas do tenant autenticado; pode ser vazia. */
     @GET
     public ListaTarefasResponse listar() {
         return new ListaTarefasResponse(service.listar().stream().map(TarefaResponse::from).toList());
     }
 
+    /** @param id identificador da tarefa
+     *  @return tarefa correspondente */
     @GET @Path("/{id}")
     public TarefaResponse buscar(@PathParam("id") Long id) { return TarefaResponse.from(service.buscar(id)); }
 
+    /** @param request dados validados da tarefa
+     *  @return resposta HTTP 201 com a tarefa criada */
     @POST
     @RolesAllowed("ADMIN")
     public Response criar(@Valid TarefaRequest request) {
@@ -39,6 +47,9 @@ public class TarefaResource {
         return Response.status(Response.Status.CREATED).entity(TarefaResponse.from(tarefa)).build();
     }
 
+    /** @param id identificador da tarefa
+     *  @param request novos dados validados
+     *  @return tarefa atualizada */
     @PUT @Path("/{id}")
     @RolesAllowed("ADMIN")
     public TarefaResponse atualizar(@PathParam("id") Long id, @Valid TarefaRequest request) {
@@ -46,6 +57,8 @@ public class TarefaResource {
         return TarefaResponse.from(service.atualizar(id, request.titulo(), request.descricao(), request.status()));
     }
 
+    /** @param id identificador da tarefa
+     *  @return confirmação da exclusão */
     @DELETE @Path("/{id}")
     @RolesAllowed("ADMIN")
     public ResultadoExclusaoResponse excluir(@PathParam("id") Long id) {

@@ -14,6 +14,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+/**
+ * Conjunto de testes automatizados para TarefaServiceTest.
+ */
 class TarefaServiceTest {
     @BeforeEach
     void setUp() {
