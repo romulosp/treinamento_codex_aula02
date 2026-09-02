@@ -21,6 +21,8 @@
 
 As Skills de processo seguem `specs/shared/process/workflow.md`.
 
+- `java-javadoc`: cria ou atualiza JavaDoc em português do Brasil para contratos Java comprovados, sem documentação especulativa. Exemplo de uso: "adicione JavaDoc ao `UsuarioService` com base no comportamento comprovado pelo código e testes".
+
 ## Skills importadas do estudo
 
 As skills abaixo foram importadas de `D:\desenvolvimento\ia\estudo\skills` para uso local neste projeto. A categoria original foi preservada apenas neste catalogo; para descoberta operacional, cada skill fica diretamente em `.agents/skills/<nome-da-skill>/`.
