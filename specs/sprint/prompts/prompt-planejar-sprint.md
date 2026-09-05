@@ -13,7 +13,7 @@ Criar ou atualizar uma Sprint conforme `specs/sprint/README.md` e `specs/sprint/
 3. Consulte `specs/sprint/README.md` para classificar a Change pelo gate real e pela evidência disponível. Não atribua `READY` sem todos os critérios da Definition of Ready.
 4. Respeite as dependências e proponha uma ordem de execução compatível com elas.
 5. Priorize, nesta ordem: segurança, risco de negócio, testes unitários e testes de integração. Registre o risco, seu impacto e o tratamento ou decisão necessária para cada item.
-6. Registre prioridade, fase/gate, status, dependência, evidência atual e observações operacionais para cada item.
+6. Registre prioridade, fase/gate, status, dependência, evidência atual, disponibilidade de Sonar/cobertura e observações operacionais para cada item. Se a ferramenta estiver indisponível, registre o motivo e a Auditoria de Qualidade Assistida por LLM exigida.
 7. Registre um Sprint Goal objetivo e um critério observável para demonstrar seu sucesso na Sprint Review.
 8. Não duplique requisitos, critérios de aceite ou detalhes técnicos das Changes e SPECs referenciadas.
 9. A Sprint não substitui nem altera o workflow 01-06 e não constitui uma nova etapa desse workflow.

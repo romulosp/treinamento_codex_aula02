@@ -26,11 +26,11 @@ Uma Change pertence a, no máximo, uma Sprint `ACTIVE`. O Sprint Planner não mu
 
 Ao ordenar a Sprint, priorize nesta sequência: segurança, risco de negócio, testes unitários e testes de integração. Para cada item, registre o risco conhecido, a dependência, o gate atual e a evidência que comprova o avanço. O Sprint Goal precisa indicar o resultado esperado e como ele será demonstrado na Sprint Review.
 
-## Ausência de Sonar ou cobertura configurada
+## Ausência ou indisponibilidade de Sonar e cobertura
 
-Quando o módulo não possuir Sonar ou ferramenta de cobertura configurados, a Change não é liberada apenas pela ausência da ferramenta. Execute uma **Auditoria de Qualidade Assistida por LLM**: rode os comandos de build, tipo, lint e testes disponíveis; relacione cada artefato de produção alterado aos testes unitários e de integração aplicáveis; e revise defeitos, tratamento de erro, duplicação, código morto, complexidade desnecessária e documentação. Registre escopo, comandos, resultados, achados e correções em `validation.md`.
+Quando o módulo não possuir Sonar ou ferramenta de cobertura configurados, ou quando Docker, SonarQube, scanner, token ou dependência necessária ao Sonar estiverem indisponíveis, a Change não é liberada apenas pela ausência ou falha da ferramenta. Execute uma **Auditoria de Qualidade Assistida por LLM**: rode os comandos de build, tipo, lint e testes disponíveis; relacione cada artefato de produção alterado aos testes unitários e de integração aplicáveis; e revise bugs, vulnerabilidades e hotspots de segurança, tratamento de erro, duplicação, código morto, complexidade desnecessária e documentação. Registre motivo do fallback, escopo, comandos, resultados, achados e correções em `validation.md`.
 
-Essa auditoria substitui o gate operacional ausente, mas não declara percentual de cobertura nem afirma que o Sonar foi executado. Quando Sonar ou cobertura estiverem configurados, seus resultados continuam obrigatórios.
+Essa auditoria substitui somente o gate operacional ausente ou indisponível; não declara percentual de cobertura nem afirma que o Sonar foi executado. Quando Sonar e cobertura estiverem disponíveis, seus resultados continuam obrigatórios. Falha de build, scanner ou Quality Gate depois de o Sonar estar disponível não é fallback e impede a aprovação. A Skill `security-audit` continua obrigatória quando aplicável.
 
 ## Aplicabilidade da auditoria de segurança
 

@@ -13,7 +13,7 @@ Apresentar o progresso, os bloqueios e a próxima Change executável com base no
 3. Para cada Change, informe o gate atual, a documentação entregue, a evidência ausente, o risco de segurança ou de negócio e a condição objetiva para avançar.
 4. Preserve o escopo aprovado das Changes e SPECs; a Sprint não altera requisitos, critérios de aceite ou o workflow 01-06.
 5. Não altere automaticamente ordem, prioridade ou status sem evidência objetiva registrada.
-6. Considere como bloqueio a ausência da auditoria de segurança quando aplicável, de teste unitário ou de integração aplicável, da verificação Sonar/cobertura configurada ou da Auditoria de Qualidade Assistida por LLM quando essas ferramentas não existirem, ou qualquer achado de segurança confirmado ainda não resolvido; esses itens não podem ser tratados como `DONE`.
+6. Considere como bloqueio a ausência da auditoria de segurança quando aplicável, de teste unitário ou de integração aplicável, da verificação Sonar/cobertura configurada e operacionalmente disponível, ou da Auditoria de Qualidade Assistida por LLM quando essas ferramentas não existirem ou estiverem indisponíveis. Também é bloqueio qualquer achado de segurança confirmado, falha de build, scanner ou Quality Gate ainda não resolvido; esses itens não podem ser tratados como `DONE`.
 7. Para identificar a próxima Change executável em uma única Sprint `ACTIVE`:
    1. ignore itens `DONE`, `REMOVED` e `IN_PROGRESS`;
    2. verifique se um item `BLOCKED` impede os itens seguintes pelas dependências declaradas;

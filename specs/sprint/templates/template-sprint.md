@@ -92,7 +92,7 @@ Uma Change fica `DONE` na Sprint somente quando:
 
 - Quando o módulo possuir ferramenta de cobertura configurada, os testes aplicáveis atingem entre 80% e 100%, conforme as regras de qualidade do projeto; 80% é o mínimo aceitável e a meta é 100% nas áreas novas ou alteradas, quando viável.
 - A validação respeita as métricas efetivamente configuradas no Sonar e na ferramenta de cobertura do projeto.
-- O percentual de cobertura só é registrado com medição reproduzível. Se o módulo não possuir ferramenta de cobertura configurada, execute a Auditoria de Qualidade Assistida por LLM e registre o mapeamento de artefatos alterados para testes aplicáveis; não declare percentual estimado.
+- O percentual de cobertura só é registrado com medição reproduzível. Se o módulo não possuir ferramenta de cobertura configurada ou se a infraestrutura configurada estiver operacionalmente indisponível, execute a Auditoria de Qualidade Assistida por LLM e registre o mapeamento de artefatos alterados para testes aplicáveis; não declare percentual estimado.
 - Não são usados testes artificiais, exclusões indevidas ou alterações de configuração apenas para elevar a cobertura.
 
 ### Documentação de código
@@ -104,11 +104,11 @@ Uma Change fica `DONE` na Sprint somente quando:
 
 ### Qualidade e Sonar
 
-- Quando Sonar estiver configurado no módulo, suas verificações de qualidade são aprovadas.
-- Quando não houver Sonar ou cobertura configurados no módulo, execute a Auditoria de Qualidade Assistida por LLM: rode build, tipo, lint e testes disponíveis; relacione os artefatos alterados aos testes unitários e de integração aplicáveis; e revise defeitos, tratamento de erro, duplicação, código morto, complexidade desnecessária e documentação.
-- A auditoria assistida registra em `validation.md` o módulo, os arquivos analisados, os comandos, resultados, mapeamento de testes, achados e correções. Ela não declara percentual de cobertura nem afirma que o Sonar foi executado.
+- Quando Sonar e cobertura estiverem configurados e operacionalmente disponíveis no módulo, suas verificações de qualidade são aprovadas.
+- Quando não houver Sonar ou cobertura configurados no módulo, ou quando Docker, Sonar, scanner, token ou dependência necessária ao Sonar estiverem operacionalmente indisponíveis, execute a Auditoria de Qualidade Assistida por LLM. Rode build, tipo, lint e testes disponíveis; relacione os artefatos alterados aos testes unitários e de integração aplicáveis; e revise bugs, vulnerabilidades e hotspots de segurança, tratamento de erro, duplicação, código morto, complexidade desnecessária e documentação.
+- A auditoria assistida registra em `validation.md` o motivo do fallback, o módulo, os arquivos analisados, os comandos, resultados, mapeamento de testes, achados e correções. Ela não declara percentual de cobertura nem afirma que o Sonar foi executado; a Skill `security-audit`, quando aplicável, continua obrigatória.
 - Quando o Sonar exigir uma classe de teste correspondente para cada classe Java, o requisito é obrigatório, inclusive para classes simples.
-- Problemas de qualidade, cobertura abaixo do mínimo quando aferível, ausência de testes exigidos ou ausência da auditoria assistida quando Sonar/cobertura não existirem impedem o status `DONE`.
+- Problemas de qualidade, cobertura abaixo do mínimo quando aferível, ausência de testes exigidos ou ausência da auditoria assistida quando Sonar/cobertura não existirem ou estiverem indisponíveis impedem o status `DONE`.
 - Exceções são permitidas somente quando registradas explicitamente como decisão, com justificativa e aprovação definida pelo processo do projeto.
 
 ### Auditoria de segurança
