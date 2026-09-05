@@ -20,9 +20,9 @@ A SPEC é a fonte da verdade. Identifique a primeira fase pendente, execute-a e 
 ## Modo de execução automática
 
 1. Trate este prompt como o orquestrador do fluxo completo; não peça que o usuário escreva separadamente “revisão”, “implementação”, “validação” ou “aprovação”.
-2. Quando a mudança estiver em `RASCUNHO` e o contrato estiver completo, execute a revisão da SPEC diretamente. Se a SPEC for aprovada, continue na mesma conversa para a implementação.
+2. Quando a mudança estiver em `RASCUNHO` e o contrato estiver completo, execute a revisão da SPEC diretamente. Se a SPEC for aprovada, registre o planejamento técnico preparatório e continue na mesma conversa para a implementação.
 3. Após registrar `IMPLEMENTADA`, execute a revisão da implementação. Se aprovada, execute a validação com os testes aplicáveis. Se validada, produza a aprovação formal e execute o encerramento com commit rastreável.
-4. Ao encontrar um gate reprovado, pare no mesmo turno, informe a evidência objetiva e a primeira fase à qual a mudança deve retornar. Não avance nem tente contornar a pendência.
+4. Ao encontrar um gate reprovado, pare no mesmo turno, informe a evidência objetiva e a primeira fase à qual a mudança deve retornar. Não avance nem tente contornar a pendência. Exceção: achado de segurança confirmado e corrigível dentro da SPEC aprovada retorna automaticamente à implementação, revisão, validação e nova auditoria.
 5. Antes de encerrar, informe a última fase alcançada, status, arquivos atualizados, comandos e códigos de saída, bloqueios e hash do commit, quando aplicável.
 
 Exemplo de uso:
@@ -33,7 +33,7 @@ Exemplo de uso:
 
 ## Preparação obrigatória
 
-1. Leia `proposal.md`, `spec.md`, `DESIGN.md`, `tasks.md`, `validation.md`, todos os relatórios em `reviews/` e as regras compartilhadas aplicáveis.
+1. Leia `proposal.md`, `spec.md`, `DESIGN.md`, `tasks.md`, `implementation-plan.md` quando existir, `validation.md`, todos os relatórios em `reviews/` e as regras compartilhadas aplicáveis.
 2. Identifique o estado atual usando os documentos da mudança e [STATUS.md](../../STATUS.md).
 3. Antes de executar qualquer comando Maven, configure a sessão do terminal para usar Java 17 e Maven 3.8.8. A configuração é temporária, vale somente para a sessão e não deve ser gravada em `pom.xml`, arquivos gerados ou variáveis permanentes do sistema.
 	 - No Prompt de Comando do Windows, execute:
@@ -59,6 +59,7 @@ Exemplo de uso:
 ## Regras inegociáveis
 
 - Nunca implemente antes de `proposal.md` e `spec.md` estarem ambos em `SPEC_APROVADA`.
+- Antes da implementação, registre `implementation-plan.md` com impactos, riscos, testes unitários e de integração, qualidade e auditoria de segurança. Esse artefato é preparatório e não altera as fases 01-06.
 - Não invente decisões, contratos ou requisitos para contornar pendências. Registre a evidência exigida e encerre se a fase estiver bloqueada.
 - Revisões não corrigem código ou requisitos. Validação não corrige código. Aprovação não altera código nem executa testes. Commit não revalida a entrega.
 - Não arquive a mudança nem crie commit sem relatório formal com estado `APROVADA`.
@@ -80,7 +81,7 @@ Execute a Skill `spec-review`. Avalie exclusivamente clareza, completude, consis
 
 ### 3. Implementação — cumprir o contrato aprovado
 
-Somente com `proposal.md` e `spec.md` em `SPEC_APROVADA`, execute a Skill `spec-implement`. Implemente exclusivamente os artefatos, contratos e comportamentos aprovados. Crie ou atualize testes de comportamento observável e atualize `tasks.md`.
+Somente com `proposal.md` e `spec.md` em `SPEC_APROVADA`, execute o planejamento técnico de `specs/sprint/prompts/prompt-planejar-implementacao.md` e registre `implementation-plan.md`. Em seguida, execute a Skill `spec-implement`. Implemente exclusivamente os artefatos, contratos e comportamentos aprovados. Crie ou atualize testes unitários e de integração aplicáveis, atualize `tasks.md` e mantenha a documentação de código necessária.
 
 Para projetos Java Quarkus gerados, derive `PROJETO_DIR=apps/backend/<artifactId-sem-hifens>/`, crie essa pasta antes de gerar qualquer arquivo e crie `PROJETO_DIR/start_aplicacao.bat` com o conteúdo abaixo, preservando a configuração temporária de Java 17.0.11 e Maven 3.8.8. Execute Maven a partir de `PROJETO_DIR`:
 
@@ -115,14 +116,20 @@ endlocal
 
 ### 4. Revisão da implementação — comparar entrega e SPEC
 
-Com a mudança em `IMPLEMENTADA`, execute a Skill `implementation-review`. Compare código, configurações, dependências, contratos, testes, critérios de aceite e alterações indevidas contra a SPEC aprovada. Não corrija nada durante a revisão. Salve o relatório com achados `IMP-REV-*` em `reviews/`.
+Com a mudança em `IMPLEMENTADA`, confirme a existência de `implementation-plan.md` e execute a Skill `implementation-review`. Compare código, configurações, dependências, contratos, testes, critérios de aceite e alterações indevidas contra a SPEC aprovada e o plano técnico. Não corrija nada durante a revisão. Salve o relatório com achados `IMP-REV-*` em `reviews/`.
 
 - Aprovada: registre `IMPLEMENTACAO_APROVADA` e avance.
 - Reprovada: registre `REPROVADA`, indique as divergências e retorne à implementação; encerre.
 
 ### 5. Validação — provar o comportamento por evidências
 
-Somente com a implementação aprovada, execute a Skill `implementation-validate`. Execute todos os testes e verificações aplicáveis e confronte seus resultados com os cenários da SPEC. Em `validation.md`, registre ambiente, versões, comandos, códigos de saída, cenários, resultados e evidências `VAL-*`. Não corrija código nesta fase.
+Somente com a implementação aprovada, execute a Skill `implementation-validate`. Execute todos os testes unitários e de integração, verificações de qualidade e cobertura aplicáveis e confronte seus resultados com os cenários da SPEC. Em `validation.md`, registre ambiente, versões, comandos, códigos de saída, cenários, resultados e evidências `VAL-*`.
+
+Quando o módulo não possuir Sonar ou ferramenta de cobertura, execute a Auditoria de Qualidade Assistida por LLM: rode build, tipo, lint e testes disponíveis; mapeie os artefatos alterados para seus testes aplicáveis; revise defeitos, tratamento de erro, duplicação, código morto, complexidade e documentação; e registre escopo, comandos, resultados, achados e correções em `validation.md`. Não declare percentual estimado de cobertura nem afirme que o Sonar foi executado.
+
+Ainda nesta fase, execute a Skill `security-audit` quando a Change possuir artefato de frontend/backend, API, autenticação, autorização, configuração, dependência, segredo ou integração no escopo. Registre as evidências em `validation.md` e gere um relatório PDF atual em `docs/security-audit/` com `docs/security-audit/gerar_relatorio.py`; o relatório deve representar a auditoria atual, identificar a Change e manter segredos redigidos. Para Change exclusivamente documental, registre a não aplicabilidade e os artefatos inspecionados em `validation.md`; não gere nem reutilize PDF histórico.
+
+Se houver achado de segurança confirmado, retorne à implementação e corrija-o autonomamente dentro da SPEC aprovada. Em seguida, repita revisão da implementação, validação e auditoria. Se a correção exigir alteração da SPEC, ação externa ou decisão fora do escopo, registre `BLOQUEADA` e encerre. Não aprove nem faça commit enquanto houver achado confirmado, relatório ausente ou relatório que não represente a auditoria atual.
 
 - Êxito: registre `VALIDADA` e avance.
 - Falha: registre a evidência, a causa e a fase de retorno; encerre.
@@ -137,6 +144,7 @@ Somente com a mudança validada, execute a Skill `change-approve`. Não implemen
 | Implementação | `IMPLEMENTADA` |
 | Revisão da implementação | `IMPLEMENTACAO_APROVADA` |
 | Validação | `VALIDADA` |
+| Segurança, como parte da validação | Auditoria atual sem achados confirmados em aberto |
 
 - Aprovada: produza o relatório formal, atualize [STATUS.md](../../STATUS.md) para `APROVADA` e avance.
 - Reprovada: informe a primeira fase que deve ser retomada e encerre.
