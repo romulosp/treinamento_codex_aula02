@@ -32,5 +32,7 @@
 | `027-importar-skills-estudo` | `ARQUIVADA` | 2026-08-30 |
 | `028-exemplo-site-web-001` | `ARQUIVADA` | 2026-08-30 |
 | `029-criar-agente-implementacao-para-teste` | `ARQUIVADA` | 2026-08-30 |
+| `031-criar-skill-java-javadoc` | `ARQUIVADA` | 2026-09-01 |
+| `032-documentar-java` | `ARQUIVADA` | 2026-09-01 |
 
 As mudanças de 001 a 019 foram arquivadas.
