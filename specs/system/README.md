@@ -30,3 +30,8 @@
 - A fonte canônica de fluxo, estados, gates e evidências é `specs/shared/process/workflow.md`; as Skills são o mecanismo operacional das fases.
 - Toda implementação começa em `specs/changes/`, passa por revisão de SPEC, implementação, revisão, validação e aprovação, e só então é arquivada com atualização desta especificação vigente.
 - Em reprovação, falha ou bloqueio, o fluxo é interrompido com indicação da evidência e da primeira fase de retorno.
+- O Sprint Planner em `specs/sprint/` organiza Sprints concretas, riscos, dependências e evidências operacionais, sem substituir os gates do workflow Spec Driven.
+- Após `SPEC_APROVADA`, cada Change registra `implementation-plan.md` antes da implementação, com impactos, testes, qualidade, segurança e riscos, sem criar uma fase adicional.
+- Quando Sonar ou cobertura não estiverem configurados no módulo, ou a infraestrutura estiver operacionalmente indisponível (ex. daemon Docker inacessível), a validação executa Auditoria de Qualidade Assistida por LLM com comandos e evidências registradas; ela não inventa resultado de Sonar ou percentual de cobertura.
+- A auditoria de segurança aplica-se aos artefatos técnicos no escopo. Changes exclusivamente documentais registram a não aplicabilidade em `validation.md` e não reutilizam relatório histórico como evidência.
+- O script `scripts/sonar/validar-codigo.ps1` orquestra a preparação e execução do SonarQube via Docker Compose e scanner local para aplicações Java e frontend; em caso de indisponibilidade operacional (Docker ou PostgreSQL), o script requer obrigatoriamente fallback para Auditoria de Qualidade LLM.
