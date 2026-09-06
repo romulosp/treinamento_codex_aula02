@@ -26,6 +26,14 @@ apps/backend/gerenciarcategorias/start_aplicacao.bat
 Thumbs.db
 Desktop.ini
 
+#arquivos apps retirando
+**/apps/backend/**
+**/apps/backend/**
+
+**/apps/frontend/web/**
+**/apps/frontend/smartphone/**
+**/apps/frontend/desktop/**
+
 # Dependencias, builds e credenciais locais: manter depois das regras de inclusao.
 **/node_modules/
 **/target/
