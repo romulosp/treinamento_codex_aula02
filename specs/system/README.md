@@ -20,6 +20,8 @@
 
 ## Estado histórico reproduzível
 
+- O Produto Base é uma aplicação local demonstrativa em `apps/backend/produtobase/` e `apps/frontend/web/produtobase/`: o backend Quarkus usa a porta 1000; o Vite usa a porta 2000 e encaminha `/produtos` ao backend somente no desenvolvimento. O frontend mantém URL relativa para a API e autenticação demonstrativa no navegador, sem autenticação no servidor; não deve ser publicado sem Change de segurança específica.
+
 - As mudanças arquivadas registram a base Java 17 com Maven e Quarkus 3.2.10.Final, organizada nas camadas `api`, `application`, `domain` e `infrastructure`.
 - As APIs geradas (`gerenciar-categorias` e `gerenciar-tarefas`), seus contratos, massa de teste, configurações parametrizadas, estratégia de teste com H2 e evidências estão preservados em `specs/archive/` e resumidos em `NotasProjeto.md`.
 - As mudanças 013 a 019 registram a regeneração local, opções de banco (PostgreSQL, DB2, MySQL, SEM_BANCO), fallback Maven e a API de tarefas com persistência em PostgreSQL.
