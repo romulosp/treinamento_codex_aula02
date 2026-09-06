@@ -16,6 +16,24 @@ O gerador renderiza `apps/backend/fotogaleria/start_aplicacao.bat` a partir de u
 
 `apps/backend/fotogaleria/testar_aplicacao.bat` valida o arquivo externo, executa o gerador e chama o BAT final. O PostgreSQL local é definido pelo `docker-compose.yml` do backend. O frontend é iniciado por `apps/frontend/web/fotogaleria/start_aplicacao_frontend.bat`.
 
+## Persistência e testes — contrato consolidado após Change 011
+
+`FotoEntity.imagemBase64` deve ser `String` com `@Column(columnDefinition = "TEXT")`, **sem `@Lob`**. Não utilizar Clob nem Large Objects para novos uploads. Essa decisão substitui expressamente o DESIGN original da Change 010.
+
+O cenário obrigatório de regressão envia uma imagem PNG por multipart, verifica POST 201 e realiza novas requisições: GET de listagem 200 sem imagemBase64 e GET de detalhe 200 com Data URL idêntico ao enviado. Cada requisição tem sua própria transação; um teste que apenas simula o repositório não prova a persistência. Deve limpar somente os registros sintéticos criados pelo teste.
+
+A suíte padrão usa JUnit 5/Mockito para unidades e `@QuarkusTest`/Rest Assured com H2 em memória para integração HTTP. `quarkus-jdbc-h2` e Rest Assured possuem escopo `test`. Em `src/test/resources/application.properties`, usar `db-kind=h2`, URL `jdbc:h2:mem:fotogaleria_test;DB_CLOSE_DELAY=-1`, Dev Services desativado, esquema `drop-and-create` e porta HTTP de teste dinâmica. Não exigir Docker, porta 55439 ou credenciais externas para esses testes. Nunca aplicar `drop-and-create` ao PostgreSQL de desenvolvimento.
+
+O datasource principal continua PostgreSQL por `POSTGRES_URL`, montada pelo gerador a partir do host, porta e banco da seção `##DB POSTGRESQL fotogaleria`. No ambiente local informado, a porta é 5432. H2 não altera a configuração principal. Testes H2 comprovam o contrato HTTP; a regressão específica de LOB exige a evidência PostgreSQL registrada na Change 011.
+
+Para dados legados, `scripts/corrigir-fotogaleria-lob.sql` converte somente referências numéricas em Data URLs, em transação, preservando os valores antigos na tabela `foto_imagem_lob_backup` e mantendo os Large Objects. A migração não deve rodar automaticamente ao regenerar o projeto. Não apagar banco ou volumes. Validar o banco alvo e executar com `psql -v ON_ERROR_STOP=1` quando realmente houver dados legados a recuperar.
+
+## Fonte para regeneração
+
+Reconstruir os módulos nos caminhos descritos neste documento, respeitando AGENTS.md e o fluxo Spec Driven. Para contratos REST completos, limites, componentes e scripts, consultar `specs/archive/2026-09-06-010-galeria-de-fotos/spec.md`. Aplicar prioritariamente as correções deste documento e `specs/archive/2026-09-06-011-corrigir-upload-postgresql/spec.md`: TEXT sem @Lob e integração padrão H2. Não reaplicar decisões históricas de @Lob, PostgreSQL na porta 55439 ou Dev Services nos testes.
+
+Reutilizar `scripts/gerar_start_aplicacao_fotogaleria.ps1` e seu template. Código em apps permanece local/ignorado; regeneração exige nova validação e não garante identidade byte a byte com arquivos anteriores.
+
 ## Segurança vigente
 
 A API não possui autenticação, autorização, usuários, tenants ou isolamento por proprietário. Essa limitação é deliberada e aceita somente para demonstração local; a aplicação não deve ser publicada ou usada em produção sem uma nova Change que implemente controles no servidor.

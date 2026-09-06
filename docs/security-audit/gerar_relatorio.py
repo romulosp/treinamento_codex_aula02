@@ -71,5 +71,32 @@ def build_pdf():
     return OUTPUT
 
 
+def build_correction_pdf():
+    """Produz a auditoria específica da correção 011, preservando o relatório 010."""
+    from reportlab.platypus import SimpleDocTemplate
+    output = OUTPUT.with_name("relatorio-011-corrigir-upload-postgresql.pdf")
+    styles = build_styles()
+    paragraphs = [
+        ("Auditoria de segurança", "title"),
+        ("011-corrigir-upload-postgresql - 06/09/2026", "subtitle"),
+        ("Escopo e método", "h1"),
+        ("Inspeção dos artefatos restaurados: FotoEntity.java:32-34, pom.xml (H2 e Rest Assured no escopo test), src/test/resources/application.properties, FotoUploadHttpTest.java e scripts/corrigir-fotogaleria-lob.sql. Auditoria estática delimitada à correção; não substitui pentest ou auditoria de toda a aplicação.", "body"),
+        ("Persistência e migração", "h1"),
+        ("Mapeamento String/TEXT sem @Lob. Migração SQL: BEGIN/COMMIT, lock da tabela, backup do id e referência antiga antes de UPDATE, preservação dos Large Objects. Prefixo de imagem validado; falha de leitura ou prefixo inválido aborta a transação. SQL não recebe comandos concatenados de entrada HTTP. Backups permanecem locais e contêm dados da aplicação.", "body"),
+        ("Isolamento e credenciais", "h1"),
+        ("H2 em memória exclusivo para testes, com recriação de esquema restrita à configuração de teste. Aplicação usa PostgreSQL e variáveis externas. Nenhuma credencial externa copiada para a correção ou relatório. A busca de histórico do novo SQL não retorna commits anteriores; BAT preenchido continua ignorado pelo Git.", "body"),
+        ("Limitações e resultado", "h1"),
+        ("Nenhum novo achado de segurança confirmado nos artefatos desta correção. Autenticação, autorização, isolamento por proprietário e frontend não são alterados. A API continua sem autenticação, limitação conhecida da demonstração local; este relatório não a declara adequada para publicação.", "body"),
+        ("Recomendações", "h1"),
+        ("Preservar backup e Large Objects até conferir as fotos recuperadas. Não apontar a configuração de teste para o banco de desenvolvimento. Antes de qualquer publicação, implementar controles de acesso em mudança própria. Não existem novos achados confirmados que exijam bloco de issue nesta auditoria.", "body"),
+    ]
+    SimpleDocTemplate(str(output), pagesize=A4, leftMargin=2*cm, rightMargin=2*cm,
+                      topMargin=1.5*cm, bottomMargin=1.5*cm,
+                      title="Auditoria 011-corrigir-upload-postgresql").build(
+        [Paragraph(text, styles[kind]) for text, kind in paragraphs])
+    return output
+
+
 if __name__ == "__main__":
-    print(build_pdf())
+    import sys
+    print(build_correction_pdf() if "--change-011" in sys.argv else build_pdf())
