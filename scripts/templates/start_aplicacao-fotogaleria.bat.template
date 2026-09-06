@@ -1,0 +1,43 @@
+@echo off
+setlocal EnableExtensions
+cd /d "%~dp0"
+
+set "JAVA_HOME=C:\Desenvolvimento\jdk-17.0.11"
+set "MAVEN_HOME=C:\Desenvolvimento\apache-maven-3.8.8"
+set "PATH=%JAVA_HOME%\bin;%MAVEN_HOME%\bin;%PATH%"
+set "POSTGRES_URL=jdbc:postgresql://${HOSTNAME_DB_POSTGRESQL}:${PORTA_DB_POSTGRESQL}/${BANCO_DB_TAREFA}"
+set "POSTGRES_DB=${BANCO_DB_TAREFA}"
+set "POSTGRES_USER=${USER_DB_POSTGRESQL}"
+set "POSTGRES_PASSWORD=${SENHA_DB_POSTGRESQL}"
+
+if not exist "%JAVA_HOME%\bin\java.exe" (
+    echo [ERRO] Java 17 nao encontrado.
+    pause
+    exit /b 1
+)
+if not exist "%MAVEN_HOME%\bin\mvn.cmd" (
+    echo [ERRO] Maven 3.8.8 nao encontrado.
+    pause
+    exit /b 1
+)
+where docker >nul 2>nul
+if errorlevel 1 (
+    echo [ERRO] Docker nao encontrado no PATH.
+    pause
+    exit /b 1
+)
+
+echo [INFO] Configuracao PostgreSQL carregada para o projeto fotogaleria.
+echo [INFO] Iniciando PostgreSQL...
+docker compose up -d postgres
+if errorlevel 1 (
+    echo [ERRO] Nao foi possivel iniciar o PostgreSQL.
+    pause
+    exit /b 1
+)
+
+echo [INFO] Iniciando Quarkus em http://localhost:2000
+start "Fotogaleria Backend" cmd /k "mvn quarkus:dev -Dquarkus.http.port=2000"
+echo [INFO] OpenAPI: http://localhost:2000/q/swagger-ui
+pause
+endlocal

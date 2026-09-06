@@ -1,5 +1,7 @@
 # Status das mudanças
 
+Change 010-galeria-de-fotos: ARQUIVADA em 2026-09-06; commit de encerramento preparado a partir de f2b8a40.
+
 Change 004-ignorar-artefatos-locais: ARQUIVADA em 2026-09-06; commit de entrega 12f6bff.
 
 Change 003-concluir-execucao-produto-base: ARQUIVADA em 2026-09-06; verificações reais concluídas e registradas no commit f06a833.
