@@ -1,6 +1,6 @@
 # Status das mudanças
 
-Change 011-corrigir-upload-postgresql: APROVADA em 2026-09-06 após restauração, revisão e validação atuais; pronta para encerramento.
+Change 011-corrigir-upload-postgresql: ARQUIVADA em 2026-09-06; entrega aprovada no commit e0f5713, especificação vigente consolidada e 14 testes aprovados após restauração.
 
 Change 010-galeria-de-fotos: ARQUIVADA em 2026-09-06; commit de encerramento preparado a partir de f2b8a40.
 
