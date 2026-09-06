@@ -17,7 +17,7 @@ Criar a fundação da aplicação Produto Base, estabelecendo a API RESTful, o a
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | `001-produto-base` | alta | negócio/técnico | Encerrada | `DONE` | nenhuma | revisão, validação, aprovação e arquivo da Change | API CRUD, frontend, integração e scripts concluídos para o escopo local demonstrativo. |
 | 2 | `002-ajustar-configuracao-produto-base` | alta | técnico | Encerrada | `DONE` | nenhuma | revisão, validação, aprovação e arquivo da Change | Login demonstrativo e portas 1000/2000 implementados; API por URL relativa. |
-| 3 | `003-concluir-execucao-produto-base` | alta | execução/testes | Aprovada, preparando commit | `IN_PROGRESS` | nenhuma | VAL-001 a VAL-007 da Change 003 | Corrigidas dependências de teste e navegação 406; execução real aprovada. |
+| 3 | `003-concluir-execucao-produto-base` | alta | execução/testes | Arquivada | `DONE` | nenhuma | VAL-001 a VAL-007 e commit f06a833 | Corrigidas dependências de teste e navegação 406; execução real aprovada. |
 
 > Requisitos e critérios de aceite pertencem exclusivamente às Changes e SPECs referenciadas. Esta Sprint registra somente planejamento e acompanhamento operacional.
 

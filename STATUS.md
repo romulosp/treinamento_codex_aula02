@@ -1,6 +1,6 @@
 # Status das mudanças
 
-Change 003-concluir-execucao-produto-base: APROVADA em 2026-09-06; verificações reais concluídas, encerramento em preparação.
+Change 003-concluir-execucao-produto-base: ARQUIVADA em 2026-09-06; verificações reais concluídas e registradas no commit f06a833.
 
 | Mudança | Fase atual | Última atualização |
 | --- | --- | --- |
