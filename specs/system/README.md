@@ -2,6 +2,8 @@
 
 ## Estado atual
 
+- O .gitignore exclui node_modules, target, dist e .quarkus em qualquer profundidade, além de .env e variantes e arquivos .key/.pem/.p12/.pfx. As exclusões finais prevalecem sobre a inclusão de scripts e documentos; não detectam segredos embutidos nem removem arquivos já rastreados.
+
 - Produto Base possui testes unitários executáveis com Mockito/AssertJ e integração HTTP Quarkus/Rest Assured com H2 em memória isolado do PostgreSQL local.
 - O Vite do Produto Base mantém a porta 2000 estrita e distingue GET HTML (SPA) das chamadas JSON em /produtos encaminhadas à API na porta 1000. O smoke local verifica CRUD PostgreSQL e remove apenas o registro temporário criado.
 

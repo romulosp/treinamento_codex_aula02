@@ -25,3 +25,15 @@ apps/backend/gerenciarcategorias/start_aplicacao.bat
 *.iml
 Thumbs.db
 Desktop.ini
+
+# Dependencias, builds e credenciais locais: manter depois das regras de inclusao.
+**/node_modules/
+**/target/
+**/dist/
+**/.quarkus/
+**/.env
+**/.env.*
+*.key
+*.pem
+*.p12
+*.pfx
