@@ -2,6 +2,11 @@
 
 ## Estado atual
 
+- O .gitignore exclui node_modules, target, dist e .quarkus em qualquer profundidade, além de .env e variantes e arquivos .key/.pem/.p12/.pfx. As exclusões finais prevalecem sobre a inclusão de scripts e documentos; não detectam segredos embutidos nem removem arquivos já rastreados.
+
+- Produto Base possui testes unitários executáveis com Mockito/AssertJ e integração HTTP Quarkus/Rest Assured com H2 em memória isolado do PostgreSQL local.
+- O Vite do Produto Base mantém a porta 2000 estrita e distingue GET HTML (SPA) das chamadas JSON em /produtos encaminhadas à API na porta 1000. O smoke local verifica CRUD PostgreSQL e remove apenas o registro temporário criado.
+
 - O workspace mantém localmente projetos executáveis independentes sob `apps/backend/<artifactId-sem-hifens>/`; por exemplo, `gerenciar-categorias` fica em `apps/backend/gerenciarcategorias/` e `gerenciar-tarefas` em `apps/backend/gerenciartarefas/`. O contêiner `apps/backend/` não é um módulo Maven.
 - A política no `.gitignore` permite versionar somente arquivos `.md` e `.txt`, com a exceção técnica do próprio `.gitignore`.
 - A API de tarefas utiliza persistência relacional com PostgreSQL via Hibernate ORM Panache (Repository pattern) e H2 em memória para testes automatizados, expondo os contratos REST documentados na mudança 019.
@@ -19,6 +24,8 @@
 - O agente `implementador-para-teste`, em `.github/agents/`, executa mudanças até `IMPLEMENTADA` e para para avaliação humana; o prompt integral permanece responsável pelas fases de encerramento e commit.
 
 ## Estado histórico reproduzível
+
+- O Produto Base é uma aplicação local demonstrativa em `apps/backend/produtobase/` e `apps/frontend/web/produtobase/`: o backend Quarkus usa a porta 1000; o Vite usa a porta 2000 e encaminha `/produtos` ao backend somente no desenvolvimento. O frontend mantém URL relativa para a API e autenticação demonstrativa no navegador, sem autenticação no servidor; não deve ser publicado sem Change de segurança específica.
 
 - As mudanças arquivadas registram a base Java 17 com Maven e Quarkus 3.2.10.Final, organizada nas camadas `api`, `application`, `domain` e `infrastructure`.
 - As APIs geradas (`gerenciar-categorias` e `gerenciar-tarefas`), seus contratos, massa de teste, configurações parametrizadas, estratégia de teste com H2 e evidências estão preservados em `specs/archive/` e resumidos em `NotasProjeto.md`.

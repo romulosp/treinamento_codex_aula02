@@ -69,6 +69,18 @@ Depois do seu teste, use [Executar mudança Spec Driven](.github/prompts/executa
 
 Consulte [NotasProjeto.md](NotasProjeto.md) para instruções completas de criação, testes, execução e limpeza de um módulo Java Quarkus.
 
+## Executar Produto Base localmente
+
+- Frontend: http://localhost:2000/login (login demonstrativo root/root).
+- API: http://localhost:1000/produtos.
+- Backend: executar apps/backend/produtobase/testar_aplicacao.bat.
+- Frontend: executar apps/frontend/web/produtobase/start_aplicacao_frontend.bat.
+- Testes backend: configurar JAVA_HOME para a instalação Java 17 e executar Maven verify no módulo.
+- Testes frontend: npm test e npm run build no projeto frontend.
+- Smoke com os serviços ativos: node scripts/smoke.mjs no frontend. Cria e remove somente um produto temporário.
+
+Evidências da conclusão real: specs/archive/2026-09-06-003-concluir-execucao-produto-base/validation.md. A API permanece demonstrativa, sem autenticação de servidor.
+
 ## Referências
 
 - [Arquitetura do backend Java](specs/shared/architecture/backend-java.md)
