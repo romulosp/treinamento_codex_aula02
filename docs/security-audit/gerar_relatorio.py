@@ -34,23 +34,7 @@ COLORS = {
     "ponto forte": "#059669",
 }
 
-FINDINGS = [
-    {
-        "severity": "alta",
-        "category": "Chaves expostas",
-        "location": "histórico Git 62cb917: apps/backend/start_aplicacao.bat:12,16",
-        "description": (
-            "O histórico Git contém um segredo OIDC e uma senha DB2 em texto claro "
-            "(SECRET e DB2_PASSWORD). Mesmo que o arquivo não esteja mais no estado "
-            "atual, qualquer clone do repositório histórico permite recuperar os valores."
-        ),
-        "evidence": (
-            'set "SECRET=<valor redigido>"\n'
-            'set "DB2_PASSWORD=<valor redigido>"'
-        ),
-        "impact": "Comprometimento de ambiente OIDC/DB2 se as credenciais ainda forem válidas.",
-    }
-]
+FINDINGS = []
 
 
 class Rule(Flowable):
@@ -199,28 +183,30 @@ def build_pdf():
     doc.addPageTemplates([PageTemplate(id="all", frames=frame, onPage=header_footer)])
 
     story = []
-    story += [Spacer(1, 3.0 * cm), p("Relatório de Auditoria de Segurança", styles["title"]), p("gerenciar-tarefas", ParagraphStyle("project", parent=styles["title"], fontSize=19, textColor=colors.HexColor("#2563EB"))), Spacer(1, 0.8 * cm), Rule(doc.width, "#2563EB"), Spacer(1, 0.8 * cm), p("Data: 28 de agosto de 2026", styles["cover_subtitle"]), p("Escopo: backend Quarkus 3.2, Java 17, JAX-RS, Panache/Hibernate ORM, OIDC e todos os artefatos locais versionados ou presentes no workspace.", styles["cover_subtitle"]), Spacer(1, 1.0 * cm), p("Nota metodológica", styles["h2"]), p("A auditoria mapeou cada categoria do prompt para a stack detectada: isolamento por filtro e queries Panache; autorização por política HTTP e RolesAllowed; IDOR em todos os handlers JAX-RS; segredos em configuração, scripts e histórico Git; e XSS em frontend ou respostas HTML. Não foram inventados achados para componentes ausentes.", styles["cover_subtitle"]), PageBreak()]
+    story += [Spacer(1, 3.0 * cm), p("Relatório de Auditoria de Segurança", styles["title"]), p("automatizar-sonar-local", ParagraphStyle("project", parent=styles["title"], fontSize=19, textColor=colors.HexColor("#2563EB"))), Spacer(1, 0.8 * cm), Rule(doc.width, "#2563EB"), Spacer(1, 0.8 * cm), p("Data: 05 de setembro de 2026", styles["cover_subtitle"]), p("Escopo: scripts/sonar/validar-codigo.ps1 e integrações do SonarQube / PostgreSQL local.", styles["cover_subtitle"]), Spacer(1, 1.0 * cm), p("Nota metodológica", styles["h2"]), p("A auditoria verificou o fluxo do script PowerShell que manipula composição Docker, geração de senha para banco, e execução do Sonar.", styles["cover_subtitle"]), PageBreak()]
 
-    story += [p("Resumo executivo", styles["h1"]), p("O estado atual do backend não apresentou falhas ativas verificadas nas categorias de isolamento, autorização, IDOR ou tratamento de input. Foi confirmado um achado no histórico Git: credenciais antigas em texto claro. A correção do script atual impede novos defaults de senha, mas não remove o risco histórico sem rotação.", styles["body"]), Spacer(1, 0.2 * cm)]
+    story += [p("Resumo executivo", styles["h1"]), p("A automação foi considerada segura. As credenciais do banco são randomicamente geradas e não ficam gravadas no código fonte. O token do Sonar é repassado via variável de ambiente.", styles["body"]), Spacer(1, 0.2 * cm)]
     chart_table = Table([[Image(str(severity_chart), width=8.0 * cm, height=4.9 * cm), Image(str(category_chart), width=9.0 * cm, height=4.25 * cm)]], colWidths=[8.2 * cm, 9.2 * cm])
     chart_table.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 0)]))
     story += [chart_table, Spacer(1, 0.3 * cm)]
-    summary_data = [[p("Severidade", styles["small"]), p("Quantidade", styles["small"])], [p("Crítica", styles["body"]), p("0", styles["body"])], [p("Alta", styles["body"]), p("1", styles["body"])], [p("Média", styles["body"]), p("0", styles["body"])], [p("Baixa", styles["body"]), p("0", styles["body"])]]
+    summary_data = [[p("Severidade", styles["small"]), p("Quantidade", styles["small"])], [p("Crítica", styles["body"]), p("0", styles["body"])], [p("Alta", styles["body"]), p("0", styles["body"])], [p("Média", styles["body"]), p("0", styles["body"])], [p("Baixa", styles["body"]), p("0", styles["body"])]]
     summary = Table(summary_data, colWidths=[5 * cm, 3 * cm])
     summary.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E2E8F0")), ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#CBD5E1")), ("ALIGN", (1, 0), (1, -1), "CENTER"), ("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("LEFTPADDING", (0, 0), (-1, -1), 7), ("RIGHTPADDING", (0, 0), (-1, -1), 7)]))
     story += [summary, PageBreak()]
 
-    story += [p("Pontos fortes e pontos fracos", styles["h1"]), p("Pontos fortes", styles["h2"]), p("- Todas as rotas do recurso /tarefas estão cobertas pela política HTTP authenticated e o teste sem identidade retorna 401.\n- POST, PUT e DELETE possuem RolesAllowed(ADMIN), com teste de usuário USER retornando 403.\n- O tenant é derivado do principal autenticado; X-Tenant-Id divergente é rejeitado com 403.\n- Listagem e busca usam consultas do repositório com tenantId, e a exclusão passa pela mesma busca protegida.\n- Bean Validation é aplicada ao DTO de entrada e o recurso usa @Valid.\n- Configuração OIDC e banco não possuem defaults de produção; SecurityConfig falha se valores obrigatórios estiverem ausentes.\n- Não há frontend, HTML, e-mail ou template no projeto; as respostas do backend são JSON.", styles["body"]), p("Pontos fracos", styles["h2"]), p("- O histórico Git ainda contém credenciais antigas e exige rotação imediata.\n- A política atual de auditoria não consegue provar que credenciais históricas foram revogadas; isso depende de ação operacional fora do código.", styles["body"]), p("Categorias sem aplicação", styles["h2"]), p("Não existe frontend no workspace auditado, portanto não se aplica permissão escondida no navegador nem XSS de DOM. Não foram encontrados Docker, CI, Helm ou Terraform no escopo pesquisado.", styles["body"]), PageBreak()]
+    story += [p("Pontos fortes e pontos fracos", styles["h1"]), p("Pontos fortes", styles["h2"]), p("- A senha gerada para o banco PostgreSQL é randomizada e exportada apenas para o .env no diretório local.\n- Não existem senhas fixas.\n- O token não é logado e é utilizado apenas no docker run.", styles["body"]), p("Pontos fracos", styles["h2"]), p("- Nenhum.", styles["body"]), p("Categorias sem aplicação", styles["h2"]), p("Tenant/usuário, Autorização IDOR, Entradas de usuário/XSS e componentes Web não fazem parte deste escopo.", styles["body"]), PageBreak()]
 
-    story += [p("Achados detalhados", styles["h1"]), p("Achados verificados no código real e no histórico Git. A linha de histórico é identificada pelo commit para evitar confusão com o estado atual.", styles["body"])]
+    story += [p("Achados detalhados", styles["h1"]), p("Nenhum achado de segurança verificado no código implementado.", styles["body"])]
     finding_rows = [[p("Severidade", styles["small"]), p("Arquivo: linha", styles["small"]), p("Descrição", styles["small"])]]
     for finding in FINDINGS:
         finding_rows.append([severity_chip(finding["severity"], styles), p(finding["location"], styles["small"]), p(finding["description"], styles["small"])])
     finding_table = Table(finding_rows, colWidths=[2.0 * cm, 5.0 * cm, 9.8 * cm], repeatRows=1)
     finding_table.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E2E8F0")), ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#CBD5E1")), ("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 6), ("RIGHTPADDING", (0, 0), (-1, -1), 6), ("TOPPADDING", (0, 0), (-1, -1), 6), ("BOTTOMPADDING", (0, 0), (-1, -1), 6)]))
-    story += [finding_table, Spacer(1, 0.35 * cm), p("Condições de explorabilidade", styles["h2"]), p("O achado histórico é explorável se os valores ainda forem aceitos pelo IdP ou pelo DB2. A análise não presume validade atual: a validade precisa ser confirmada pela rotação e pelos logs dos serviços. O estado atual do script não reintroduz esses valores.", styles["body"]), PageBreak()]
+    story += [finding_table, Spacer(1, 0.35 * cm), PageBreak()]
 
-    story += [p("Recomendações priorizadas", styles["h1"]), p("P1 - Revogar e rotacionar imediatamente o segredo OIDC e a senha DB2 expostos no commit 62cb917; invalidar sessões ou tokens relacionados se aplicável.", styles["body"]), p("P2 - Adicionar secret scanning no CI e uma política de pre-commit para impedir credenciais em scripts, propriedades e documentação.", styles["body"]), p("P3 - Preservar os testes de 401, 403, isolamento e validação como gate obrigatório em futuras mudanças do backend.", styles["body"]), p("P4 - Se a política de retenção permitir, remover os blobs históricos após rotação, documentando o procedimento e validando todos os clones e mirrors.", styles["body"]), Spacer(1, 0.5 * cm), p("ISSUES PARA O GITHUB", styles["h1"]), p("Issue acionável pronta para copiar e colar:", styles["body"]), KeepTogether(issue_block(FINDINGS[0], styles))]
+    story += [p("Recomendações priorizadas", styles["h1"]), p("Nenhuma.", styles["body"])]
+    if FINDINGS:
+        story += [Spacer(1, 0.5 * cm), p("ISSUES PARA O GITHUB", styles["h1"]), p("Issue acionável pronta para copiar e colar:", styles["body"]), KeepTogether(issue_block(FINDINGS[0], styles))]
 
     doc.build(story)
     return OUTPUT

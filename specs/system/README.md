@@ -2,6 +2,11 @@
 
 ## Estado atual
 
+- O .gitignore exclui node_modules, target, dist e .quarkus em qualquer profundidade, além de .env e variantes e arquivos .key/.pem/.p12/.pfx. As exclusões finais prevalecem sobre a inclusão de scripts e documentos; não detectam segredos embutidos nem removem arquivos já rastreados.
+
+- Produto Base possui testes unitários executáveis com Mockito/AssertJ e integração HTTP Quarkus/Rest Assured com H2 em memória isolado do PostgreSQL local.
+- O Vite do Produto Base mantém a porta 2000 estrita e distingue GET HTML (SPA) das chamadas JSON em /produtos encaminhadas à API na porta 1000. O smoke local verifica CRUD PostgreSQL e remove apenas o registro temporário criado.
+
 - O workspace mantém localmente projetos executáveis independentes sob `apps/backend/<artifactId-sem-hifens>/`; por exemplo, `gerenciar-categorias` fica em `apps/backend/gerenciarcategorias/` e `gerenciar-tarefas` em `apps/backend/gerenciartarefas/`. O contêiner `apps/backend/` não é um módulo Maven.
 - A política no `.gitignore` permite versionar somente arquivos `.md` e `.txt`, com a exceção técnica do próprio `.gitignore`.
 - A API de tarefas utiliza persistência relacional com PostgreSQL via Hibernate ORM Panache (Repository pattern) e H2 em memória para testes automatizados, expondo os contratos REST documentados na mudança 019.
@@ -20,6 +25,8 @@
 
 ## Estado histórico reproduzível
 
+- O Produto Base é uma aplicação local demonstrativa em `apps/backend/produtobase/` e `apps/frontend/web/produtobase/`: o backend Quarkus usa a porta 1000; o Vite usa a porta 2000 e encaminha `/produtos` ao backend somente no desenvolvimento. O frontend mantém URL relativa para a API e autenticação demonstrativa no navegador, sem autenticação no servidor; não deve ser publicado sem Change de segurança específica.
+
 - As mudanças arquivadas registram a base Java 17 com Maven e Quarkus 3.2.10.Final, organizada nas camadas `api`, `application`, `domain` e `infrastructure`.
 - As APIs geradas (`gerenciar-categorias` e `gerenciar-tarefas`), seus contratos, massa de teste, configurações parametrizadas, estratégia de teste com H2 e evidências estão preservados em `specs/archive/` e resumidos em `NotasProjeto.md`.
 - As mudanças 013 a 019 registram a regeneração local, opções de banco (PostgreSQL, DB2, MySQL, SEM_BANCO), fallback Maven e a API de tarefas com persistência em PostgreSQL.
@@ -30,3 +37,8 @@
 - A fonte canônica de fluxo, estados, gates e evidências é `specs/shared/process/workflow.md`; as Skills são o mecanismo operacional das fases.
 - Toda implementação começa em `specs/changes/`, passa por revisão de SPEC, implementação, revisão, validação e aprovação, e só então é arquivada com atualização desta especificação vigente.
 - Em reprovação, falha ou bloqueio, o fluxo é interrompido com indicação da evidência e da primeira fase de retorno.
+- O Sprint Planner em `specs/sprint/` organiza Sprints concretas, riscos, dependências e evidências operacionais, sem substituir os gates do workflow Spec Driven.
+- Após `SPEC_APROVADA`, cada Change registra `implementation-plan.md` antes da implementação, com impactos, testes, qualidade, segurança e riscos, sem criar uma fase adicional.
+- Quando Sonar ou cobertura não estiverem configurados no módulo, ou a infraestrutura estiver operacionalmente indisponível (ex. daemon Docker inacessível), a validação executa Auditoria de Qualidade Assistida por LLM com comandos e evidências registradas; ela não inventa resultado de Sonar ou percentual de cobertura.
+- A auditoria de segurança aplica-se aos artefatos técnicos no escopo. Changes exclusivamente documentais registram a não aplicabilidade em `validation.md` e não reutilizam relatório histórico como evidência.
+- O script `scripts/sonar/validar-codigo.ps1` orquestra a preparação e execução do SonarQube via Docker Compose e scanner local para aplicações Java e frontend; em caso de indisponibilidade operacional (Docker ou PostgreSQL), o script requer obrigatoriamente fallback para Auditoria de Qualidade LLM.

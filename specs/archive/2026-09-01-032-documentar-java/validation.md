@@ -39,6 +39,7 @@
 - Arquivos `.java` sob `apps/backend/`.
 - Saídas dos comandos VAL-001 a VAL-006.
 - Relatórios Maven em `target/surefire-reports` (artefatos locais ignorados pelo Git).
+- Os arquivos Java ignorados de `gerenciarcategorias` foram preservados localmente e não incluídos por força no commit.
 
 ## Veredito
 
