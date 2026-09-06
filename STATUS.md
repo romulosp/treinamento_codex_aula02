@@ -1,6 +1,6 @@
 # Status das mudanças
 
-Change 004-ignorar-artefatos-locais: APROVADA em 2026-09-06; pronta para encerramento.
+Change 004-ignorar-artefatos-locais: ARQUIVADA em 2026-09-06; commit de entrega 12f6bff.
 
 Change 003-concluir-execucao-produto-base: ARQUIVADA em 2026-09-06; verificações reais concluídas e registradas no commit f06a833.
 
