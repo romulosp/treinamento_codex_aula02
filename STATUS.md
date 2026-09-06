@@ -1,5 +1,9 @@
 # Status das mudanças
 
+Change 004-ignorar-artefatos-locais: ARQUIVADA em 2026-09-06; commit de entrega 12f6bff.
+
+Change 003-concluir-execucao-produto-base: ARQUIVADA em 2026-09-06; verificações reais concluídas e registradas no commit f06a833.
+
 | Mudança | Fase atual | Última atualização |
 | --- | --- | --- |
 | `001-criar-projeto-java` | `ARQUIVADA` | 2026-08-27 |
@@ -36,5 +40,7 @@
 | `032-documentar-java` | `ARQUIVADA` | 2026-09-01 |
 | `033-consolidar-governanca-sprint-planner` | `ARQUIVADA` | 2026-09-05 |
 | `034-automatizar-sonar-local` | `APROVADA` | 2026-09-05 |
+| `001-produto-base` | `ARQUIVADA` | 2026-09-05 |
+| `002-ajustar-configuracao-produto-base` | `ARQUIVADA` | 2026-09-05 |
 
 As mudanças de 001 a 019 foram arquivadas.
