@@ -1,5 +1,7 @@
 # Status das mudanças
 
+Change 003-concluir-execucao-produto-base: APROVADA em 2026-09-06; verificações reais concluídas, encerramento em preparação.
+
 | Mudança | Fase atual | Última atualização |
 | --- | --- | --- |
 | `001-criar-projeto-java` | `ARQUIVADA` | 2026-08-27 |

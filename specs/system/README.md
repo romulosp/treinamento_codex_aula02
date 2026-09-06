@@ -2,6 +2,9 @@
 
 ## Estado atual
 
+- Produto Base possui testes unitários executáveis com Mockito/AssertJ e integração HTTP Quarkus/Rest Assured com H2 em memória isolado do PostgreSQL local.
+- O Vite do Produto Base mantém a porta 2000 estrita e distingue GET HTML (SPA) das chamadas JSON em /produtos encaminhadas à API na porta 1000. O smoke local verifica CRUD PostgreSQL e remove apenas o registro temporário criado.
+
 - O workspace mantém localmente projetos executáveis independentes sob `apps/backend/<artifactId-sem-hifens>/`; por exemplo, `gerenciar-categorias` fica em `apps/backend/gerenciarcategorias/` e `gerenciar-tarefas` em `apps/backend/gerenciartarefas/`. O contêiner `apps/backend/` não é um módulo Maven.
 - A política no `.gitignore` permite versionar somente arquivos `.md` e `.txt`, com a exceção técnica do próprio `.gitignore`.
 - A API de tarefas utiliza persistência relacional com PostgreSQL via Hibernate ORM Panache (Repository pattern) e H2 em memória para testes automatizados, expondo os contratos REST documentados na mudança 019.

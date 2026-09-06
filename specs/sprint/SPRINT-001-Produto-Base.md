@@ -4,7 +4,7 @@
 
 - **Nome:** Produto Base - Fundações Backend
 - **Status:** `DONE`
-- **Período (opcional):** 2026-09-05 a definir
+- **Período:** 2026-09-05 a 2026-09-06
 - **Critério de sucesso do Sprint Goal:** Backend Quarkus operando com API CRUD de Produto conectada ao PostgreSQL e validada por testes unitários e de integração aplicáveis.
 
 ## Sprint Goal
@@ -17,6 +17,7 @@ Criar a fundação da aplicação Produto Base, estabelecendo a API RESTful, o a
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | `001-produto-base` | alta | negócio/técnico | Encerrada | `DONE` | nenhuma | revisão, validação, aprovação e arquivo da Change | API CRUD, frontend, integração e scripts concluídos para o escopo local demonstrativo. |
 | 2 | `002-ajustar-configuracao-produto-base` | alta | técnico | Encerrada | `DONE` | nenhuma | revisão, validação, aprovação e arquivo da Change | Login demonstrativo e portas 1000/2000 implementados; API por URL relativa. |
+| 3 | `003-concluir-execucao-produto-base` | alta | execução/testes | Aprovada, preparando commit | `IN_PROGRESS` | nenhuma | VAL-001 a VAL-007 da Change 003 | Corrigidas dependências de teste e navegação 406; execução real aprovada. |
 
 > Requisitos e critérios de aceite pertencem exclusivamente às Changes e SPECs referenciadas. Esta Sprint registra somente planejamento e acompanhamento operacional.
 
@@ -42,15 +43,19 @@ Criar a fundação da aplicação Produto Base, estabelecendo a API RESTful, o a
 
 ## Sprint Review
 - **Objetivo original da Sprint:** Criar a fundação da aplicação Produto Base.
-- **Critério de sucesso e resultado observado:** (Pendente)
-- **Changes planejadas e resultado de cada uma:** (Pendente)
-- **Entregas concluídas:** (Pendente)
-- **Itens removidos, bloqueados ou pendentes:** (Pendente)
-- **Evidências relevantes:** (Pendente)
-- **Auditoria de segurança:** (Pendente)
-- **Documentação atualizada:** (Pendente)
-- **README da raiz:** (Pendente)
-- **Principais mudanças entregues:** (Pendente)
+- **Critério de sucesso e resultado observado:** CRUD PostgreSQL funcionando pela API 1000 e proxy 2000; 10 testes Java e 3 frontend aprovados, builds concluídos.
+- **Changes planejadas e resultado de cada uma:** 001 entregou a base; 002 configurou login e portas; 003 corrigiu falhas reveladas pela execução e retificou o encerramento anterior.
+- **Entregas concluídas:** Backend Quarkus, frontend React, proxy e testes unitários/integração. HTML /produtos responde 200 e API preserva JSON.
+- **Itens removidos, bloqueados ou pendentes:** Nenhuma pendência funcional nos critérios da Change 003. Sonar indisponível com auditoria LLM registrada; sem percentual de cobertura. Teste visual automatizado não executado.
+- **Evidências relevantes:** VAL-001 a VAL-007 em specs/archive/2026-09-06-003-concluir-execucao-produto-base/validation.md. Relatórios Surefire locais com zero falhas.
+- **Auditoria de segurança:** Relatório da Change 003; ausência de autenticação de servidor continua limitação explícita do produto demonstrativo.
+- **Documentação atualizada:** SPEC corretiva, plano, revisões, validação, sistema vigente e esta Sprint Review.
+- **README da raiz:** Instruções locais do Produto Base adicionadas.
+- **Principais mudanças entregues:** Mockito/AssertJ habilitam testes existentes; integração Quarkus/H2; proxy diferencia navegação HTML de API; smoke PostgreSQL com limpeza dos próprios registros.
+
+### Retificação de 2026-09-06
+
+O encerramento de 2026-09-05 era prematuro: Java/Maven estavam instalados, mas os testes não compilavam e a navegação retornava 406. A Change 003 registra a correção e execução efetiva. Os relatórios anteriores permanecem como histórico, não como evidência dos novos resultados.
 
 ## Decisões importantes
 
