@@ -19,6 +19,40 @@
 - `java-unit-test`: criar, refatorar e revisar testes unitários Java com JUnit 5 e Mockito, validando regra de negócio e cobertura.
 - `security-audit`: auditar segurança pós-implementação com evidências verificáveis, histórico de segredos e relatório PDF opcional.
 
+## Backend Golang
+
+- `backend-golang`: gera e revisa aplicações Go nos perfis `api` e `desktop`, respeitando a arquitetura, os testes, a segurança e os gates da Change aprovada.
+- `golang-benchmark`: mede benchmarks, perfis e regressões de desempenho com rigor estatístico.
+- `golang-cli`: estrutura aplicações CLI com comandos, flags, configuração, códigos de saída e testes.
+- `golang-code-style`: orienta estilo, clareza, formatação e convenções de código Go.
+- `golang-concurrency`: orienta goroutines, canais, cancelamento, sincronização e prevenção de vazamentos.
+- `golang-context`: orienta propagação de `context.Context`, cancelamento, deadlines e rastreamento.
+- `golang-continuous-integration`: configura qualidade e CI/CD para projetos Go.
+- `golang-data-structures`: orienta escolha e uso de slices, mapas, arrays, containers e genéricos.
+- `golang-database`: orienta acesso seguro a bancos com `database/sql`, `sqlx` e `pgx`.
+- `golang-dependency-injection`: orienta injeção manual e bibliotecas de DI em Go.
+- `golang-dependency-management`: orienta `go.mod`, `go.sum`, atualizações e auditoria de dependências.
+- `golang-design-patterns`: orienta padrões idiomáticos, construtores, opções funcionais, erros e resiliência.
+- `golang-documentation`: orienta comentários GoDoc, README, exemplos e documentação de APIs.
+- `golang-error-handling`: orienta tratamento, wrapping, classificação e propagação de erros.
+- `golang-grpc`: orienta implementação de serviços e contratos gRPC em Go.
+- `golang-linter`: orienta configuração e execução de linters para Go.
+- `golang-modernize`: orienta modernização de código para versões atuais do Go.
+- `golang-naming`: orienta nomes de pacotes, tipos, funções, erros, testes e acrônimos.
+- `golang-observability`: orienta logs estruturados, métricas, traces, profiling e alertas.
+- `golang-performance`: orienta otimizações somente após medição e profiling.
+- `golang-popular-libraries`: orienta escolha de bibliotecas Go maduras, simples e mantidas.
+- `golang-project-layout`: orienta layout de projetos, módulos, `cmd`, `internal`, `pkg` e workspaces.
+- `golang-safety`: orienta programação defensiva contra pânicos, corrupção silenciosa e condições de corrida.
+- `golang-samber-do`: orienta uso de `samber/do` para injeção de dependências.
+- `golang-samber-oops`: orienta erros estruturados com `samber/oops`.
+- `golang-security`: orienta prevenção e auditoria de vulnerabilidades em aplicações Go.
+- `golang-stay-updated`: reúne fontes oficiais, comunidades, notícias e atualizações do ecossistema Go.
+- `golang-stretchr-testify`: orienta testes com `stretchr/testify`.
+- `golang-structs-interfaces`: orienta structs, interfaces, composição, ponteiros e genéricos.
+- `golang-testing`: orienta testes unitários, integração, cobertura, fuzzing e testes com dependências.
+- `golang-troubleshooting`: orienta diagnóstico sistemático, reprodução, pprof, Delve e análise de causa raiz.
+
 As Skills de processo seguem `specs/shared/process/workflow.md`.
 
 - `java-javadoc`: cria ou atualiza JavaDoc em português do Brasil para contratos Java comprovados, sem documentação especulativa. Exemplo de uso: "adicione JavaDoc ao `UsuarioService` com base no comportamento comprovado pelo código e testes".
