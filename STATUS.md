@@ -44,6 +44,7 @@ Change 003-concluir-execucao-produto-base: ARQUIVADA em 2026-09-06; verificaçõ
 | `032-documentar-java` | `ARQUIVADA` | 2026-09-01 |
 | `033-consolidar-governanca-sprint-planner` | `ARQUIVADA` | 2026-09-05 |
 | `034-automatizar-sonar-local` | `APROVADA` | 2026-09-05 |
+| `035-skill-golang` | `ARQUIVADA` | 2026-09-09 |
 | `001-produto-base` | `ARQUIVADA` | 2026-09-05 |
 | `002-ajustar-configuracao-produto-base` | `ARQUIVADA` | 2026-09-05 |
 
