@@ -97,6 +97,76 @@ def build_correction_pdf():
     return output
 
 
+def build_change_063_pdf():
+    """Produz a auditoria da Change 063 sem incluir valores de configuracao."""
+    output = OUTPUT.with_name("relatorio-063-dashboard-atendimento-servico.pdf")
+    styles = build_styles()
+
+    def page_decorations(canvas, doc):
+        canvas.saveState()
+        width, height = A4
+        canvas.setStrokeColor(colors.HexColor("#C9C0AF"))
+        canvas.line(2 * cm, height - 1.25 * cm, width - 2 * cm, height - 1.25 * cm)
+        canvas.line(2 * cm, 1.3 * cm, width - 2 * cm, 1.3 * cm)
+        canvas.setFont("Helvetica", 7.5)
+        canvas.setFillColor(colors.HexColor("#52615D"))
+        canvas.drawString(2 * cm, height - 0.95 * cm, "Auditoria de Seguranca - Change 063")
+        canvas.restoreState()
+
+    doc = BaseDocTemplate(str(output), pagesize=A4, leftMargin=2 * cm, rightMargin=2 * cm,
+                          topMargin=2.2 * cm, bottomMargin=2.0 * cm,
+                          title="Auditoria de Seguranca - Change 063", author="Codex")
+    doc.addPageTemplates([PageTemplate(id="all", frames=Frame(doc.leftMargin, doc.bottomMargin,
+                          doc.width, doc.height), onPageEnd=page_decorations)])
+    p = lambda text, kind="body": Paragraph(text, styles[kind])
+    rows = [
+        [p("Categoria", "small"), p("Conclusao e evidencia", "small")],
+        [p("Autenticacao"), p("Conforme. Sessao BFF opaca; tokens permanecem no backend. Introspeccao valida atividade, expiracao, emissor e cliente.")],
+        [p("Autorizacao e IDOR"), p("Conforme. USER consulta/cria; ADMIN altera/exclui. Todas as consultas continuam vinculadas ao subject proprietario.")],
+        [p("CORS e CSRF"), p("Conforme. Allowlist explicita, origem obrigatoria em mutacoes, cookie HttpOnly/SameSite=Lax e token CSRF em header separado.")],
+        [p("Segredos e logs"), p("Conforme no estado atual. Configuracao real fica em arquivo externo; template usa placeholders; testes usam valores sinteticos.")],
+        [p("Entradas, XSS e injecao"), p("Conforme. Bean Validation na fronteira, parametros em consultas Panache, JSX sem HTML cru, eval ou armazenamento de tokens.")],
+        [p("Dependencias e operacao"), p("Quarkus BOM 3.2.10.Final, Java 17, health checks sem detalhes internos, metricas tecnicas e armazenamento de sessao limitado.")],
+    ]
+    table = Table(rows, colWidths=[4.3 * cm, 12.5 * cm], repeatRows=1)
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8E1D5")),
+        ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#C9C0AF")),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 7), ("RIGHTPADDING", (0, 0), (-1, -1), 7),
+        ("TOPPADDING", (0, 0), (-1, -1), 6), ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+    ]))
+    story = [
+        Spacer(1, 2.4 * cm), p("Relatorio de Auditoria de Seguranca", "title"),
+        Spacer(1, 0.25 * cm), p("063-dashboard-atendimento-servico", "subtitle"),
+        p("Data: 07 de setembro de 2026", "subtitle"), Spacer(1, 0.8 * cm),
+        p("Resultado: nenhum achado de seguranca confirmado permanece em aberto.", "h1"),
+        p("O escopo incluiu backend Quarkus, frontend React/Vite, persistencia Panache/PostgreSQL, integracao OIDC, sessoes, scripts locais e configuracao externa. A auditoria foi estatica e apoiada pelos testes automatizados; nao substitui pentest."),
+        PageBreak(), p("Auditoria de Seguranca - Change 063", "small"), Spacer(1, 0.7 * cm),
+        p("Resumo por categoria", "h1"), table,
+        Spacer(1, 0.3 * cm), p("Pontos fortes", "h1"),
+        p("- Identidade derivada da sessao, nunca de header controlado pelo cliente.<br/>"
+          "- Busca, alteracao e exclusao filtradas por proprietario.<br/>"
+          "- Access token, refresh token, senha e client secret ausentes das respostas do frontend.<br/>"
+          "- Logout idempotente, renovacao controlada e limpeza periodica de sessoes.<br/>"
+          "- Gerador falha antes da substituicao quando secao ou chave obrigatoria esta ausente."),
+        p("Limitacoes", "h1"),
+        p("A sessao em memoria e o Direct Access Grant sao decisoes aceitas apenas para o ambiente local descrito na SPEC. O teste manual com PostgreSQL e Keycloak reais permanece obrigatorio antes da aprovacao final. O arquivo externo precisa conter a chave BANCO_DB_DASHBOARDCOMPRAS."),
+        p("Achados detalhados", "h1"),
+        p("Nenhuma vulnerabilidade confirmada exige abertura de issue nesta auditoria. Portanto, nao ha blocos de issue P1/P2/P3."),
+        p("Evidencias", "h1"),
+        p("FiltroSeguranca.java; KeycloakOidcAdapter.java; GerenciadorAutenticacao.java; PanacheCompraRepository.java; CompraResourceTest.java; api.ts; ProtectedRoute.tsx; gerar_start_aplicacao_dashboardatendimentoservico.ps1."),
+        p("Comandos verificados: mvn clean verify; npm run build; npm test -- --run; testes sinteticos do gerador; busca por Spring, armazenamento de navegador, HTML cru, eval e segredos rastreados.", "small"),
+    ]
+    doc.build(story)
+    return output
+
+
 if __name__ == "__main__":
     import sys
-    print(build_correction_pdf() if "--change-011" in sys.argv else build_pdf())
+    if "--change-063" in sys.argv:
+        print(build_change_063_pdf())
+    elif "--change-011" in sys.argv:
+        print(build_correction_pdf())
+    else:
+        print(build_pdf())
