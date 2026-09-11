@@ -1,6 +1,9 @@
 package domainerror
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 var (
 	ErrPortNotConfigured            = errors.New("pinpad port not configured")
@@ -16,4 +19,12 @@ var (
 	ErrQueueFull                    = errors.New("pinpad command queue is full")
 	ErrQRCodeGeneratorNotConfigured = errors.New("QR code generator is not configured")
 	ErrNotImplemented               = errors.New("operation is not implemented")
+	ErrInvalidCommandSequence       = errors.New("invalid pinpad command sequence")
 )
+
+// StatusError representa um RSP_STAT diferente de sucesso devolvido pelo pinpad.
+// Code preserva os três dígitos ABECS para decisões específicas do consumidor.
+type StatusError struct{ Code string }
+
+// Error fornece uma descrição sanitizada, sem incluir payload ou dados do cartão.
+func (e *StatusError) Error() string { return fmt.Sprintf("pinpad returned status %s", e.Code) }

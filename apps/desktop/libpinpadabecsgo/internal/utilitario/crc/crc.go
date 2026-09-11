@@ -1,5 +1,6 @@
 package crc
 
+// CRC16CCITT calcula CRC-16-CCITT com polinômio 0x1021 e valor inicial zero.
 func CRC16CCITT(data []byte) uint16 {
 	var crc uint16
 	for _, b := range data {

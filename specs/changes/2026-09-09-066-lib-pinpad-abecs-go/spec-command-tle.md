@@ -1,7 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comando TLE
 
 ## Status
-`RASCUNHO`
+`SPEC_APROVADA`
 
 ## Objetivo
 Encerrar e confirmar a carga de tabela EMV iniciada por TLI e alimentada por TLR.

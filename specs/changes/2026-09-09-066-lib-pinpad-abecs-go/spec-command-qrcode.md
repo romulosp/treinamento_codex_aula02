@@ -1,7 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — DisplayQRCode: aviso estruturado de posição
 
 ## Status
-`RASCUNHO`
+`SPEC_APROVADA`
 
 ## Papel do recurso no projeto
 

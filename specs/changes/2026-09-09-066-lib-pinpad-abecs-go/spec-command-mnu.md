@@ -1,7 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comando MNU
 
 ## Status
-`RASCUNHO`
+`SPEC_APROVADA`
 
 ## Objetivo
 Apresentar um menu no pinpad e devolver a opção selecionada pelo usuário.

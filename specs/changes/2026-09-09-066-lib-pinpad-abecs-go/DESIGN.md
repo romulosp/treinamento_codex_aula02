@@ -28,10 +28,15 @@ A Change extrai somente o domínio de comunicação ABECS do legado C++. O resul
 6. Um worker por instância será o proprietário do transporte. A fila usa capacidade 100, FIFO e retorno imediato de `ErrQueueFull`. `Enqueue` nunca bloqueia o produtor; `Submit` é a única operação bloqueante, aguardando o resultado do comando ou o cancelamento do contexto.
 7. Contextos serão propagados a todas as operações potencialmente bloqueantes. O shutdown cancelará o worker e fechará a porta de forma idempotente.
 8. O relógio do `SessionManager` será injetável para testes determinísticos de expiração.
-9. `slog` será usado na infraestrutura de logging com redaction por padrão.
+9. `slog` será usado na infraestrutura de logging com redaction por padrão. O
+   tracer SPE/PP/RSP será uma instância injetada e desabilitada por padrão; a
+   composição do utilitário local usará uma única instância com destino
+   `logs/LogPinpadAbecs.txt` quando `PINPAD_LOG_FILE` não estiver definida.
 10. Comandos avançados terão builders, parsers e fluxos seriais definidos na RF-012, sem acoplar o núcleo a bridges HTTP, WebSocket ou UI.
 11. O catálogo de comandos será documentado uma SPEC por comando. Uma implementação parcial deverá declarar explicitamente o subconjunto suportado e não poderá simular campos de resposta que pertençam a outro comando.
 12. A validação automatizada de componentes puros não substitui a validação de transporte e comportamento com pinpad físico real.
+13. A comunicação segura ABECS será isolada do framing em claro e seguirá `spec-protocolo-seguro.md`: OPN negocia `KSEC` temporária pelo perfil RSA de 2048 bits comprovado no legado; pacotes protegidos seguem o formato normativo AES-CBC; CLO encerra e limpa a sessão. CLX é visual e não fecha a porta, mas também encerra a sessão segura no pinpad, conforme manual ABECS v2.12, seção 6.4.5.
+14. `PinpadConfig` inicia em `COM7`; uma `PORTA_PINPAD` não vazia no ambiente do processo tem precedência. O script local não deve sobrescrever essa escolha.
 
 ## Arquitetura e componentes
 
@@ -51,7 +56,7 @@ apps/desktop/libpinpadabecsgo/
 ├── internal/infrastructure/
 │   ├── serial/                 go.bug.st/serial e fake
 │   ├── config/                 ambiente e defaults
-│   ├── logging/                slog e redaction
+│   ├── logging/                slog, tracer e redaction
 │   └── worker/                 implementação FIFO/worker
 └── internal/utilitario/        crc, tlv e bytes
 ```

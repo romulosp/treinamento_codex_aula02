@@ -17,6 +17,7 @@ const (
 	PP_DC3 byte = 0x13
 )
 
+// ApplySubstitution escapa bytes de controle que ocorrem no corpo do pacote.
 func ApplySubstitution(data []byte) []byte {
 	out := make([]byte, 0, len(data))
 	for _, b := range data {
@@ -33,6 +34,8 @@ func ApplySubstitution(data []byte) []byte {
 	}
 	return out
 }
+
+// RemoveSubstitution reverte escapes ABECS e rejeita sequências incompletas.
 func RemoveSubstitution(data []byte) ([]byte, error) {
 	out := make([]byte, 0, len(data))
 	for i := 0; i < len(data); i++ {
@@ -57,6 +60,8 @@ func RemoveSubstitution(data []byte) ([]byte, error) {
 	}
 	return out, nil
 }
+
+// BuildPacket enquadra o payload com SYN, ETB, substitution e CRC-16-CCITT.
 func BuildPacket(payload []byte) []byte {
 	escaped := ApplySubstitution(payload)
 	packet := make([]byte, 0, 1+len(escaped)+3)
@@ -73,6 +78,7 @@ func BuildPacket(payload []byte) []byte {
 	binary.BigEndian.PutUint16(check[:], sum)
 	return append(packet, check[:]...)
 }
+
 // BuildAbecsPayload monta o payload logico de um comando ABECS: identificador
 // de 3 caracteres, seguido do tamanho dos parametros em 3 digitos ASCII e, por
 // fim, os proprios parametros. Este payload ainda nao esta enquadrado (sem
@@ -85,9 +91,13 @@ func BuildAbecsPayload(id string, parameters []byte) []byte {
 	payload = append(payload, parameters...)
 	return payload
 }
+
+// BuildCommand monta e enquadra um comando ABECS de bloco único.
 func BuildCommand(id string, parameters []byte) []byte {
 	return BuildPacket(BuildAbecsPayload(id, parameters))
 }
+
+// ValidatePacket valida framing, substitution e CRC, retornando o payload puro.
 func ValidatePacket(packet []byte) ([]byte, error) {
 	if len(packet) < 4 || packet[0] != PP_SYN || packet[len(packet)-3] != PP_ETB {
 		return nil, fmt.Errorf("%w: invalid frame", domainerror.ErrInvalidResponse)
@@ -107,6 +117,8 @@ func ValidatePacket(packet []byte) ([]byte, error) {
 	}
 	return body, nil
 }
+
+// AckType classifica um único byte de controle ou dados de resposta.
 func AckType(data []byte) string {
 	switch {
 	case len(data) == 1 && data[0] == PP_ACK:

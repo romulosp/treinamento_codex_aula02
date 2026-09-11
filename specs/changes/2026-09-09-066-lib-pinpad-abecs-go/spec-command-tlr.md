@@ -1,7 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comando TLR
 
 ## Status
-`RASCUNHO`
+`SPEC_APROVADA`
 
 ## Objetivo
 Transmitir um lote de registros da tabela EMV depois de `TLI` aceitar o carregamento.

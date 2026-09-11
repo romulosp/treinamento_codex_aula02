@@ -1,19 +1,18 @@
 package parser
 
 import (
+	domainerror "br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/error"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/model"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/protocol"
 	"encoding/hex"
-	"fmt"
 	"strconv"
 	"strings"
 )
 
 // tagNames mapeia os identificadores de resposta (RSP_DATID) do comando GIX
-// (secao 6.4.3 da especificacao ABECS) para chaves internas usadas em
-// model.Response.Tags. Todos os identificadores abaixo correspondem as
-// constantes ja definidas em protocol.Tag* e foram confirmados contra
-// hardware real (PERTO PPP100).
+// (secao 6.4.3 do manual ABECS v2.12) para chaves internas usadas em
+// model.Response.Tags. A interpretação no dispositivo permanece sujeita à
+// validação física prevista pela Change.
 var tagNames = map[uint16]string{
 	0x8001: "SerialNumber",
 	0x8002: "PartNumber",
@@ -40,10 +39,10 @@ var tagNames = map[uint16]string{
 }
 
 func ParseAbecsResponse(data []byte) (*model.Response, error) {
-	response := &model.Response{AckType: protocol.AckType(data), RawData: append([]byte(nil), data...), Tags: map[string]string{}}
+	response := &model.Response{AckType: protocol.AckType(data), RawData: append([]byte(nil), data...), Tags: map[string]string{}, RawTags: map[uint16][]byte{}}
 	if len(data) == 1 {
 		if data[0] == protocol.PP_NAK {
-			return response, fmt.Errorf("nak response")
+			return response, domainerror.ErrNakReceived
 		}
 		return response, nil
 	}
@@ -53,29 +52,51 @@ func ParseAbecsResponse(data []byte) (*model.Response, error) {
 	// contra hardware real (resposta ao comando GIX). Quando o envelope
 	// completo nao estiver presente (respostas curtas), cai de volta para o
 	// layout minimo (3 primeiros bytes como status) para nao quebrar.
-	tagsStart := 3
+	if len(data) < 6 {
+		return nil, domainerror.ErrInvalidResponse
+	}
+	tagsStart := 6
+	response.StatusCode = string(data[3:6])
 	if len(data) >= 9 {
 		response.StatusCode = string(data[3:6])
+		declaredLength, err := strconv.Atoi(string(data[6:9]))
+		if err != nil || declaredLength < 0 || declaredLength != len(data)-9 {
+			return nil, domainerror.ErrInvalidResponse
+		}
 		tagsStart = 9
-	} else if len(data) >= 3 {
-		response.StatusCode = string(data[:3])
+	}
+	response.Data = append([]byte(nil), data[tagsStart:]...)
+	// A resposta ao OPN seguro possui CRKSEC em hexadecimal, com estrutura
+	// própria definida pelo protocolo seguro. Ela não é BER-TLV e precisa
+	// permanecer intacta para a camada RSA validar tamanho e descriptografar
+	// KSEC antes de qualquer outro comando protegido.
+	if string(data[:3]) == "OPN" {
+		return response, nil
+	}
+	if len(response.Data) > 0 && len(response.Data) < 4 {
+		return response, nil
 	}
 	for pos := tagsStart; pos+4 <= len(data); {
 		tag := uint16(data[pos])<<8 | uint16(data[pos+1])
 		length := int(data[pos+2])<<8 | int(data[pos+3])
 		pos += 4
 		if pos+length > len(data) {
-			break
+			return nil, domainerror.ErrInvalidResponse
 		}
+		value := append([]byte(nil), data[pos:pos+length]...)
+		response.RawTags[tag] = value
 		name, ok := tagNames[tag]
 		if ok {
-			response.Tags[name] = string(data[pos : pos+length])
+			response.Tags[name] = string(value)
 		}
 		pos += length
 	}
 	return response, nil
 }
 func DeviceInfoFromResponse(response *model.Response) model.DeviceInfo {
+	if response == nil {
+		return model.DeviceInfo{}
+	}
 	get := func(key string) string { return response.Tags[key] }
 	info := model.DeviceInfo{
 		SerialNumber:            get("SerialNumber"),
@@ -124,6 +145,36 @@ func DeviceInfoFromResponse(response *model.Response) model.DeviceInfo {
 	return info
 }
 func TagHex(value []byte) string { return strings.ToUpper(hex.EncodeToString(value)) }
+
+// DisplayCapabilitiesFromResponse converte as tags GIX em capacidades sem
+// depender de heurísticas específicas de fabricante.
+func DisplayCapabilitiesFromResponse(response *model.Response) model.DisplayCapabilities {
+	info := DeviceInfoFromResponse(response)
+	capabilities := model.DisplayCapabilities{
+		TextLines:     info.TextRows,
+		TextCols:      info.TextCols,
+		GraphicWidth:  info.GraphicWidth,
+		GraphicHeight: info.GraphicHeight,
+		Model:         info.Model,
+		Manufacturer:  info.Manufacturer,
+	}
+	raw := ""
+	if response != nil {
+		raw = response.Tags["Capabilities"]
+	}
+	if len(raw) >= 2 {
+		capabilities.SupportsCTLS = raw[0] == '1'
+		capabilities.HasGraphic = raw[1] == '1' || raw[1] == '2'
+		capabilities.HasColor = raw[1] == '2'
+	}
+	if response != nil {
+		formats := strings.ToUpper(response.Tags["SupportedFormats"])
+		capabilities.SupportsPNG = strings.Contains(formats, "PNG")
+		capabilities.SupportsJPG = strings.Contains(formats, "JPG") || strings.Contains(formats, "JPEG")
+		capabilities.SupportsGIF = strings.Contains(formats, "GIF")
+	}
+	return capabilities
+}
 
 // decodeCapabilities traduz o valor bruto de PP_CAPAB (tag 0x8005) para uma
 // descricao legivel: o digito 1 indica suporte a CTLS ("1" = CTLS) e o

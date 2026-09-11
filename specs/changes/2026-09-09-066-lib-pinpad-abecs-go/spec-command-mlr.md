@@ -1,7 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comando MLR
 
 ## Status
-`RASCUNHO`
+`SPEC_APROVADA`
 
 ## Objetivo
 Transmitir blocos de um arquivo multimídia iniciado por `MLI`.

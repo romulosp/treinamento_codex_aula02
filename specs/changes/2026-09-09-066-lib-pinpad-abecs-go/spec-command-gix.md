@@ -1,7 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comando GIX (informações do dispositivo)
 
 ## Status
-`RASCUNHO`
+`SPEC_APROVADA`
 
 ## Papel do comando no projeto
 

@@ -1,5 +1,8 @@
 package protocol
 
+// PP_DC2 identifica PKTDATA protegido pela Comunicação Segura ABECS.
+const PP_DC2 byte = 0x12
+
 // ResponseTag identifies a RSP_DATID value returned by the pinpad.
 type ResponseTag uint16
 

@@ -1,7 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comando MLI
 
 ## Status
-`RASCUNHO`
+`SPEC_APROVADA`
 
 ## Objetivo
 Iniciar o carregamento de um arquivo multimídia para o armazenamento do pinpad.

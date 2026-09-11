@@ -1,7 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comando MLE
 
 ## Status
-`RASCUNHO`
+`SPEC_APROVADA`
 
 ## Objetivo
 Finalizar o carregamento multimídia iniciado por `MLI` e transmitido por `MLR`.

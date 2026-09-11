@@ -8,13 +8,14 @@ import (
 	"time"
 )
 
+// Load aplica as variáveis de ambiente à configuração padrão do pinpad.
 func Load() (model.PinpadConfig, error) {
 	cfg := model.DefaultConfig()
 	if value, ok := os.LookupEnv("PORTA_PINPAD"); ok {
+		if value == "" {
+			return cfg, fmt.Errorf("invalid PORTA_PINPAD")
+		}
 		cfg.Port = value
-	}
-	if cfg.Port == "" {
-		return cfg, fmt.Errorf("PORTA_PINPAD is required")
 	}
 	if value := os.Getenv("PINPAD_BAUDRATE"); value != "" {
 		n, err := strconv.Atoi(value)

@@ -1,7 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comando RST
 
 ## Status
-`RASCUNHO`
+`SPEC_APROVADA`
 
 ## Objetivo
 Reinicializar o estado lógico do pinpad por comando tipado, preservando o ciclo de vida da porta e do worker.

@@ -44,6 +44,15 @@ apps/frontend/desktop/**
 !apps/desktop/libpinpadabecsgo/
 !apps/desktop/libpinpadabecsgo/**
 
+# Artefatos locais da biblioteca Go ABECS.
+apps/desktop/libpinpadabecsgo/coverage
+apps/desktop/libpinpadabecsgo/coverage.out
+apps/desktop/libpinpadabecsgo/.gocache/
+apps/desktop/libpinpadabecsgo/.gomodcache/
+apps/desktop/libpinpadabecsgo/.bin/
+apps/desktop/libpinpadabecsgo/*.exe
+apps/desktop/libpinpadabecsgo/logs/LogPinpadAbecs.txt
+
 # Dependências, builds e credenciais locais: manter depois das regras de inclusão.
 **/node_modules/
 **/target/

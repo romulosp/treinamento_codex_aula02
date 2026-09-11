@@ -1,7 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comando GPN
 
 ## Status
-`RASCUNHO`
+`SPEC_APROVADA`
 
 ## Objetivo
 Obter PIN block por chave de terminal ou DUKPT, convertendo as funções GPN do legado para uma fachada Go tipada e segura.

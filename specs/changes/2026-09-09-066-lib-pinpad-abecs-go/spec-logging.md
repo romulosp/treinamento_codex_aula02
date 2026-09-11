@@ -1,15 +1,29 @@
 # SPEC: 066-lib-pinpad-abecs-go — Logging detalhado de comunicação (SPE/PP)
 
 ## Status
-`RASCUNHO`
+`SPEC_APROVADA`
 
-> Esta SPEC havia sido aprovada em uma versão anterior. Como o contrato foi ampliado para documentar o tracer, a separação entre `slog` e SPE/PP/RSP e os critérios de validação física, ela deve passar por nova revisão antes da implementação.
+> Esta revisão acrescenta o destino operacional do utilitário local, a emissão obrigatória de eventos em todos os caminhos de I/O e o procedimento seguro de coleta de evidências. A revisão formal de 2026-09-11 aprovou este contrato; a implementação permanece pendente.
 
 ## Papel do logging no projeto
 
 Esta SPEC define dois canais complementares: o `slog` operacional, que registra operação, duração e resultado, e o tracer bruto SPE/PP/RSP, que registra a comunicação serial suficiente para diagnosticar framing e protocolo. O tracer não é uma autorização para armazenar dados do cartão: redaction é aplicada antes da escrita e prevalece sobre a necessidade de diagnóstico.
 
 O tracer pertence à infraestrutura. O domínio não deve importar `slog`, `os.File` ou conhecer o formato do arquivo. A serialização do comando deve fornecer apenas metadados seguros, como o tipo do comando e o status, ao tracer.
+
+## Estado atual e lacuna observada
+
+Na data desta revisão, `internal/infrastructure/logging/logging.go` fornece
+somente o logger estruturado `slog` e `RedactPayload`. Não existe destino de
+arquivo, criação de sessão de porta, evento `open`/`close`, rastro `SPE`/`PP`
+ou linha `RSP`. Logo, a existência do `slog` não satisfaz esta SPEC e não pode
+ser usada como evidência de log serial.
+
+O exemplo fornecido de cenário GCX confirma que o diagnóstico precisa manter a
+ordem `SPE → PP* → close`. O conteúdo de cartão e de portador eventualmente
+presente em uma resposta desse tipo é dado sensível: essa resposta não pode ser
+copiada para a documentação, para fixtures nem enviada sem a redação prevista
+em RF-L006.
 
 ## Identificação
 
@@ -64,7 +78,8 @@ Os exemplos acima são ilustrativos; os bytes reais devem ser derivados da trans
 
 ### RF-L001 — Destino do log configurável
 
-Deverá existir uma função equivalente a `SetLogDestination(filename string) (bool, error)` no pacote `internal/infrastructure/logging`:
+O pacote `internal/infrastructure/logging` deverá expor um `Tracer` configurável
+por uma operação equivalente a `SetLogDestination(filename string) (bool, error)`:
 
 - `filename` não vazio abre (ou cria) o arquivo em modo *append* e passa a direcionar todas as mensagens de rastro de comunicação para ele;
 - `filename` vazio desliga o rastro de comunicação (nenhuma mensagem `SPE`/`PP`/`open`/`close` é mais gravada);
@@ -73,6 +88,46 @@ Deverá existir uma função equivalente a `SetLogDestination(filename string) (
 - é thread-safe: pode ser chamada enquanto outras goroutines estão gravando ou lendo da porta serial, sem corrida de dados (`go test -race`).
 
 Esse rastro de comunicação é independente do `slog` estruturado já definido em RF-011 de `spec.md`: um audita a operação (nível INFO/ERROR, duração, resultado); o outro é o traço bruto de bytes trocados, equivalente ao legado. Os dois poderão coexistir e ser habilitados de forma independente.
+
+### RF-L001.2 — Instância e injeção do tracer
+
+`Tracer` é uma dependência de infraestrutura, desabilitada por padrão e segura
+para concorrência. A composição do executável local deverá criar **uma única**
+instância e fornecê-la tanto ao `Service` quanto ao adaptador serial real antes
+de `Open`. A instância compartilhada é responsável pelo lock e pela ordenação
+das linhas de uma sessão.
+
+As APIs atuais de construção que não recebem tracer permanecem compatíveis e
+usam um tracer desabilitado. Uma configuração explícita (por construtor
+adicional ou setter documentado) deverá permitir associar o `Tracer` ao serviço
+e ao adaptador real antes da abertura. O domínio e a porta `SerialPort` não
+receberão essa dependência. Testes deverão poder criar instâncias isoladas com
+arquivo temporário, sem alterar estado global nem o destino configurado por
+outro teste.
+
+### RF-L001.1 — Destino do utilitário local e coleta de evidências
+
+A biblioteca permanece com tracer desabilitado por padrão. O executável local
+`cmd/libpinpadabecsgo`, quando iniciado pelo script local, deverá configurar o
+tracer com a seguinte precedência:
+
+1. `PINPAD_LOG_FILE`, quando definida e não vazia, é o destino absoluto ou
+   relativo informado pelo operador;
+2. quando a variável estiver ausente ou vazia, o script local define
+   temporariamente `logs/LogPinpadAbecs.txt`, relativo ao diretório do módulo;
+3. a biblioteca consumida por outro processo não infere nem cria esse caminho;
+   o consumidor deve chamar a configuração de destino explicitamente.
+
+O script local deverá criar o diretório `logs/` antes de iniciar o executável.
+O arquivo `LogPinpadAbecs.txt` usa append UTF-8 e deve ser ignorado pelo Git.
+Falha ao configurar o destino deve ser exibida pelo CLI e interromper a
+execução de validação local, pois sem rastro não é possível coletar evidência
+de erro do pinpad.
+
+Para suporte, o operador poderá enviar o arquivo recém-gerado em `logs/`,
+desde que confirme que não contém PAN, trilhas, PIN, PIN block, KSN, chave ou
+dados pessoais. Um arquivo que contenha qualquer desses dados deve ser
+redigido antes do compartilhamento e sua origem deve ser preservada localmente.
 
 ### Correlação SPE/PP com comando e status
 
@@ -108,7 +163,7 @@ Toda escrita na porta serial deverá gerar uma linha:
 [<id>] SPE <hex bytes separados por espaço>
 ```
 
-onde `<hex bytes>` é a representação hexadecimal maiúscula, dois dígitos por byte, exatamente dos bytes efetivamente enviados (payload já submetido a `ApplySubstitution`/`BuildPacket`), na ordem de transmissão.
+onde `<hex bytes>` é a representação hexadecimal maiúscula, dois dígitos por byte, exatamente dos bytes efetivamente enviados (payload já submetido a `ApplySubstitution`/`BuildPacket`), na ordem de transmissão. A camada de aplicação emite essa linha uma única vez, imediatamente após a confirmação de escrita bem-sucedida pelo adaptador, porque é ela que conhece o tipo do comando.
 
 ### RF-L004 — Registro de bytes recebidos (PP)
 
@@ -140,7 +195,26 @@ Falhas de abertura, escrita, leitura e fechamento da porta deverão ser registra
 
 ### RF-L008 — Integração não invasiva
 
-A instrumentação de RF-L002 a RF-L007 deverá ser aplicada no adaptador real de `SerialPort` (RF-007 de `spec.md`) e, quando aplicável, no ponto único de envio/recebimento usado pela fila/worker (RF-009), sem duplicar logs para o mesmo byte em múltiplas camadas. O fake de `SerialPort` usado em testes não é obrigado a gravar no rastro de comunicação, mas deverá permitir testar a instrumentação por injeção do logger.
+A instrumentação de RF-L002 a RF-L007 deverá ser aplicada ao adaptador real de `SerialPort` (RF-007 de `spec.md`) e ao ponto único de envio/recebimento usado pela fila/worker (RF-009), sem duplicar logs para o mesmo byte em múltiplas camadas. O fake de `SerialPort` usado em testes não é obrigado a gravar no rastro de comunicação; a instrumentação será comprovada com uma instância isolada de `Tracer` e destinos temporários.
+
+### RF-L008.1 — Ordem, uma única emissão e sessão de porta
+
+- O adaptador serial real é a fonte única dos eventos `open`, `close`, `PP` e
+  falhas de I/O; a camada de aplicação não poderá repetir os mesmos bytes nem
+  os mesmos erros.
+- A camada de aplicação é a fonte única de `SPE CMD=<tipo>` e
+  `RSP CMD=<tipo> STATUS=<código>`. Ela registra `SPE` somente depois de o
+  adaptador confirmar a escrita; em falha, somente o evento de erro do
+  adaptador é escrito. Assim, a linha representa bytes efetivamente enviados,
+  sem uma segunda emissão no adaptador.
+- A sessão lógica deve ser incrementada somente após uma abertura bem-sucedida
+  e permanecer igual até `close()`. O formato recomendado é `[COM7#001]`; um
+  número de handle de C/JNI é somente referência histórica e não faz parte do
+  contrato Go.
+- Um ACK/NAK/EOT lido isoladamente continua sendo uma linha `PP`; ele não pode
+  ser omitido nem combinado com a linha `RSP`.
+- Cada linha deve terminar com `\n`, ser escrita integralmente sob o mesmo lock
+  e não pode ser reordenada em relação à chamada de I/O que representa.
 
 ### RF-L009 — Desempenho e concorrência
 
@@ -173,7 +247,22 @@ O rastro de comunicação deverá usar exclusão mútua (`sync.Mutex` ou equival
 - [ ] **CA-L008:** falha simulada de abertura da porta gera linha `open(...)=>ERRO: <mensagem>` e `SetLogDestination`/estado de log preservam o destino anterior.
 - [ ] **CA-L009:** `go test -race ./...` cobre gravação concorrente de múltiplas linhas de rastro sem corrida de dados.
 - [ ] **CA-L010:** com o rastro desligado (nenhum destino configurado), nenhuma linha `SPE`/`PP`/`open`/`close` é produzida e nenhuma alocação de formatação hexadecimal ocorre no caminho crítico (validável por teste ou benchmark comparativo).
+- [ ] **CA-L011:** executar o script local sem `PINPAD_LOG_FILE` cria
+  `logs/LogPinpadAbecs.txt` no diretório do módulo; o destino explícito definido
+  pelo operador prevalece e nenhum dos dois arquivos é versionado.
+- [ ] **CA-L012:** em um cenário GCX de laboratório, a sequência registrada é
+  `SPE CMD=GCX`, um ou mais `PP`, `RSP CMD=GCX STATUS=<código>` e `close()`
+  quando aplicável; o conteúdo hexadecimal de GCX/GTK/GOX/FCX/GPN permanece
+  integralmente redigido.
+- [ ] **CA-L013:** duas instâncias isoladas de `Tracer`, configuradas com
+  destinos temporários distintos, não misturam linhas; uma construção sem
+  tracer permanece desabilitada e não cria arquivo.
 
 ## Validação
 
-Os critérios de concorrência, append, troca de destino e redaction podem ser cobertos por testes automatizados sem hardware. A confirmação de que os eventos correspondem aos bytes efetivamente trocados deve ser repetida com pinpad físico, porta serial real e dados de teste de laboratório. Logs de validação não podem ser anexados se contiverem PAN, PIN, KSN, trilhas ou chaves.
+Os critérios de concorrência, append, troca de destino, criação do diretório e
+redaction podem ser cobertos por testes automatizados sem hardware. A
+confirmação de que os eventos correspondem aos bytes efetivamente trocados deve
+ser repetida com pinpad físico, porta serial real e dados de teste de
+laboratório. Logs de validação não podem ser anexados se contiverem PAN, PIN,
+KSN, trilhas, chaves ou dados de portador.

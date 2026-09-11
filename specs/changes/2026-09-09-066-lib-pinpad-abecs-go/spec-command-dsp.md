@@ -1,7 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comando DSP
 
 ## Status
-`RASCUNHO`
+`SPEC_APROVADA`
 
 ## Objetivo
 Exibir duas linhas de texto no display do pinpad por meio do comando tipado `DSP`.

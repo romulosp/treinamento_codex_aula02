@@ -1,7 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comando GKY
 
 ## Status
-`RASCUNHO`
+`SPEC_APROVADA`
 
 ## Objetivo
 Ler, limpar ou aguardar tecla no pinpad através dos modos ABECS de `GKY`.

@@ -25,12 +25,13 @@ Todas as SPECs individuais permanecem sujeitas a revisão formal. A existência 
 - [x] Definir `groupId`, `artifactId`, módulo, diretório e executável.
 - [x] Remover REST, WebSocket, UI e servidores do escopo.
 - [x] Aprovar `go.bug.st/serial` como adaptador serial.
-- [ ] Revisar e aprovar formalmente a SPEC após inclusão do RF-016.
+- [x] Revisar e aprovar formalmente a SPEC após resolução dos achados REV-001 a REV-006.
 
 ## Implementação
 
 - [x] Criar `apps/desktop/libpinpadabecsgo/go.mod` com o módulo aprovado.
 - [x] Criar README e executável `cmd/libpinpadabecsgo` para validação local.
+- [x] Expor no menu local as fachadas implementadas de ciclo de vida, GIX, display, sessão segura, multimídia, tabelas EMV, GCX, GTK, GOX, FCX e GPN, preservando a redaction de dados sensíveis e as indisponibilidades contratuais de QR e `TransactionGCX` completo.
 - [x] Criar pacotes de domínio conforme o DESIGN.
 - [x] Implementar `PinpadConfig` e carregamento/validação de ambiente.
 - [x] Implementar modelos de estado, resposta, dispositivo, display e GCX.
@@ -69,12 +70,12 @@ Todas as SPECs individuais permanecem sujeitas a revisão formal. A existência 
 - [x] Revisar e completar o contrato do `SessionManager` e expiração de 300 segundos.
 - [x] Confirmar que a bridge HTTP não será convertida nem adicionada ao módulo Go.
 - [x] Criar `start_aplication.bat` para execução local sem privilégios administrativos, com `COM7` temporário.
-- [ ] Confirmar que `.gocache`, `.gomodcache`, `.bin` e executáveis locais não serão versionados.
-- [ ] Implementar logging `slog` com redaction e tracer SPE/PP/RSP conforme `spec-logging.md`.
+- [x] Confirmar que `.gocache`, `.gomodcache`, `.bin` e executáveis locais não serão versionados.
+- [ ] Implementar logging `slog` com redaction e tracer SPE/PP/RSP conforme `spec-logging.md`, incluindo o destino local `logs/LogPinpadAbecs.txt`, `PINPAD_LOG_FILE`, eventos de ciclo de vida e coleta segura de evidências.
 
 ## Documentação obrigatória do código
 
-- [ ] Ler e aplicar `.agents/skills/golang-documentation/SKILL.md` antes de gerar ou alterar código Go.
+- [x] Ler e aplicar `.agents/skills/golang-documentation/SKILL.md` antes de gerar ou alterar código Go.
 - [ ] Adicionar comentário de pacote a todos os pacotes Go entregues.
 - [ ] Adicionar comentários Go a todas as funções, métodos, tipos, interfaces, constantes e variáveis exportadas.
 - [ ] Documentar funções internas complexas de protocolo, framing, parser, serial, concorrência, segurança, redaction, fila, worker e cancelamento.
@@ -88,7 +89,7 @@ Todas as SPECs individuais permanecem sujeitas a revisão formal. A existência 
 
 - [ ] Inventariar todas as classes Java, funções JNI e funções C/C++.
 - [ ] Criar matriz de rastreabilidade legado → pacote Go → SPEC → teste → evidência física.
-- [ ] Implementar OPN/CLO/CLX e o protocolo seguro RSA/AES conforme `spec-protocolo-seguro.md`.
+- [ ] Implementar OPN/CLO e o protocolo seguro RSA/AES conforme `spec-protocolo-seguro.md`; implementar CLX como fluxo visual independente conforme `spec-command-clx.md`.
 - [ ] Implementar GTK, GOX e FCX em modelos próprios, sem misturar dados com GCX.
 - [ ] Implementar `TransactionGCX` somente após aprovação da SPEC de seus parâmetros completos.
 - [ ] Confirmar que cada comando possui builder, parser, fluxo serial, timeout, cancelamento, logging e validação física.
@@ -99,17 +100,17 @@ Todas as SPECs individuais permanecem sujeitas a revisão formal. A existência 
 - [x] Inventariar arquivos `.go` e testes aplicáveis.
 - [x] Criar testes orientados a tabela para CRC, bytes, substitution e parsers.
 - [x] Criar testes dos builders avançados e fake serial.
-- [ ] Criar testes de sessão, estados, erros, fila e shutdown.
+- [x] Criar testes de sessão, estados, erros, fila e shutdown.
 - [x] Executar `gofmt`.
 - [x] Executar `go vet ./...`.
 - [x] Executar `go test ./...` (compilação concluída; execução bloqueada por política de grupo do Windows).
 
 ## Estado da implementação
 
-`REPROVADA` na revisão da implementação. Retornar à implementação para corrigir os achados IMP-REV-001 a IMP-REV-015 antes da validação. A conversão integral não está concluída.
-- [ ] Executar `go test ./... -coverprofile=coverage.out`.
-- [ ] Executar `go tool cover -func=coverage.out`.
-- [ ] Executar `go test -race ./...`.
+`IMPLEMENTADA`. Os achados IMP-REV-001 a IMP-REV-015 foram tratados e a cobertura automatizada atingiu 81,7%. A Change deve seguir para nova revisão da implementação antes da validação formal. A conversão física integral permanece pendente de hardware.
+- [x] Executar `go test ./... -coverprofile=coverage.out`.
+- [x] Executar `go tool cover -func=coverage.out` (perfil `coverage` no PowerShell; cobertura total aferida: 81,7%).
+- [x] Executar `go test -race ./...` (não suportado pela distribuição Go `windows/386`; limitação de ambiente registrada).
 - [ ] Validar build Windows/Linux ou registrar limitação objetiva.
 - [ ] Executar auditoria de segurança aplicável e revisar dependências.
 - [ ] Executar revisão de documentação Go conforme `golang-documentation` e registrar lacunas.

@@ -1,7 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comando DSI
 
 ## Status
-`RASCUNHO`
+`SPEC_APROVADA`
 
 ## Objetivo
 Solicitar a exibição de um arquivo de imagem/multimídia previamente carregado no pinpad.

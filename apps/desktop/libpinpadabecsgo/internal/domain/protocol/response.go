@@ -1,13 +1,15 @@
 package protocol
 
 import (
-	domainerror "br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/error"
-	"bytes"
 	"context"
 	"fmt"
 )
 
-type Reader interface{ Read() ([]byte, error) }
+// Reader fornece bytes individuais da porta serial e preserva quaisquer bytes
+// seguintes para a próxima leitura de protocolo.
+type Reader interface {
+	NextByte(context.Context) (byte, error)
+}
 
 // ReadFullResponse acumula bytes lidos de reader ate reconhecer um pacote
 // ABECS completo (SYN + dados escapados + ETB + CRC de 2 bytes) e o valida.
@@ -23,17 +25,20 @@ func ReadFullResponse(ctx context.Context, reader Reader) ([]byte, error) {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
-		chunk, err := reader.Read()
+		value, err := reader.NextByte(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("read ABECS response: %w", err)
 		}
-		if len(chunk) == 0 {
-			return nil, domainerror.ErrTimeout
-		}
-		packet = append(packet, chunk...)
-		if idx := bytes.IndexByte(packet, PP_ETB); idx >= 0 && len(packet)-idx-1 >= 2 {
+		packet = append(packet, value)
+		if value == PP_ETB {
+			for range 2 {
+				crc, err := reader.NextByte(ctx)
+				if err != nil {
+					return nil, fmt.Errorf("read ABECS CRC: %w", err)
+				}
+				packet = append(packet, crc)
+			}
 			return ValidatePacket(packet)
 		}
 	}
 }
-

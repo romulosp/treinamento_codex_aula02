@@ -1,7 +1,7 @@
 # Proposta: 066-lib-pinpad-abecs-go
 
 ## Status
-`RASCUNHO`
+`SPEC_APROVADA`
 
 ## Responsável e data
 
@@ -30,9 +30,12 @@ A biblioteca será a base para futuras Changes de bridge HTTP, WebSocket, UI e i
 - Arquitetura Clean Architecture, DDD e Ports and Adapters.
 - Adaptador serial com `go.bug.st/serial`, sem CGO.
 - Configuração por ambiente, modelo de pinpad, estados, erros e catálogo de comandos/status.
+- Comunicação segura ABECS conforme `spec-protocolo-seguro.md`: OPN seguro,
+  negociação RSA de 2048 bits, `KSEC` temporária, pacotes AES-CBC e
+  encerramento por CLO, sempre dependentes de confirmação no dispositivo.
 - CRC-16-CCITT, substitution, packet builder, leitura de resposta, parser ABECS e parser BER-TLV.
 - Implementação completa de serial, CRC, framing, parsers, `SessionManager`, `CommandQueue`, estados e comandos CAN/OPN/GIX/CLO.
-- Implementação Go dos builders, parsers e fluxos de comunicação especificados individualmente para CAN, OPN, CLO/CLX, GIX, DSP, DEX, MNU, DSI, MLI, MLR, MLE, TLI, TLR, TLE, GCX, GTK, GOX, FCX, GKY, GPN e RST, preservando contratos, status, cancelamento e redaction sem expor dados sensíveis.
+- Implementação Go dos builders, parsers e fluxos de comunicação especificados individualmente para CAN, OPN, CLO, CLX visual independente, GIX, DSP, DEX, MNU, DSI, MLI, MLR, MLE, TLI, TLR, TLE, GCX, GTK, GOX, FCX, GKY, GPN e RST, preservando contratos, status, cancelamento e redaction sem expor dados sensíveis.
 - Fachada de biblioteca equivalente ao `PinpadService`, com configuração, ciclo de vida, estados, comandos de display, imagem, tabelas EMV, transações GCX, leitura de teclas, reset e captura de PIN.
 - Executável de validação em `cmd/libpinpadabecsgo`.
 - Script `start_aplication.bat` para teste local sem privilégios administrativos, com configuração temporária da porta serial e binário gerado no diretório do módulo.

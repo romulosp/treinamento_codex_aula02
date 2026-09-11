@@ -24,6 +24,7 @@ func fixed(value string, size int) string {
 func BuildDSPCommand(line1, line2 string) []byte {
 	return BuildPacketPayload(CommandDSP, fixed(line1, 16)+fixed(line2, 16))
 }
+
 // BuildDEXCommand monta o comando DEX conforme ABECS 3.3.4: DEX_MSGLEN (N3)
 // seguido de DEX_MSG (S..160), sem campos de alinhamento ou tipo de mensagem.
 func BuildDEXCommand(message string) ([]byte, error) {
@@ -54,6 +55,7 @@ func BuildGKYCommand(mode byte, timeout int) ([]byte, error) {
 	}
 	return BuildPacketPayload(CommandGKY, string([]byte{'0' + mode})+strconv.Itoa(timeout)), nil
 }
+
 // BuildPacketPayload monta o payload logico ABECS (CMD_ID + LEN(3) + parametros)
 // para o comando informado. O enquadramento SYN/ETB/CRC e feito posteriormente
 // pela camada de transporte (service.exchange), nunca aqui.

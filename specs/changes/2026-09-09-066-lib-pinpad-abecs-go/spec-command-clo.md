@@ -1,7 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comando CLO
 
 ## Status
-`RASCUNHO`
+`SPEC_APROVADA`
 
 ## Objetivo
 Definir o encerramento lógico da comunicação ABECS antes do fechamento da porta serial. `Close` deve separar o encerramento do protocolo do fechamento do handle físico.
@@ -16,7 +16,9 @@ Definir o encerramento lógico da comunicação ABECS antes do fechamento da por
 - Enviar CLO pelo worker quando a sessão ABECS exigir.
 - Validar ACK, status, timeout e erros.
 - Registrar `SPE CMD=CLO`, `PP`, `RSP CMD=CLO STATUS=...` e `close()`.
-- O encerramento seguro `CLX`, se exigido, possui SPEC própria.
+- O encerramento de comunicação segura, quando exigido, é responsabilidade de
+  `CLO` e segue `spec-protocolo-seguro.md`; `CLX` é exclusivamente visual e
+  possui SPEC própria.
 
 ## Critérios de aceite
 - [ ] CLO é transmitido a um pinpad real quando aplicável.

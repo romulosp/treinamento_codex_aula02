@@ -1,10 +1,15 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comunicação segura ABECS
 
 ## Status
-`RASCUNHO`
+`SPEC_APROVADA`
 
 ## Objetivo
-Definir a conversão das funções de comunicação segura existentes no legado Java + JNI + C para Go, sem misturar criptografia com o parser de comandos em claro. Esta SPEC é transversal, mas necessária para `OPN` seguro, `CLO`/`CLX` seguro, pacotes iniciados por `DC2` e os comandos que transportam dados protegidos.
+Definir a conversão da comunicação segura existente no legado Java + JNI + C
+para Go, sem misturar criptografia com o parser de comandos em claro. Esta
+SPEC é transversal e integra o escopo desta Change para `OPN` seguro, `CLO`,
+`CLX`, pacotes iniciados por `DC2` e comandos protegidos. `CLX` permanece uma
+operação visual na fachada, mas o pinpad encerra a comunicação segura e limpa
+`KSEC` quando o recebe, conforme manual ABECS v2.12, seção 6.4.5.
 
 ## Escopo
 - RSA PKCS#1 usado na negociação prevista pelo manual.
@@ -12,6 +17,8 @@ Definir a conversão das funções de comunicação segura existentes no legado 
 - AES-CBC, IV, padding e formato do pacote cifrado, somente conforme manual/legado comprovado.
 - Estados `CLEAR`, `SECURE`, `CLOSING` e falha, caso sejam necessários ao dispositivo.
 - Integração com `SerialPort`, framing e tracer sem expor material criptográfico.
+- Implementação somente após confirmar no manual e no dispositivo a sequência e
+  o formato aprovados para o perfil de comunicação segura.
 
 ## Fora de escopo
 - Criar um protocolo proprietário.
@@ -25,7 +32,14 @@ Definir a conversão das funções de comunicação segura existentes no legado 
 `OPN` deve ser enviado em claro quando o manual exigir. A resposta deve ser validada antes de iniciar qualquer estado seguro.
 
 ### RF-SEC-002 — Negociação RSA
-A chave pública, formato de bloco, padding e mensagens devem ser exatamente os definidos pela revisão do manual adotada. A implementação deve rejeitar chave, tamanho ou bloco inválido.
+
+O legado identifica uma negociação por `OPN` com par RSA de 2048 bits e
+expoente público `65537`, seguida da obtenção de `KSEC` criptografada. A
+implementação Go deverá aceitar somente esse perfil enquanto nenhuma revisão
+normativa aprovada estabelecer outro; deverá validar tamanho, formato do bloco
+e resposta antes de instalar a chave de sessão. A chave pública, formato do
+bloco e padding devem ser exatamente os definidos pela revisão do manual
+adotada; a implementação deve rejeitar chave, tamanho ou bloco inválido.
 
 ### RF-SEC-003 — KSEC temporária
 `KSEC` deve existir somente durante a sessão autorizada, não ser registrada e ser descartada ao fechar, falhar ou cancelar a sessão segura.
@@ -33,8 +47,13 @@ A chave pública, formato de bloco, padding e mensagens devem ser exatamente os 
 ### RF-SEC-004 — AES-CBC
 Pacotes protegidos devem usar o formato aprovado, incluindo IV, padding, `DC2`, tamanho e CRC na ordem documentada. O framing ABECS não pode calcular CRC sobre representação diferente da definida no manual.
 
-### RF-SEC-005 — CLO/CLX
-O encerramento seguro deve ocorrer antes do fechamento físico quando requerido. Falha de encerramento não pode ser ocultada pelo fechamento da porta.
+### RF-SEC-005 — CLO e encerramento
+
+`CLO` encerra a comunicação segura antes do fechamento físico da porta quando o
+perfil adotado assim exigir. `CLX` também a encerra no pinpad, embora não feche
+a porta física. Falha de encerramento não pode ser ocultada pelo fechamento da
+porta; ainda assim, `KSEC`, IV e outros buffers temporários devem ser limpos e
+a fachada deve retornar a estado consistente.
 
 ### RF-SEC-006 — Redaction
 SPE, PP, RSP, `slog`, erros e métricas nunca podem conter RSA, KSEC, AES, IV, PIN, PIN block, KSN, PAN ou pacote cifrado convertido em texto.
@@ -53,13 +72,16 @@ SPE, PP, RSP, `slog`, erros e métricas nunca podem conter RSA, KSEC, AES, IV, P
 - [ ] Manual e dispositivo utilizado confirmam formato, chaves, padding, IV e sequência.
 - [ ] OPN seguro é aceito pelo pinpad físico real.
 - [ ] Um comando protegido é enviado e respondido corretamente sem dados em claro no log.
-- [ ] CLO/CLX encerra a sessão segura e deixa a porta em estado consistente.
+- [ ] CLO encerra a sessão segura e deixa a porta em estado consistente; CLX é
+  comprovado como comando visual que também encerra a sessão segura no pinpad,
+  sem fechar a porta física.
 - [ ] Cancelamento, timeout, NAK e falha criptográfica são erros distinguíveis.
 - [ ] `go test -race ./...` não encontra corrida ou vazamento.
 - [ ] Evidências sanitizadas são registradas em `validation.md`.
 
 ## Dependências
-`spec-command-opn.md`, `spec-command-clo.md`, `spec-command-clx.md`, `spec-infra-serial-cancel.md` e `spec-logging.md`.
+`spec-command-opn.md`, `spec-command-clo.md`, `spec-infra-serial-cancel.md` e
+`spec-logging.md`.
 
 ## Referências
 Manual ABECS v2.12, seções de OPN seguro e comunicação protegida; funções equivalentes identificadas nos fontes Java/JNI/C. A revisão formal deve confirmar se a versão do manual usada pelo dispositivo é compatível.

@@ -1,7 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go
 
 ## Status
-`RASCUNHO`
+`SPEC_APROVADA`
 
 ## Descrição executiva
 
@@ -32,6 +32,16 @@ As validações unitárias podem usar adaptadores determinísticos para framing,
 - `.agents/skills/golang-security/SKILL.md`
 - `.agents/skills/golang-documentation/SKILL.md`
 - `go.bug.st/serial`
+- SPECs individuais desta Change: `spec-command-can.md`, `spec-command-opn.md`,
+  `spec-command-clo.md`, `spec-command-clx.md`, `spec-command-gix.md`,
+  `spec-command-dsp.md`, `spec-command-dex.md`, `spec-command-mnu.md`,
+  `spec-command-dsi.md`, `spec-command-qrcode.md`, `spec-command-mli.md`,
+  `spec-command-mlr.md`, `spec-command-mle.md`, `spec-command-tli.md`,
+  `spec-command-tlr.md`, `spec-command-tle.md`, `spec-command-gky.md`,
+  `spec-command-gcx.md`, `spec-command-gtk.md`, `spec-command-gox.md`,
+  `spec-command-fcx.md`, `spec-command-gpn.md` e `spec-command-rst.md`.
+- SPECs transversais desta Change: `spec-logging.md`,
+  `spec-infra-serial-cancel.md` e `spec-protocolo-seguro.md`.
 - Manual ABECS v2.12 fornecido para esta Change e requisitos comportamentais derivados do legado. Caso uma implementação seja baseada em outra revisão do manual, a versão deverá ser registrada na SPEC individual e validada contra o dispositivo utilizado.
 
 ## Requisitos funcionais
@@ -59,10 +69,20 @@ Suportar Windows e Linux, incluindo portas `COM1..COMn`, `/dev/ttyS*`, `/dev/tty
 
 Variáveis:
 
-- obrigatória: `PORTA_PINPAD`;
+- `PORTA_PINPAD`: opcional e prioritária; quando definida no ambiente do
+  processo e não vazia, substitui a porta do modelo;
 - opcionais: `PINPAD_BAUDRATE`, `PINPAD_TIMEOUT`, `LOG_LEVEL`.
 
-Defaults: baud rate `19200`, timeout `30s`, log `INFO`. O modelo `PinpadConfig` deverá conter `Port`, `BaudRate`, `Timeout`, `AutoLoadEMVTables`, `UseGCXInitialization`, `GCXInitTimeout`, `AcquirerIndex` e `TableVersion`, com defaults `COM3`, `19200`, `30s`, `false`, `true`, `5s`, `00` e `TABVER0001`, respectivamente. A obrigatoriedade de `PORTA_PINPAD` na execução deverá ser resolvida de modo consistente com o default do modelo e documentada no README.
+Defaults: porta `COM7`, baud rate `19200`, timeout `30s`, log `INFO`. O modelo
+`PinpadConfig` deverá conter `Port`, `BaudRate`, `Timeout`,
+`AutoLoadEMVTables`, `UseGCXInitialization`, `GCXInitTimeout`, `AcquirerIndex`
+e `TableVersion`, com defaults `COM7`, `19200`, `30s`, `false`, `true`, `5s`,
+`00` e `TABVER0001`, respectivamente. O carregamento operacional inicia com
+esses defaults e aplica as variáveis de ambiente definidas no processo; logo,
+ausência de `PORTA_PINPAD` usa `COM7`, enquanto valor presente e não vazio tem
+precedência. Um valor vazio, baud rate inválido ou timeout inválido retorna erro
+de configuração. O README e `start_aplication.bat` devem refletir essa mesma
+precedência sem persistir alteração no sistema.
 
 ### RF-003 — Modelos e estados
 
@@ -92,9 +112,9 @@ Esta Change deverá gerar, em Go, os seguintes grupos de constantes e modelos, s
 
 - `protocol`: bytes de controle, tags `RSP_DATID`, bases de tags dinâmicas, tipos multimídia e limites `MLR`/`TLR`;
 - `state`: todos os códigos `RSP_STAT` de `ST_OK` a `ST_MFERR`, com `GetStatusDescription`;
-- `command`: todos os parâmetros `SPE_xxx`, códigos e modos `GKY`, métodos e tamanhos `GPN`, opções, tipos de transação e estados ICC de `GCX`;
-- `model`: `BerTLV` e `GCXResponse`, incluindo campos de dados EMV e tags sensíveis sujeitos a redaction;
-- `command`: catálogo, builders e contratos dos comandos `DSP`, `DEX`, `MNU`, `DSI`, `MLI`, `MLR`, `MLE`, `TLI`, `TLR`, `TLE`, `GKY`, `GPN`, `GCX`, `GOX`, `FCX` e `RST`.
+- `command`: todos os parâmetros `SPE_xxx`, códigos e modos `GKY`, métodos e tamanhos `GPN`, opções, tipos de transação e estados ICC de `GCX`, `GTK`, `GOX` e `FCX`;
+- `model`: `BerTLV`, `GCXResponse` e modelos próprios de `GTK`, `GOX` e `FCX`, incluindo campos de dados EMV e tags sensíveis sujeitos a redaction;
+- `command`: catálogo, builders e contratos dos comandos `DSP`, `DEX`, `MNU`, `DSI`, `MLI`, `MLR`, `MLE`, `TLI`, `TLR`, `TLE`, `GKY`, `GPN`, `GCX`, `GTK`, `GOX`, `FCX`, `CLX` e `RST`.
 
 Os artefatos futuros devem expor somente constantes, tipos, builders e contratos nesta Change; não devem implementar fluxo transacional para comandos avançados.
 
@@ -140,7 +160,12 @@ Implementar completamente os comandos CAN, OPN, GIX e CLO:
 - GIX: payload `GIX000`, resposta ACK e payload;
 - CLO: payload `CLO000`, resposta ACK.
 
-Para DSP, DEX, MNU, DSI, MLI, MLR, MLE, GCX, GOX, FCX, GKY, GPN, RST, TLI, TLR e TLE criar os contratos, tipos, builders, parsers e fluxos definidos em RF-012. Os fluxos não poderão introduzir REST, servidor, UI ou transporte diferente da porta serial.
+`CLX` será implementado como encerramento visual não bloqueante, separado de
+`CLO` e da comunicação segura, conforme `spec-command-clx.md`. Para DSP, DEX,
+MNU, DSI, MLI, MLR, MLE, GCX, GTK, GOX, FCX, GKY, GPN, RST, TLI, TLR e TLE criar
+os contratos, tipos, builders, parsers e fluxos definidos em RF-012 e nas SPECs
+individuais citadas. Os fluxos não poderão introduzir REST, servidor, UI ou
+transporte diferente da porta serial.
 
 ### RF-011 — Logging
 
@@ -210,7 +235,20 @@ A implementação Go deverá gerar os artefatos abaixo. Os nomes são contratos 
 - `BuildRSTCommand`/`SendRSTCommand`, ACK, resposta RST, status e timeout;
 - integração com `PinpadService`, estado `BUSY`, fila FIFO, cancelamento e shutdown seguro.
 
-#### 10. Artefatos que não serão gerados
+#### 10. GTK, GOX, FCX e CLX
+
+- `GTK`: builder, parser e modelo próprios, com pré-condição de captura,
+  seleção de PAN/trilhas, criptografia, KSN e redaction conforme
+  `spec-command-gtk.md`;
+- `GOX`: builder, parser e modelo próprios para continuação EMV, decisão,
+  PIN online, KSN e TLV, conforme `spec-command-gox.md`;
+- `FCX`: builder, parser e modelo próprios para resposta da credenciadora,
+  objetos EMV e Issuer Script Results, conforme `spec-command-fcx.md`;
+- `CLX`: builder e parser para mensagem/mídia de encerramento visual não
+  bloqueante, conforme `spec-command-clx.md`; não fecha a porta física, mas o
+  pinpad encerra comunicação segura e limpa `KSEC` quando ela estiver ativa.
+
+#### 11. Artefatos que não serão gerados
 
 Não serão gerados: REST, HTTP, WebSocket, servidor, Windows Service, Linux daemon, UI, instalador, API de comando hexadecimal bruto, armazenamento de PAN/PIN, logs de dados sensíveis ou tradução literal de `HANDLE`, `DWORD`, `CRITICAL_SECTION` e `CreateFileA`.
 
@@ -234,6 +272,8 @@ Os arquivos C++ fornecidos como anexos são somente entrada de requisitos para e
 | `comparePackets`, `logPacketFormatted`, `buildFixedGCXTest` | somente utilitários de teste/debug; não entram no fluxo produtivo nem registram dados sensíveis |
 | `sendGPNCommand`, `sendGPNCommandMK`, `sendGPNCommandDUKPT` | builders, validações, parser binário e serviço GPN com redaction obrigatória |
 | `sendRSTCommand` | comando RST e confirmação de resposta |
+| `getTracks`, `closeEx`, `startGoOnChipEx`, `goOnChipEx`, `finishChipEx` | comandos e modelos próprios GTK, CLX, GOX e FCX, sem mistura de respostas entre fluxos |
+| `open` seguro, geração RSA e cifragem/decifragem AES do legado | comunicação segura isolada conforme `spec-protocolo-seguro.md`, sem JNI, CGO ou logging de chave |
 | constantes, `BerTlvObject` e `GCXResponse` | constantes Go, `BerTLV` e `GCXResponse` documentados nesta SPEC |
 
 ### RF-013 — Fachada de serviço da biblioteca
@@ -244,6 +284,9 @@ A biblioteca deverá gerar uma fachada Go equivalente ao contrato funcional de `
 
 - `SetConfig` e `GetConfig`, com cópia segura da configuração e validação dos campos;
 - `Open`, `Close`, `Reset` e `ResetPinpad`, com transições `CLOSED → OPEN → BUSY → OPEN`;
+- `Close` executa o encerramento seguro por `CLO` quando houver sessão segura,
+  limpa material temporário e só então fecha a porta; `CLX` também desativa a
+  comunicação segura no pinpad, mas não fecha a porta física;
 - `GetState`, `EnsureOpen` e erros distinguíveis para porta fechada, ocupada, indisponível, timeout, NAK e resposta inválida;
 - `Shutdown` idempotente, encerrando worker, cancelando operações pendentes e fechando a porta quando aplicável;
 - substituição de `HANDLE`, `recursive_mutex`, `Sleep` e `DWORD` por interfaces Go, `sync`, `context.Context` e `time.Duration`.
@@ -286,6 +329,18 @@ Esta Change implementará o fluxo GCX no mesmo subconjunto já serializado em RF
 - `TransactionGCX` com tipo de transação, referência do adquirente, tipo de aplicação, lista de AIDs, cashback, moeda, máscara de PAN, dados EMV e lista de tags **não será implementado nesta Change**: a serialização completa desses campos depende de tabela de tags, ordem e limites ainda não documentados nesta SPEC. O contrato Go (assinatura da interface/método) poderá existir como stub retornando `ErrNotImplemented`, para reserva de nome, mas nenhuma serialização inventada será escrita. A implementação completa de `TransactionGCX` fica para uma Change futura, quando a tabela de parâmetros for especificada;
 - nenhuma entrada ou resposta sensível será registrada em texto ou hexadecimal.
 
+#### Continuação e finalização EMV
+
+- `GetTracks`/`GTK` só opera após captura elegível e retorna seu próprio modelo
+  de dados sensíveis, nunca campos adicionados a `GCXResponse`;
+- `ContinueEMV`/`GOX` exige `GCX` ICC/CTLS EMV bem-sucedido, processa os
+  parâmetros EMV especificados e retorna decisão, PIN block/KSN quando
+  aplicáveis e objetos TLV no modelo próprio;
+- `FinishEMV`/`FCX` sucede GOX quando requerido pela decisão EMV ou pela regra
+  da credenciadora e retorna resultado e Issuer Script Results no modelo próprio;
+- todos os três fluxos passam por fila, contexto, autorização do consumidor e
+  redaction integral, conforme suas SPECs individuais.
+
 #### Teclas, reset e PIN
 
 - `WaitForKeyPress`, com timeout em segundos e retorno dos códigos `GKY_KEY_*`;
@@ -309,6 +364,8 @@ Todos os métodos da fachada deverão retornar erros Go estruturados, preservand
 | `tableLoadInitiate`, `tableLoadRecord`, `tableLoadEnd`, `loadCompleteEMVTable` | operações EMV individuais e orquestração completa |
 | `sendGCXInitialization`, `purchaseGCX` | fachada transacional GCX no subconjunto especificado em RF-012.7 |
 | `transactionGCX` (parâmetros completos) | reservado como stub `ErrNotImplemented`; serialização completa fica para Change futura |
+| `getTracks`, `startGoOnChipEx`, `goOnChipEx`, `finishChipEx` | fachadas GTK, GOX e FCX com modelos de resposta próprios e redaction integral |
+| `closeEx` | fachada CLX visual não bloqueante; não fecha porta, mas o pinpad encerra sessão segura ativa |
 | `waitForKeyPress`, `resetPinpad` | GKY e RST na fachada |
 | `getPIN`, `getPIN_MK`, `getPIN_DUKPT` | fachada GPN com proteção de dados sensíveis |
 | `sendAndWaitResponse`, `sendEMVCommand`, `setError` | helpers internos, não exportados; `getMutex` não será exposto |
@@ -375,13 +432,19 @@ Cada comando abaixo deverá possuir uma SPEC individual, ou uma SPEC individual 
 | Transação/cartão | `GCX`, `GTK`, `GOX`, `FCX` | parâmetros, tags permitidas, dados sensíveis e sequência |
 | PIN | `GPN` | MK/WK/DUKPT, validação e redaction integral |
 
-Também devem existir SPECs próprias para logging SPE/PP/RSP e cancelamento de leitura serial, por serem contratos transversais com critérios observáveis. Uma fachada que apenas encaminha bytes sem implementar o contrato do comando deve permanecer marcada como parcial ou `ErrNotImplemented`.
+Também devem existir SPECs próprias para logging SPE/PP/RSP, cancelamento de
+leitura serial e comunicação segura RSA/AES/KSEC, por serem contratos
+transversais com critérios observáveis. Uma fachada que apenas encaminha bytes
+sem implementar o contrato do comando deve permanecer marcada como parcial ou
+`ErrNotImplemented`.
 
 ### RF-016 — Execução local sem privilégios administrativos
 
 Deverá existir `start_aplication.bat` na raiz do módulo para execução por usuário comum do Windows, sem exigir elevação de privilégio e sem gravar configuração permanente no sistema. O script deverá:
 
-- definir `PORTA_PINPAD`, `PINPAD_BAUDRATE` e `PINPAD_TIMEOUT` somente na sessão do processo;
+- preservar `PORTA_PINPAD` já definida no ambiente da sessão e atribuir `COM7`
+  somente quando ela estiver ausente ou vazia; definir `PINPAD_BAUDRATE` e
+  `PINPAD_TIMEOUT` somente na sessão do processo;
 - definir `GOROOT` explicitamente quando o ambiente Go configurado estiver fora do PATH padrão;
 - usar cache de compilação e módulo dentro do diretório do módulo, quando necessário;
 - compilar o executável em um diretório local do módulo e executá-lo a partir desse diretório, evitando depender do executável temporário em `%LOCALAPPDATA%\go-build`;
@@ -409,6 +472,19 @@ O requisito aplica-se ao código de produção e aos exemplos executáveis que f
 - não será aceito código novo sem documentação apenas porque o método é interno, se sua ausência dificultar a compreensão de protocolo, segurança, concorrência ou conversão do legado.
 
 A revisão da implementação deverá verificar a cobertura documental de todos os pacotes e símbolos exportados, e a validação deverá registrar a inspeção executada. A ausência de documentação exigida por este RF bloqueia a aprovação da implementação.
+
+### RF-018 — Comunicação segura ABECS
+
+Comunicação segura integra o escopo desta Change e é definida por
+`spec-protocolo-seguro.md`, que prevalece para negociação por OPN, ciclo de vida
+de `KSEC`, pacotes protegidos, AES-CBC, `DC2`, CRC, redaction e encerramento por
+`CLO`. O perfil inicialmente permitido é o comprovado pelo legado e pelo
+manual ABECS v2.12: RSA de 2048 bits com expoente público 65537 para negociar
+uma chave de sessão temporária. Algoritmo, padding, IV, ordem de campos e
+formato de pacote não poderão ser deduzidos ou alterados fora da SPEC
+transversal e da confirmação no dispositivo de laboratório. `CLX` é o comando
+visual definido em `spec-command-clx.md` e também desativa a comunicação segura
+no pinpad, sem fechar a porta física.
 
 ## Requisitos não funcionais
 
@@ -444,16 +520,18 @@ A revisão da implementação deverá verificar a cobertura documental de todos 
 - [ ] **CA-011:** `go test ./...`, cobertura, `go test -race ./...` e `go vet ./...` são executados e registrados.
 - [ ] **CA-012:** cobertura aplicável é igual ou superior a 80%, sem percentual inventado.
 - [ ] **CA-013:** nenhum log/teste contém dados sensíveis reais.
-- [ ] **CA-014:** builders e parsers derivados da classe C++ cobrem display, multimídia, tabelas EMV, GKY, GCX (subconjunto RF-012.7), GPN e RST.
+- [ ] **CA-014:** builders e parsers derivados do legado cobrem display, multimídia, tabelas EMV, GKY, GCX (subconjunto RF-012.7), GTK, GOX, FCX, CLX, GPN e RST.
 - [ ] **CA-015:** transporte serial preserva bytes excedentes e suporta frames agrupados em uma ou várias leituras.
-- [ ] **CA-016:** fachada Go cobre ciclo de vida, `GetInfo`/`GetInfoRaw`, display, imagem, EMV, GCX (subconjunto), GKY, RST e GPN, sem expor `SendRawCommand`.
+- [ ] **CA-016:** fachada Go cobre ciclo de vida, `GetInfo`/`GetInfoRaw`, display, imagem, EMV, GCX (subconjunto), GTK, GOX, FCX, CLX, GKY, RST e GPN, sem expor `SendRawCommand`.
 - [ ] **CA-016a:** `DisplayQRCode` usa `QRCodeGenerator` injetado, retorna `ErrQRCodeGeneratorNotConfigured` quando ausente, valida tamanho 50-320 e margem 0-10, e reporta `xPos`/`yPos` como não suportados de forma explícita no resultado.
 - [ ] **CA-016b:** `TransactionGCX` completo retorna `ErrNotImplemented` sem serializar campos não especificados nesta SPEC.
 - [ ] **CA-016c:** `LoadCompleteEMVTable` reconhece `StatusTableVersionDifferent` como resultado válido de TLI e interrompe corretamente em falha de TLR/TLE.
 - [ ] **CA-017:** concorrência, cancelamento, shutdown e proteção de dados sensíveis são testados na fachada.
 - [ ] **CA-018:** `Enqueue` nunca bloqueia o produtor e retorna `ErrQueueFull` na capacidade máxima; `Submit` bloqueia até resultado ou cancelamento de contexto; `Clear` e `Stop` cancelam comandos pendentes sem executar após o encerramento; `SessionManager` cobre posse, conflito, renovação, liberação e expiração de 300 segundos com relógio injectável.
 - [ ] **CA-019:** nenhum artefato de bridge HTTP, WebSocket, listener TCP ou estado global de servidor é gerado.
-- [ ] **CA-020:** `start_aplication.bat` executa como usuário comum, usa `COM7` como configuração local atual sem persistência, compila o binário em diretório do módulo e informa claramente bloqueios de política de grupo.
+- [ ] **CA-020:** carregamento usa `COM7` somente quando `PORTA_PINPAD` estiver ausente; valor não vazio definido no ambiente do processo tem precedência. `start_aplication.bat` preserva essa variável quando já existente, executa como usuário comum, não persiste configuração, compila o binário em diretório do módulo e informa claramente bloqueios de política de grupo.
 - [ ] **CA-021:** todo pacote Go entregue possui comentário de pacote, todos os símbolos exportados possuem comentários iniciados pelo identificador e os fluxos internos complexos de protocolo, segurança, concorrência e cancelamento estão documentados conforme RF-017.
 - [ ] **CA-022:** exemplos executáveis definidos como parte da documentação passam em `go test`, não expõem dados sensíveis e refletem somente contratos aprovados nas SPECs.
 - [ ] **CA-023:** a revisão da implementação registra a inspeção documental, incluindo pacotes, símbolos exportados, código gerado e divergências encontradas; qualquer lacuna bloqueia a aprovação.
+- [ ] **CA-024:** GTK, GOX, FCX e CLX possuem builders, parsers, modelos e fluxos próprios conforme suas SPECs individuais; nenhum campo de trilha, PIN/KSN ou Issuer Script Results é atribuído a `GCXResponse`.
+- [ ] **CA-025:** OPN seguro, pacote protegido e encerramento por CLO/CLX são validados no pinpad físico conforme `spec-protocolo-seguro.md`, sem registrar KSEC, RSA, AES, IV, PIN, PAN, KSN ou criptogramas; `CLX` é validado como comando visual que encerra a sessão segura do pinpad sem fechar a porta física.

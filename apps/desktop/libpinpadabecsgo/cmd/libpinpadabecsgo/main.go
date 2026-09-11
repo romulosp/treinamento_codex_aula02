@@ -1,14 +1,17 @@
+// Command libpinpadabecsgo executa o menu local de validação manual da
+// biblioteca ABECS e configura seus adaptadores sem expor serviços de rede.
 package main
 
 import (
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/application/service"
+	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/command"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/model"
+	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/protocol"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/infrastructure/config"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/infrastructure/logging"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/infrastructure/serial"
 	"bufio"
 	"context"
-	"encoding/hex"
 	"fmt"
 	"log/slog"
 	"os"
@@ -32,12 +35,48 @@ func main() {
 	}
 	logger.Info("configuracao carregada", slog.String("port", cfg.Port), slog.Int("baudRate", cfg.BaudRate), slog.Duration("timeout", cfg.Timeout))
 
+	tracer := logging.NewTracer()
+	destination, err := configureTracer(tracer)
+	if err != nil {
+		logger.Error("falha ao configurar rastro serial", slog.Any("error", err))
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	if destination != "" {
+		logger.Info("rastro serial configurado", slog.String("arquivo", destination))
+	}
+	defer func() {
+		if closeErr := tracer.Close(); closeErr != nil {
+			logger.Error("falha ao fechar rastro serial", slog.Any("error", closeErr))
+		}
+	}()
+
 	port := serial.New(cfg.Port, cfg.BaudRate, cfg.Timeout)
+	port.SetTracer(tracer)
 	svc := service.New(cfg, port)
+	svc.SetTracer(tracer)
 	defer svc.Shutdown()
 
 	reader := bufio.NewReader(os.Stdin)
 	runMenu(reader, svc, cfg, logger)
+}
+
+// configureTracer habilita o rastro somente quando PINPAD_LOG_FILE foi
+// definido pelo operador ou pelo script local. Retorna o caminho ativo para
+// exibição no CLI e preserva a biblioteca sem destino padrão implícito.
+func configureTracer(tracer *logging.Tracer) (string, error) {
+	destination := strings.TrimSpace(os.Getenv("PINPAD_LOG_FILE"))
+	if destination == "" {
+		return "", nil
+	}
+	active, err := tracer.SetLogDestination(destination)
+	if err != nil {
+		return "", fmt.Errorf("configurar PINPAD_LOG_FILE: %w", err)
+	}
+	if !active {
+		return "", fmt.Errorf("PINPAD_LOG_FILE nao ativou o rastro")
+	}
+	return destination, nil
 }
 
 func runMenu(reader *bufio.Reader, svc *service.Service, cfg model.PinpadConfig, logger *slog.Logger) {
@@ -91,8 +130,78 @@ func runMenu(reader *bufio.Reader, svc *service.Service, cfg model.PinpadConfig,
 			clock := readLine(reader, "Hora da transacao (HHMMSS): ")
 			resp, err := svc.PurchaseGCX(ctx, amount, date, clock, false, false)
 			if handleErr(logger, "PurchaseGCX (GCX)", err) {
-				fmt.Printf("Tipo de cartao: %s | PAN: %s | Nome: %s\n", resp.CardType, resp.PAN, resp.CardholderName)
+				fmt.Printf("Tipo de cartao: %s\n", resp.CardType)
 			}
+		case "12":
+			response, err := svc.GetInfoRaw(ctx)
+			if handleErr(logger, "GetInfoRaw (GIX)", err) {
+				fmt.Printf("Status: %s | Bytes recebidos: %d\n", response.StatusCode, len(response.RawData))
+			}
+		case "13":
+			capabilities, err := svc.GetDisplayCapabilities(ctx)
+			if handleErr(logger, "GetDisplayCapabilities (GIX)", err) {
+				fmt.Printf("Display: %dx%d texto, %dx%d grafico | PNG=%t JPG=%t GIF=%t CTLS=%t\n", capabilities.TextLines, capabilities.TextCols, capabilities.GraphicWidth, capabilities.GraphicHeight, capabilities.SupportsPNG, capabilities.SupportsJPG, capabilities.SupportsGIF, capabilities.SupportsCTLS)
+			}
+		case "14":
+			privateKey, _, err := protocol.GenerateSecureOPN()
+			if err == nil {
+				err = svc.OpenSecure(ctx, privateKey)
+			}
+			handleErr(logger, "OpenSecure (OPN RSA/AES)", err)
+		case "15":
+			message := readLine(reader, "Mensagem visual (vazio para limpar): ")
+			mediaName := readLine(reader, "Nome da midia (opcional): ")
+			_, err := svc.CloseVisual(ctx, command.CLXRequest{Message: message, MediaName: mediaName})
+			handleErr(logger, "CloseVisual (CLX)", err)
+		case "16":
+			path := readLine(reader, "Caminho do arquivo local: ")
+			name := readLine(reader, "Nome da midia no pinpad: ")
+			handleErr(logger, "LoadMultimediaPath (MLI/MLR/MLE)", svc.LoadMultimediaPath(ctx, path, name, printProgress))
+		case "17":
+			name := readLine(reader, "Nome da midia carregada: ")
+			_, err := svc.DisplayImage(ctx, name)
+			handleErr(logger, "DisplayImage (DSI)", err)
+		case "18":
+			acquirer := readLine(reader, "Indice do adquirente (ex.: 00): ")
+			version := readLine(reader, "Versao da tabela: ")
+			records := splitRecords(readLine(reader, "Registros separados por ';': "))
+			handleErr(logger, "LoadCompleteEMVTable (TLI/TLR/TLE)", svc.LoadCompleteEMVTable(ctx, acquirer, version, records, printProgress))
+		case "19":
+			_, err := svc.SendGCXInitialization(ctx)
+			handleErr(logger, "SendGCXInitialization (GCX)", err)
+		case "20":
+			keyIndex := readInt(reader, "Indice da chave: ")
+			_, err := svc.GetTracks(ctx, command.GTKRequest{Tracks: "1111", DataMethod: "50", KeyIndex: &keyIndex})
+			if handleErr(logger, "GetTracks (GTK)", err) {
+				fmt.Println("Trilhas recebidas e mantidas redigidas no utilitario local.")
+			}
+		case "21":
+			_, err := svc.ContinueEMV(ctx, command.GOXRequest{AcquirerReference: "01", PinMethod: "3", KeyIndex: 1})
+			handleErr(logger, "ContinueEMV (GOX)", err)
+		case "22":
+			_, err := svc.FinalizeEMV(ctx, command.FCXRequest{Options: "0000", Authorization: "00"})
+			handleErr(logger, "FinalizeEMV (FCX)", err)
+		case "23":
+			keyIndex := readInt(reader, "Indice da chave: ")
+			pan := readLine(reader, "PAN (nao sera exibido): ")
+			message := readLine(reader, "Mensagem de PIN: ")
+			_, _, err := svc.SendGPNCommandMK(ctx, keyIndex, pan, message)
+			if handleErr(logger, "SendGPNCommandMK (GPN)", err) {
+				fmt.Println("PIN coletado; PIN block e KSN foram redigidos.")
+			}
+		case "24":
+			ksn := readLine(reader, "KSN (nao sera exibido): ")
+			pan := readLine(reader, "PAN (nao sera exibido): ")
+			message := readLine(reader, "Mensagem de PIN: ")
+			_, _, err := svc.SendGPNCommandDUKPT(ctx, ksn, pan, message)
+			if handleErr(logger, "SendGPNCommandDUKPT (GPN)", err) {
+				fmt.Println("PIN coletado; PIN block e KSN foram redigidos.")
+			}
+		case "25":
+			fmt.Println("DisplayQRCode requer QRCodeGenerator injetado pelo consumidor; o CLI nao adiciona gerador concreto.")
+		case "26":
+			_, err := svc.TransactionGCX(ctx, service.TransactionGCXRequest{})
+			handleErr(logger, "TransactionGCX completo (reservado)", err)
 		case "0":
 			cancel()
 			fmt.Println("Encerrando...")
@@ -122,6 +231,21 @@ func printMenu(cfg model.PinpadConfig) {
 	fmt.Println(" 9) Exibir menu interativo (MNU)")
 	fmt.Println("10) Aguardar tecla pressionada (GKY)")
 	fmt.Println("11) Iniciar transacao de compra (GCX)")
+	fmt.Println("12) Obter resposta bruta resumida (GIX)")
+	fmt.Println("13) Obter capacidades do display (GIX)")
+	fmt.Println("14) Abrir sessao segura (OPN RSA/AES)")
+	fmt.Println("15) Atualizar/limpar display visual (CLX)")
+	fmt.Println("16) Carregar arquivo de midia (MLI/MLR/MLE)")
+	fmt.Println("17) Exibir midia carregada (DSI)")
+	fmt.Println("18) Carregar tabela EMV (TLI/TLR/TLE)")
+	fmt.Println("19) Inicializar transacao GCX")
+	fmt.Println("20) Obter trilhas apos GCX elegivel (GTK, redigido)")
+	fmt.Println("21) Continuar transacao EMV (GOX)")
+	fmt.Println("22) Finalizar transacao EMV (FCX)")
+	fmt.Println("23) Capturar PIN MK/WK (GPN, redigido)")
+	fmt.Println("24) Capturar PIN DUKPT (GPN, redigido)")
+	fmt.Println("25) Exibir QR Code (requer gerador injetado)")
+	fmt.Println("26) Transacao GCX completa (reservada na SPEC)")
 	fmt.Println(" 0) Sair")
 	fmt.Println("==========================================")
 }
@@ -139,7 +263,7 @@ func stateName(state model.PinpadState) string {
 
 // printDeviceInfo exibe os dados do GIX ja refinados (nomes legiveis e
 // campos compostos decompostos), conforme secao 6.4.3 da especificacao
-// ABECS. O hex bruto e mantido apenas como informacao de diagnostico.
+// ABECS. Dados brutos não são exibidos para evitar vazamento acidental.
 func printDeviceInfo(info *model.DeviceInfo) {
 	fmt.Println("--- Informacoes do pinpad (GIX) ---")
 	fmt.Printf("numeroSerie:: %s\n", info.SerialNumber)
@@ -165,7 +289,6 @@ func printDeviceInfo(info *model.DeviceInfo) {
 	fmt.Printf("largura:: %d\n", info.GraphicWidth)
 	fmt.Printf("altura:: %d\n", info.GraphicHeight)
 	fmt.Printf("formatosSuportados:: %s\n", info.SupportedFormats)
-	fmt.Printf("Resposta bruta (hex): %s\n", hex.EncodeToString(info.RawData))
 }
 
 func handleErr(logger *slog.Logger, operation string, err error) bool {
@@ -205,3 +328,20 @@ func splitOptions(raw string) []string {
 	return options
 }
 
+// splitRecords separa registros fornecidos no CLI sem transportar linhas vazias.
+func splitRecords(raw string) []string {
+	parts := strings.Split(raw, ";")
+	records := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if value := strings.TrimSpace(part); value != "" {
+			records = append(records, value)
+		}
+	}
+	return records
+}
+
+// printProgress informa apenas progresso agregado, sem imprimir payloads ou dados sensíveis.
+func printProgress(_ context.Context, current, total int64) error {
+	fmt.Printf("Progresso: %d/%d\n", current, total)
+	return nil
+}

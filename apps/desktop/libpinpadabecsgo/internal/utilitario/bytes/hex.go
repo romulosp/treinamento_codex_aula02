@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// FromHex converte texto hexadecimal em bytes, aceitando espaços e prefixo 0x.
 func FromHex(value string) ([]byte, error) {
 	clean := strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(value), " ", ""), "0x", "")
 	if len(clean)%2 != 0 {
@@ -17,4 +18,6 @@ func FromHex(value string) ([]byte, error) {
 	}
 	return out, nil
 }
+
+// ToHex converte bytes em texto hexadecimal maiúsculo.
 func ToHex(value []byte) string { return strings.ToUpper(hex.EncodeToString(value)) }

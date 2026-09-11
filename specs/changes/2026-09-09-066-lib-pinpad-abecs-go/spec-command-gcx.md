@@ -1,7 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comando GCX (transação/captura de cartão)
 
 ## Status
-`RASCUNHO`
+`SPEC_APROVADA`
 
 ## Papel do comando no projeto
 

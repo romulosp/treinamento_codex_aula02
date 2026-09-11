@@ -1,7 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comando TLI (início de carga de tabela EMV)
 
 ## Status
-`RASCUNHO`
+`SPEC_APROVADA`
 
 ## Papel do comando no projeto
 

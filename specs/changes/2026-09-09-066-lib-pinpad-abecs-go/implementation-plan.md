@@ -31,7 +31,9 @@
 3. Consolidar modelos, constantes, erros e catálogo de status/comandos.
 4. Validar CRC, substitution, framing, leitura de resposta e parsers ABECS/BER-TLV com limites defensivos.
 5. Ajustar `SerialPort` para propagação de contexto e cancelamento efetivo.
-6. Implementar logging com redaction e tracer SPE/PP/RSP sem duplicação.
+6. Implementar logging com redaction e tracer SPE/PP/RSP sem duplicação,
+   injetando a mesma instância no serviço e no adaptador serial; o script local
+   cria `logs/LogPinpadAbecs.txt` ou respeita `PINPAD_LOG_FILE`.
 7. Revisar `SessionManager`, fila FIFO de capacidade 100, worker único, cancelamento e shutdown.
 8. Implementar e validar individualmente CAN/OPN/GIX/CLO/CLX/RST.
 9. Implementar e validar display, multimídia, tabelas EMV, GKY, GCX, GTK, GOX, FCX e GPN conforme suas SPECs.
@@ -66,7 +68,7 @@
 ## Riscos, dúvidas e decisões necessárias
 
 - A execução usa Windows 386; a compatibilidade Linux deverá ser comprovada por build/teste em ambiente Linux disponível ou registrada como limitação objetiva.
-- A política de `PORTA_PINPAD` obrigatória versus default de `PinpadConfig` será documentada explicitamente e coberta por testes.
+- `PinpadConfig` inicia com `COM7`; `PORTA_PINPAD` definida e não vazia tem precedência, e ausência usa o default. Essa política deve ser coberta por testes e refletida no script local.
 - A API atual `SerialPort.Read()` ainda precisa ser alinhada à SPEC de cancelamento para receber contexto e retornar `context.Canceled`/`context.DeadlineExceeded` corretamente.
 - A biblioteca serial poderá exigir download de dependência; falha de rede será registrada como bloqueio de ambiente, não contornada com implementação inventada.
 - A validação com hardware físico não está disponível automaticamente; o fake comprovará somente componentes puros e a validação física deverá ser registrada separadamente. Sem essa evidência, o comando permanece não validado.

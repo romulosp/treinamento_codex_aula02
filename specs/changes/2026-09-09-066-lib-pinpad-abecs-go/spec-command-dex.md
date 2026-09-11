@@ -1,7 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comando DEX
 
 ## Status
-`RASCUNHO`
+`SPEC_APROVADA`
 
 ## Objetivo
 Exibir uma mensagem textual do tamanho permitido pelo protocolo ABECS usando `DEX`.

@@ -13,6 +13,7 @@ type result struct {
 	err      error
 }
 
+// CommandQueue define entrada assíncrona e submissão síncrona de comandos FIFO.
 type CommandQueue interface {
 	Enqueue(context.Context, command.Command) error
 	Submit(context.Context, command.Command) (*model.Response, error)
@@ -27,6 +28,8 @@ type item struct {
 	result  chan result
 	cleanup func()
 }
+
+// Queue executa um único worker e cancela operações pendentes no encerramento.
 type Queue struct {
 	mu      sync.Mutex
 	items   chan item
@@ -38,6 +41,7 @@ type Queue struct {
 	stopped bool
 }
 
+// New cria uma fila FIFO; capacidade não positiva usa o padrão de 100 comandos.
 func New(capacity int) *Queue {
 	if capacity <= 0 {
 		capacity = 100
@@ -114,6 +118,8 @@ func (q *Queue) enqueue(ctx context.Context, cmd command.Command, resultCh chan 
 	}
 	return nil
 }
+
+// Submit enfileira e aguarda o resultado, cancelamento ou encerramento da fila.
 func (q *Queue) Submit(ctx context.Context, cmd command.Command) (*model.Response, error) {
 	if ctx == nil {
 		ctx = context.Background()
@@ -129,11 +135,19 @@ func (q *Queue) Submit(ctx context.Context, cmd command.Command) (*model.Respons
 		return nil, ctx.Err()
 	}
 }
+
+// Enqueue insere sem bloquear e retorna ErrQueueFull quando a capacidade esgota.
 func (q *Queue) Enqueue(ctx context.Context, cmd command.Command) error {
 	return q.enqueue(ctx, cmd, make(chan result, 1))
 }
-func (q *Queue) Size() int     { return len(q.items) }
+
+// Size devolve a quantidade de comandos ainda pendentes na fila.
+func (q *Queue) Size() int { return len(q.items) }
+
+// IsEmpty informa se não há comandos pendentes para execução.
 func (q *Queue) IsEmpty() bool { return q.Size() == 0 }
+
+// Clear cancela os comandos ainda não iniciados, sem afetar o comando atual.
 func (q *Queue) Clear() {
 	for {
 		select {
@@ -144,6 +158,8 @@ func (q *Queue) Clear() {
 		}
 	}
 }
+
+// Stop cancela a execução em curso, conclui pendentes e aguarda o worker.
 func (q *Queue) Stop() {
 	q.once.Do(func() {
 		q.mu.Lock()

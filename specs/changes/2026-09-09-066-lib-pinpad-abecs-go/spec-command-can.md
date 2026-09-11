@@ -1,7 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comando CAN
 
 ## Status
-`RASCUNHO`
+`SPEC_APROVADA`
 
 ## Objetivo
 Definir o cancelamento ABECS em baixo nível, usado pela fachada e pelo transporte quando uma operação precisa ser interrompida. `CAN` não é uma transação nem uma resposta de negócio; é um controle de sessão/operação.

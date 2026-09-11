@@ -1,7 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Infraestrutura serial: cancelamento de leitura
 
 ## Status
-`RASCUNHO`
+`SPEC_APROVADA`
 
 ## Papel da infraestrutura
 

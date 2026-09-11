@@ -1,7 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comando OPN
 
 ## Status
-`RASCUNHO`
+`SPEC_APROVADA`
 
 ## Objetivo
 Definir a abertura lógica de comunicação ABECS após a porta serial estar aberta. A abertura do handle serial e o comando ABECS `OPN` são operações distintas e devem ser documentadas separadamente.

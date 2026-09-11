@@ -97,6 +97,69 @@ def build_correction_pdf():
     return output
 
 
+def build_change_066_pdf():
+    """Produz o relatorio atual da Change 066 sem reutilizar auditorias historicas."""
+    output = OUTPUT.with_name("relatorio-066-lib-pinpad-abecs-go.pdf")
+    styles = build_styles()
+    document = BaseDocTemplate(
+        str(output), pagesize=A4, leftMargin=2 * cm, rightMargin=2 * cm,
+        topMargin=1.7 * cm, bottomMargin=1.8 * cm,
+        title="Auditoria de Seguranca - 066-lib-pinpad-abecs-go", author="Codex",
+    )
+
+    def header_footer_066(canvas, doc):
+        canvas.saveState()
+        width, height = A4
+        if doc.page > 1:
+            canvas.setStrokeColor(colors.HexColor("#C9C0AF"))
+            canvas.line(2 * cm, height - 1.25 * cm, width - 2 * cm, height - 1.25 * cm)
+            canvas.line(2 * cm, 1.3 * cm, width - 2 * cm, 1.3 * cm)
+            canvas.setFont("Helvetica", 7.5)
+            canvas.setFillColor(colors.HexColor("#52615D"))
+            canvas.drawString(2 * cm, height - 0.95 * cm, "Auditoria de Seguranca - 066-lib-pinpad-abecs-go")
+            canvas.drawRightString(width - 2 * cm, 1.02 * cm, f"Pagina {doc.page}")
+        canvas.restoreState()
+
+    document.addPageTemplates([PageTemplate(id="change-066", frames=Frame(document.leftMargin, document.bottomMargin, document.width, document.height), onPage=header_footer_066)])
+    paragraph = lambda text, kind="body": Paragraph(text, styles[kind])
+    rows = [
+        [paragraph("Categoria", "small"), paragraph("Conclusao", "small")],
+        [paragraph("Rede, autenticacao e autorizacao"), paragraph("Nao aplicavel: a biblioteca nao expoe listener, API HTTP, usuario ou tenant.")],
+        [paragraph("Segredos e dados sensiveis"), paragraph("Conforme na inspecao estatica: nenhum segredo confirmado; payloads de GCX, GTK, GOX, FCX e GPN usam redaction.")],
+        [paragraph("Entrada e protocolo"), paragraph("Conforme: limites, CRC, framing, respostas truncadas e cancelamento por contexto possuem validacao e testes automatizados.")],
+        [paragraph("Dependencias e adaptador serial"), paragraph("Limitacao: a comunicacao real continua dependente de validacao no pinpad fisico; testes deterministas nao a substituem.")],
+    ]
+    table = Table(rows, colWidths=[5.1 * cm, 11.7 * cm], repeatRows=1)
+    table.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8E1D5")), ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#C9C0AF")), ("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 7), ("RIGHTPADDING", (0, 0), (-1, -1), 7), ("TOPPADDING", (0, 0), (-1, -1), 6), ("BOTTOMPADDING", (0, 0), (-1, -1), 6)]))
+    story = [
+        Spacer(1, 4 * cm), paragraph("Relatorio de Auditoria de Seguranca", "title"), Spacer(1, 0.35 * cm),
+        paragraph("066-lib-pinpad-abecs-go", "subtitle"), Spacer(1, 0.25 * cm),
+        paragraph("Data: 11 de setembro de 2026", "subtitle"), Spacer(1, 0.8 * cm),
+        paragraph("Escopo: biblioteca Go headless, protocolo ABECS, configuracao por ambiente, adaptador serial, fila, sessao, logging e dados sensiveis do pinpad.", "subtitle"),
+        Spacer(1, 1.2 * cm), paragraph("Resultado: nenhum achado de seguranca confirmado em aberto na inspecao estatica. A validacao de comunicacao fisica permanece pendente e nao e substituida por este relatorio."),
+        PageBreak(), paragraph("Resumo executivo", "h1"),
+        paragraph("A auditoria examinou os pontos de entrada locais, o modulo Go, configuracao, logs, dependencias e tratamento de payloads. A biblioteca nao implementa rede, HTTP, persistencia, autenticacao ou autorizacao; essas categorias foram registradas como nao aplicaveis, e nao como controles existentes."),
+        paragraph("Controles observados", "h2"),
+        paragraph("O adaptador serial usa contexto e timeout. O protocolo valida CRC, framing e respostas truncadas. Dados de GCX, GTK, GOX, FCX e GPN sao redigidos nos logs estruturados. O codigo e os documentos da Change foram buscados por padroes de segredos e por superficies de rede ou execucao de comandos."),
+        paragraph("Categorias avaliadas", "h1"), table,
+        PageBreak(), paragraph("Achados e recomendacoes", "h1"),
+        paragraph("Nenhum achado de seguranca confirmado exige correcao nesta Change. Nao foi identificado segredo versionado, endpoint de rede, execucao de comando do sistema, consulta SQL ou renderizacao HTML no modulo auditado."),
+        paragraph("P1 - validacao operacional", "h2"),
+        paragraph("Executar a matriz de comunicacao com pinpad fisico e porta serial real, registrando modelo, firmware, porta, comandos, status e redaction observada. Essa e a unica evidencia pendente para concluir a validacao funcional da Change."),
+        paragraph("P2 - concorrencia", "h2"),
+        paragraph("Executar go test -race ./... em ambiente Go com arquitetura suportada. A distribuicao windows/386 usada nesta validacao nao suporta o detector de corrida; isso e limitacao de ambiente, nao achado confirmado."),
+        paragraph("Metodologia e evidencias", "h1"),
+        paragraph("Comandos: go vet ./...; go test ./...; go test ./... -coverprofile=coverage; go tool cover -func=coverage; busca por padroes de segredo, rede e execucao de processo. Cobertura total aferida: 81,7%. Nenhum valor sensivel foi incluido neste relatorio."),
+    ]
+    document.build(story)
+    return output
+
+
 if __name__ == "__main__":
     import sys
-    print(build_correction_pdf() if "--change-011" in sys.argv else build_pdf())
+    if "--change-011" in sys.argv:
+        print(build_correction_pdf())
+    elif "--change-066" in sys.argv:
+        print(build_change_066_pdf())
+    else:
+        print(build_pdf())

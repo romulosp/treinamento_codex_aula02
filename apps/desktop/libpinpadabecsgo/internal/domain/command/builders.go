@@ -2,6 +2,7 @@ package command
 
 import "fmt"
 
+// BuildPayload concatena o identificador de comando e parâmetros já validados.
 func BuildPayload(command Type, parameters string) ([]byte, error) {
 	if command == "" {
 		return nil, fmt.Errorf("command type is required")
@@ -9,8 +10,7 @@ func BuildPayload(command Type, parameters string) ([]byte, error) {
 	return append([]byte(string(command)), []byte(parameters)...), nil
 }
 
-// AdvancedContract identifies commands reserved for later Changes. It intentionally
-// carries no command-specific business rules in this Change.
+// AdvancedContract identifica comandos reservados sem regra transacional própria.
 type AdvancedContract struct {
 	Type    Type
 	Payload []byte
