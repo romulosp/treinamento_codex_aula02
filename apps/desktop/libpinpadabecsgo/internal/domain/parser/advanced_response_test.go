@@ -71,6 +71,37 @@ func TestGCXResponseValidationMatchesConditionalABECSFields(t *testing.T) {
 	}
 }
 
+func TestGCXResponseRejectsInvalidABECSFields(t *testing.T) {
+	base := func() map[uint16][]byte {
+		return map[uint16][]byte{
+			uint16(protocol.TagCardType):          []byte(command.GCXCardICC),
+			uint16(protocol.TagAIDTableInfo):      []byte("080301"),
+			uint16(protocol.TagPAN):               []byte("4444333322221111"),
+			uint16(protocol.TagPANSequenceNumber): []byte("01"),
+			uint16(protocol.TagLabel):             []byte("CREDITO"),
+		}
+	}
+	tests := map[string]func(map[uint16][]byte){
+		"AID table fora de grupos N6":  func(tags map[uint16][]byte) { tags[uint16(protocol.TagAIDTableInfo)] = []byte("08030") },
+		"PAN não numérico":             func(tags map[uint16][]byte) { tags[uint16(protocol.TagPAN)] = []byte("4444A") },
+		"sequência PAN inválida":       func(tags map[uint16][]byte) { tags[uint16(protocol.TagPANSequenceNumber)] = []byte("1") },
+		"label acima de A16":           func(tags map[uint16][]byte) { tags[uint16(protocol.TagLabel)] = []byte("12345678901234567") },
+		"país emissor inválido":        func(tags map[uint16][]byte) { tags[uint16(protocol.TagIssuerCountry)] = []byte("BR") },
+		"data inexistente":             func(tags map[uint16][]byte) { tags[uint16(protocol.TagCardExpiration)] = []byte("260231") },
+		"tipo de dispositivo inválido": func(tags map[uint16][]byte) { tags[uint16(protocol.TagDeviceType)] = []byte("A1") },
+		"BER-TLV truncado":             func(tags map[uint16][]byte) { tags[uint16(protocol.TagEMVData)] = []byte{0x9f, 0x36, 0x02, 0x01} },
+	}
+	for name, mutate := range tests {
+		t.Run(name, func(t *testing.T) {
+			tags := base()
+			mutate(tags)
+			if _, err := ValidateGCXResponse(&model.Response{RawTags: tags}); err == nil {
+				t.Fatal("esperava erro")
+			}
+		})
+	}
+}
+
 func TestGOXAndFCXResponseValidation(t *testing.T) {
 	goxRequest := command.GOXRequest{PinMethod: "3", TagList: []byte{0x9f, 0x36}}
 	if _, err := ValidateGOXResponse(&model.Response{RawTags: map[uint16][]byte{
@@ -98,6 +129,48 @@ func TestGOXAndFCXResponseValidation(t *testing.T) {
 	}}
 	if _, err := ValidateFCXResponse(validFCX, command.FCXRequest{TagList: []byte{0x9f}}); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestGOXAndFCXRejectInvalidABECSResponseFields(t *testing.T) {
+	goxRequest := command.GOXRequest{PinMethod: "3"}
+	for name, tags := range map[string]map[uint16][]byte{
+		"GOX sem resultado": {},
+		"GOX bit RUF":       {uint16(protocol.TagGOXResult): []byte("200001")},
+		"GOX PIN sem KSN": {
+			uint16(protocol.TagGOXResult): []byte("202000"),
+			uint16(protocol.TagPINBlock):  make([]byte, 8),
+		},
+		"GOX EMV truncado": {
+			uint16(protocol.TagGOXResult): []byte("200000"),
+			uint16(protocol.TagEMVData):   {0x9f, 0x36, 0x02, 0x01},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := ValidateGOXResponse(&model.Response{RawTags: tags}, goxRequest); err == nil {
+				t.Fatal("esperava erro")
+			}
+		})
+	}
+
+	for name, tags := range map[string]map[uint16][]byte{
+		"FCX sem resultado":    {},
+		"FCX decisão inválida": {uint16(protocol.TagFCXResult): []byte("200")},
+		"FCX RUF inválido":     {uint16(protocol.TagFCXResult): []byte("001")},
+		"FCX EMV truncado": {
+			uint16(protocol.TagFCXResult): []byte("000"),
+			uint16(protocol.TagEMVData):   {0x9f, 0x36, 0x02, 0x01},
+		},
+		"FCX issuer script fracionado": {
+			uint16(protocol.TagFCXResult): []byte("000"),
+			uint16(protocol.TagISResults): make([]byte, 6),
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := ValidateFCXResponse(&model.Response{RawTags: tags}, command.FCXRequest{}); err == nil {
+				t.Fatal("esperava erro")
+			}
+		})
 	}
 }
 
@@ -162,5 +235,21 @@ func TestShortResponseHelpersValidateData(t *testing.T) {
 	}
 	if _, err := ParseGKYStatus("012"); err == nil {
 		t.Fatal("timeout não é tecla")
+	}
+}
+
+func TestParseGKYStatusMapsEveryABECS212Key(t *testing.T) {
+	for status, want := range map[string]byte{
+		"000": command.GKYKeyOK,
+		"004": command.GKYKeyF1,
+		"005": command.GKYKeyF2,
+		"006": command.GKYKeyF3,
+		"007": command.GKYKeyF4,
+		"008": command.GKYKeyClear,
+		"013": command.GKYKeyCancel,
+	} {
+		if got, err := ParseGKYStatus(status); err != nil || got != want {
+			t.Fatalf("status %s = %02X, %v; want %02X", status, got, err, want)
+		}
 	}
 }

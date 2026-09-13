@@ -1,6 +1,6 @@
-// Package logging fornece o logger estruturado e o rastro serial redigido da
-// biblioteca ABECS. O tracer é opt-in e nunca deve receber dados sensíveis em
-// claro.
+// Package logging fornece o logger estruturado e o rastro serial da biblioteca
+// ABECS. O tracer é opt-in, redige frames sensíveis e oferece uma operação
+// explícita para o diagnóstico GTK em claro do utilitário local.
 package logging
 
 import (
@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -237,6 +238,58 @@ func (t *Tracer) RecordResponse(kind command.Type, status string) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	return t.writeLineLocked("service.exchangeCommand", "[%s] RSP CMD=%s STATUS=%s", t.sessionIDLocked(""), safeText(string(kind)), safeText(status))
+}
+
+// RecordGTKClearTracks registra as três trilhas já interpretadas de uma
+// resposta GTK em claro. O chamador deve usar esta exceção somente quando o
+// operador selecionar explicitamente o modo em claro no utilitário local.
+// QuoteToASCII mantém cada valor delimitado em uma única linha do rastro.
+func (t *Tracer) RecordGTKClearTracks(track1, track2, track3 []byte) error {
+	if t == nil {
+		return nil
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.destination == nil {
+		return nil
+	}
+	decodedTrack2, err := decodeGTKClearNumericTrack(track2)
+	if err != nil {
+		return fmt.Errorf("decode GTK clear track 2: %w", err)
+	}
+	decodedTrack3, err := decodeGTKClearNumericTrack(track3)
+	if err != nil {
+		return fmt.Errorf("decode GTK clear track 3: %w", err)
+	}
+	return t.writeLineLocked(
+		"cmd.libpinpadabecsgo.GetTracks",
+		"[%s] GTK_CLEAR TRACK1=%s TRACK2=%s TRACK3=%s",
+		t.sessionIDLocked(""),
+		strconv.QuoteToASCII(string(track1)),
+		strconv.QuoteToASCII(decodedTrack2),
+		strconv.QuoteToASCII(decodedTrack3),
+	)
+}
+
+func decodeGTKClearNumericTrack(encoded []byte) (string, error) {
+	var decoded strings.Builder
+	decoded.Grow(len(encoded) * 2)
+	filler := false
+	for _, value := range encoded {
+		for _, nibble := range []byte{value >> 4, value & 0x0F} {
+			switch {
+			case nibble <= 9 && !filler:
+				decoded.WriteByte('0' + nibble)
+			case nibble == 0x0D && !filler:
+				decoded.WriteByte('=')
+			case nibble == 0x0F:
+				filler = true
+			default:
+				return "", fmt.Errorf("invalid nibble %X", nibble)
+			}
+		}
+	}
+	return decoded.String(), nil
 }
 
 // RecordError registra uma falha de I/O do adaptador com o identificador da

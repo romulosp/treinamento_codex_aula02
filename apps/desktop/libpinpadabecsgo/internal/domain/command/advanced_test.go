@@ -107,6 +107,21 @@ func TestDisplayBuildersMatchPublishedABECS212Vectors(t *testing.T) {
 	}
 }
 
+func TestDisplayBuildersRejectABECSLimitViolations(t *testing.T) {
+	if _, err := BuildDSPCommand(strings.Repeat("A", 17), ""); err == nil {
+		t.Fatal("DSP deve rejeitar linha acima de S16")
+	}
+	if _, err := BuildDSPCommand("😀", ""); err == nil {
+		t.Fatal("DSP deve rejeitar caractere fora de Latin-1")
+	}
+	if _, err := BuildDEXCommand(""); err == nil {
+		t.Fatal("DEX deve rejeitar mensagem vazia")
+	}
+	if _, err := BuildDEXCommand(strings.Repeat("A", 161)); err == nil {
+		t.Fatal("DEX deve rejeitar mensagem acima de S160")
+	}
+}
+
 func TestMNUBuilderMatchesPublishedABECS212Vector(t *testing.T) {
 	got, err := BuildMNUCommand(30, "Selecione, por favor:", []string{
 		"5.Chamado Técnico",
@@ -209,6 +224,35 @@ func TestMultimediaBuildersMatchPublishedABECS212Vectors(t *testing.T) {
 	}
 }
 
+func TestDetectMediaTypeAndNamesFollowABECS212(t *testing.T) {
+	for name, test := range map[string]struct {
+		data []byte
+		want byte
+	}{
+		"PNG":  {[]byte("\x89PNG\r\n\x1a\n"), 1},
+		"JPEG": {[]byte{0xff, 0xd8, 0xff, 0xe0}, 2},
+		"GIF":  {[]byte("GIF89a"), 3},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if got, err := DetectMediaType(test.data); err != nil || got != test.want {
+				t.Fatalf("tipo = %d, %v; want %d", got, err, test.want)
+			}
+		})
+	}
+	if _, err := DetectMediaType([]byte("BMP")); err == nil {
+		t.Fatal("assinatura sem suporte deve falhar")
+	}
+	if _, err := BuildDSICommand("INVALID!"); err == nil {
+		t.Fatal("DSI deve exigir nome A8 alfanumérico")
+	}
+	if _, err := BuildMLICommand("IMG00001", []byte("BMP")); err == nil {
+		t.Fatal("MLI deve rejeitar formato sem suporte")
+	}
+	if _, err := BuildMLRCommand(nil); err == nil {
+		t.Fatal("MLR deve rejeitar SPE_DATAIN vazio")
+	}
+}
+
 func TestTableBuildersMatchABECS212(t *testing.T) {
 	tli, err := BuildTLICommand("00", "TABVER0008")
 	if err != nil || string(tli) != "TLI01200TABVER0008" {
@@ -300,6 +344,19 @@ func TestBuildABECSPayloadLimitsCommandData(t *testing.T) {
 	}
 }
 
+func TestBuildABECSPayloadSplitsParametersIntoCompleteBlocks(t *testing.T) {
+	got, err := BuildABECSPayload(CommandGCX, []Parameter{
+		{ID: SPEDataIn, Value: make([]byte, 995)},
+		{ID: SPEDataIn, Value: make([]byte, 995)},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got[:6]) != "GCX999" || string(got[1005:1008]) != "999" || len(got) != 2007 {
+		t.Fatalf("blocos ABECS = len %d, prefixos %q/%q", len(got), got[:6], got[1005:1008])
+	}
+}
+
 func TestGTKContractMatchesConditionalABECSFields(t *testing.T) {
 	if got, err := BuildGTKCommand(GTKRequest{}); err != nil || string(got) != "GTK000" {
 		t.Fatalf("GTK para obter trilhas em claro = %q, %v", got, err)
@@ -317,6 +374,15 @@ func TestGTKContractMatchesConditionalABECSFields(t *testing.T) {
 	}
 	if _, err := BuildGTKCommand(GTKRequest{DataMethod: "91", PublicKeyMod: make([]byte, 255), PublicKeyExp: []byte{3}}); err == nil {
 		t.Fatal("módulo RSA diferente de 256 bytes deve falhar")
+	}
+	if _, err := BuildGTKCommand(GTKRequest{Tracks: "0122"}); err == nil {
+		t.Fatal("SPE_TRACKS aceita somente bits")
+	}
+	if _, err := BuildGTKCommand(GTKRequest{KeyIndex: &index}); err == nil {
+		t.Fatal("índice sem método deve falhar")
+	}
+	if _, err := BuildGTKCommand(GTKRequest{DataMethod: "90", KeyIndex: &index, PublicKeyMod: make([]byte, 256), PublicKeyExp: []byte{3}}); err == nil {
+		t.Fatal("índice não se aplica ao método RSA")
 	}
 }
 
@@ -354,6 +420,15 @@ func TestCLXBuilderMatchesPublishedABECS212Vector(t *testing.T) {
 	}
 }
 
+func TestCLXBuilderRejectsInvalidABECSFields(t *testing.T) {
+	if _, err := BuildCLXCommand(CLXRequest{Message: strings.Repeat("A", 129)}); err == nil {
+		t.Fatal("CLX deve rejeitar mensagem acima de S128")
+	}
+	if _, err := BuildCLXCommand(CLXRequest{MediaName: "INVALID!"}); err == nil {
+		t.Fatal("CLX deve rejeitar nome diferente de A8")
+	}
+}
+
 func TestGOXAndFCXRejectInvalidConditionalFields(t *testing.T) {
 	base := GOXRequest{AcquirerReference: "01", PinMethod: "3", KeyIndex: 1}
 	tests := []GOXRequest{
@@ -363,6 +438,7 @@ func TestGOXAndFCXRejectInvalidConditionalFields(t *testing.T) {
 		func() GOXRequest { r := base; r.Options = "90000"; return r }(),
 		func() GOXRequest { r := base; r.TerminalParams = make([]byte, 9); return r }(),
 		func() GOXRequest { r := base; r.EMVData = make([]byte, 513); return r }(),
+		func() GOXRequest { r := base; r.WorkingKey = make([]byte, 16); return r }(),
 	}
 	for index, request := range tests {
 		if _, err := BuildGOXCommand(request); err == nil {

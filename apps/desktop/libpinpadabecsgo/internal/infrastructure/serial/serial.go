@@ -71,6 +71,7 @@ func (a *Adapter) SetTracePolicy(kind command.Type, redact bool) {
 	a.redact = redact
 }
 
+// Open abre a porta física em 8N1 e ativa um timeout curto de leitura cancelável.
 func (a *Adapter) Open() error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -97,6 +98,8 @@ func (a *Adapter) Open() error {
 	}
 	return nil
 }
+
+// Close fecha a porta física e registra o encerramento no tracer configurado.
 func (a *Adapter) Close() error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -183,6 +186,8 @@ func (a *Adapter) Write(data []byte) error {
 	}
 	return nil
 }
+
+// IsOpen informa se o adaptador mantém uma porta física aberta.
 func (a *Adapter) IsOpen() bool { a.mu.RLock(); defer a.mu.RUnlock(); return a.port != nil }
 
 func wrapSerialError(operation string, err error) error {
@@ -203,6 +208,8 @@ type FakePort struct {
 
 // NewFakePort cria transporte determinístico para testes sem hardware físico.
 func NewFakePort(reads ...[]byte) *FakePort { return &FakePort{Reads: reads} }
+
+// Open marca o transporte fake como aberto ou devolve OpenError.
 func (f *FakePort) Open() error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -212,7 +219,11 @@ func (f *FakePort) Open() error {
 	f.open = true
 	return nil
 }
+
+// Close marca o transporte fake como fechado.
 func (f *FakePort) Close() error { f.mu.Lock(); defer f.mu.Unlock(); f.open = false; return nil }
+
+// IsOpen informa o estado atual do transporte fake.
 func (f *FakePort) IsOpen() bool { f.mu.Lock(); defer f.mu.Unlock(); return f.open }
 func (f *FakePort) Read(ctx context.Context) ([]byte, error) {
 	if ctx == nil {

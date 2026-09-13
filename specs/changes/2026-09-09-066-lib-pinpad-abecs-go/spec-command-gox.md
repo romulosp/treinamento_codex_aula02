@@ -53,3 +53,34 @@ ABECS v2.12, seção 3.7.3.
 GOX exige adquirente N2, método de PIN N1 e índice N2; WKENC é condicional. A
 resposta exige PP_GOXRES N6, PIN block/KSN quando indicado pelo resultado e
 PP_EMVDATA quando uma tag list foi solicitada, mesmo que vazio.
+
+## Continuação no utilitário local — 2026-09-13
+
+O utilitário local deve conservar a resposta e o valor do último GCX concluído
+para construir a opção 20. O GOX não pode usar uma rede credenciadora fixa:
+
+- `PP_AIDTABINFO` é uma lista de entradas N6 formadas por `TAB_ACQ` N2,
+  `TAB_RECIDX` N2 e `T1_APPTYPE` N2;
+- `SPE_ACQREF` deve ser escolhido entre os valores `TAB_ACQ` presentes nessa
+  lista, removendo duplicidades e preservando a ordem retornada;
+- quando houver uma única rede, ela é usada como padrão; com múltiplas redes, o
+  operador deve selecionar uma das opções apresentadas;
+- `SPE_AMOUNT` deve repetir o valor do GCX da mesma transação, pois sua ausência
+  no GOX significa valor zero e não herança automática;
+- o operador deve escolher `SPE_MTHDPIN` e informar `SPE_KEYIDX`; métodos MK/WK
+  também exigem `SPE_WKENC` no tamanho correspondente;
+- entradas inválidas ou ausência de GCX ICC/CTLS EMV devem ser recusadas antes
+  de `ContinueEMV`.
+
+### Critérios de aceite do utilitário
+
+- [x] CA-GOX-CLI-001: um `PP_AIDTABINFO="080301"` produz
+  `SPE_ACQREF="08"`, nunca o valor fixo `01`.
+- [x] CA-GOX-CLI-002: listas com redes repetidas oferecem cada `TAB_ACQ` uma
+  única vez e rejeitam uma rede fora da lista.
+- [x] CA-GOX-CLI-003: o request GOX conserva o N12 de `SPE_AMOUNT` usado no
+  GCX e contém método/índice de PIN escolhidos pelo operador.
+- [x] CA-GOX-CLI-004: método MK/WK exige WKENC hexadecimal de 8 bytes para DES
+  ou 16 bytes para TDES; DUKPT não aceita WKENC.
+- [x] CA-GOX-CLI-005: o teste compara byte a byte o payload mínimo resultante e
+  comprova que entradas inválidas não chegam ao serviço.

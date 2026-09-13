@@ -75,7 +75,7 @@ func BuildCLXCommand(request CLXRequest) ([]byte, error) {
 // BuildGTKCommand valida os parâmetros criptográficos conhecidos do GTK e
 // monta o payload sem converter ou registrar dados sensíveis.
 func BuildGTKCommand(request GTKRequest) ([]byte, error) {
-	if request.Tracks != "" && (len(request.Tracks) != 4 || !decimalDigits(request.Tracks)) {
+	if request.Tracks != "" && (len(request.Tracks) != 4 || !binaryDigits(request.Tracks)) {
 		return nil, fmt.Errorf("invalid GTK track selection")
 	}
 	if request.DataMethod != "" && !validDataMethod(request.DataMethod) {
@@ -85,6 +85,12 @@ func BuildGTKCommand(request GTKRequest) ([]byte, error) {
 		return nil, fmt.Errorf("invalid GTK open digits")
 	}
 	rsaMethod := request.DataMethod == "90" || request.DataMethod == "91"
+	if request.DataMethod == "" && (request.KeyIndex != nil || len(request.WorkingKey) != 0 || len(request.IV) != 0 || len(request.PublicKeyMod) != 0 || len(request.PublicKeyExp) != 0 || request.OpenDigits != 0) {
+		return nil, fmt.Errorf("GTK encryption parameters require a data method")
+	}
+	if rsaMethod && request.KeyIndex != nil {
+		return nil, fmt.Errorf("GTK key index is not allowed for RSA methods")
+	}
 	if request.DataMethod != "" && !rsaMethod && (request.KeyIndex == nil || *request.KeyIndex < 0 || *request.KeyIndex > 99) {
 		return nil, fmt.Errorf("GTK key index is required")
 	}
@@ -141,8 +147,14 @@ func BuildGOXCommand(request GOXRequest) ([]byte, error) {
 	if len(request.PinMethod) != 1 || request.PinMethod[0] < '0' || request.PinMethod[0] > '3' || request.KeyIndex < 0 || request.KeyIndex > 99 {
 		return nil, fmt.Errorf("invalid GOX PIN method or key index")
 	}
-	if (request.PinMethod == "0" || request.PinMethod == "1") && (len(request.WorkingKey) != 8 && len(request.WorkingKey) != 16) {
+	if request.PinMethod == "0" && len(request.WorkingKey) != 8 {
+		return nil, fmt.Errorf("GOX DES working key must have 8 bytes")
+	}
+	if request.PinMethod == "1" && len(request.WorkingKey) != 16 {
 		return nil, fmt.Errorf("GOX working key is required for MK/WK")
+	}
+	if (request.PinMethod == "2" || request.PinMethod == "3") && len(request.WorkingKey) != 0 {
+		return nil, fmt.Errorf("GOX DUKPT does not accept a working key")
 	}
 	if request.TransactionType != nil && len(request.TransactionType) != 1 {
 		return nil, fmt.Errorf("GOX transaction type must have one byte")
@@ -239,6 +251,15 @@ func appendOptionalString(parameters []Parameter, id SPEParameter, value string)
 func decimalDigits(value string) bool {
 	for _, current := range []byte(value) {
 		if current < '0' || current > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+func binaryDigits(value string) bool {
+	for _, current := range []byte(value) {
+		if current != '0' && current != '1' {
 			return false
 		}
 	}

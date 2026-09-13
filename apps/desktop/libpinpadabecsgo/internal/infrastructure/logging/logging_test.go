@@ -291,6 +291,65 @@ func TestTracerRedactsSensitivePayloadsAndPreservesDestinationOnFailure(t *testi
 	}
 }
 
+func TestTracerRecordsGTKClearTracksAsOneEscapedLine(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "trace.log")
+	tracer := NewTracer()
+	if active, err := tracer.SetLogDestination(path); err != nil || !active {
+		t.Fatalf("SetLogDestination active=%t err=%v", active, err)
+	}
+	if err := tracer.RecordGTKClearTracks(
+		[]byte("TRACK-ONE\nFORGED"),
+		[]byte{0x54, 0x28, 0x20, 0x60, 0x97, 0x98, 0x40, 0x97, 0xD1, 0x12, 0x23, 0x36, 0x65, 0x5F},
+		nil,
+	); err != nil {
+		t.Fatal(err)
+	}
+	if err := tracer.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(content)
+	want := `GTK_CLEAR TRACK1="TRACK-ONE\nFORGED" TRACK2="5428206097984097=1122336655" TRACK3=""`
+	if !strings.Contains(text, want) {
+		t.Fatalf("GTK clear trace does not contain %q: %q", want, text)
+	}
+	if strings.Contains(text, "TRACK-ONE\nFORGED") {
+		t.Fatalf("GTK track created an injected line: %q", text)
+	}
+}
+
+func TestDecodeGTKClearNumericTrack(t *testing.T) {
+	tests := []struct {
+		name    string
+		encoded []byte
+		want    string
+		invalid bool
+	}{
+		{name: "vazio"},
+		{
+			name:    "vetor físico com separador e filler",
+			encoded: []byte{0x54, 0x28, 0x20, 0x60, 0x97, 0x98, 0x40, 0x97, 0xD2, 0x11, 0x12, 0x01, 0x38, 0x29, 0x95, 0x58, 0x46, 0x37, 0x0F},
+			want:    "5428206097984097=21112013829955846370",
+		},
+		{name: "mais de um filler final", encoded: []byte{0x12, 0xFF}, want: "12"},
+		{name: "nibble reservado", encoded: []byte{0x1A}, invalid: true},
+		{name: "dígito depois do filler", encoded: []byte{0xF1}, invalid: true},
+		{name: "separador depois do filler", encoded: []byte{0xFD}, invalid: true},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := decodeGTKClearNumericTrack(test.encoded)
+			if (err != nil) != test.invalid || got != test.want {
+				t.Fatalf("decodeGTKClearNumericTrack(%X)=%q,%v; want %q invalid=%t", test.encoded, got, err, test.want, test.invalid)
+			}
+		})
+	}
+}
+
 func TestTracerSerializesConcurrentLinesAndKeepsInstancesIsolated(t *testing.T) {
 	directory := t.TempDir()
 	firstPath := filepath.Join(directory, "first.log")

@@ -5,6 +5,7 @@ import "time"
 // PP_DC2 identifica PKTDATA protegido pela Comunicação Segura ABECS.
 const PP_DC2 byte = 0x12
 
+// Limites e prazos do nível de enlace ABECS 2.12.
 const (
 	PacketDataMaxSize      = 2049
 	CommandDataMaxSize     = 2044
@@ -16,6 +17,7 @@ const (
 // ResponseTag identifies a RSP_DATID value returned by the pinpad.
 type ResponseTag uint16
 
+// Tags fixas RSP_DATID conhecidas pela biblioteca.
 const (
 	TagSerialNumber               ResponseTag = 0x8001
 	TagPartNumber                 ResponseTag = 0x8002
@@ -81,23 +83,30 @@ const (
 	TagCommunicationInfo          ResponseTag = 0x8065
 )
 
+// Bases das famílias dinâmicas de tags retornadas por GIX.
 const (
 	TagKSNTDESDescriptionBase ResponseTag = 0x9100
 	TagKSNTDESDataBase        ResponseTag = 0x9200
 	TagTableVersionBase       ResponseTag = 0x9300
 )
 
+// TagKSNTDESDescription calcula a tag de descrição KSN TDES pelo índice.
 func TagKSNTDESDescription(index byte) ResponseTag {
 	return TagKSNTDESDescriptionBase + ResponseTag(index)
 }
-func TagKSNTDESData(index byte) ResponseTag  { return TagKSNTDESDataBase + ResponseTag(index) }
+
+// TagKSNTDESData calcula a tag de dados KSN TDES pelo índice.
+func TagKSNTDESData(index byte) ResponseTag { return TagKSNTDESDataBase + ResponseTag(index) }
+
+// TagTableVersion calcula a tag de versão de tabela pelo índice do adquirente.
 func TagTableVersion(index byte) ResponseTag { return TagTableVersionBase + ResponseTag(index) }
 
+// Tipos de mídia e limites de transferência definidos pelo ABECS 2.12.
 const (
 	MediaTypeRUF    byte = 0x00
 	MediaTypePNG    byte = 0x01
 	MediaTypeJPG    byte = 0x02
 	MediaTypeGIF    byte = 0x03
-	MLRMaxBlockSize      = 436
+	MLRMaxBlockSize      = 995
 	TLRMaxRecords        = 99
 )

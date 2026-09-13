@@ -20,6 +20,7 @@ func DefaultConfig() PinpadConfig {
 // PinpadState representa o estado observável da comunicação com o pinpad.
 type PinpadState string
 
+// Estados possíveis do ciclo de vida da conexão com o pinpad.
 const (
 	StateClosed PinpadState = "CLOSED"
 	StateOpen   PinpadState = "OPEN"
@@ -64,7 +65,8 @@ type GCXResponse struct {
 }
 
 // GTKResponse contém exclusivamente os dados devolvidos por GTK. Seus campos
-// podem ser sensíveis e não devem ser registrados ou reutilizados em GCXResponse.
+// podem ser sensíveis e não devem ser reutilizados em GCXResponse. O utilitário
+// local pode registrar as trilhas quando o operador escolher o modo em claro.
 type GTKResponse struct {
 	EncryptedPAN    []byte
 	Track1          []byte

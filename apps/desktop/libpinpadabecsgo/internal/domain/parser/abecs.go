@@ -4,7 +4,6 @@ import (
 	domainerror "br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/error"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/model"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/protocol"
-	"encoding/hex"
 	"strconv"
 	"strings"
 )
@@ -51,6 +50,7 @@ func ParseNotification(data []byte) (string, error) {
 	return string(data[9:]), nil
 }
 
+// ParseAbecsResponse interpreta status, blocos N3 e parâmetros TLV de uma resposta ABECS.
 func ParseAbecsResponse(data []byte) (*model.Response, error) {
 	response := &model.Response{AckType: protocol.AckType(data), RawData: append([]byte(nil), data...), Tags: map[string]string{}, RawTags: map[uint16][]byte{}}
 	if len(data) == 1 {
@@ -59,61 +59,59 @@ func ParseAbecsResponse(data []byte) (*model.Response, error) {
 		}
 		return response, nil
 	}
-	// O envelope de resposta ABECS espelha o de comando: CMD_ID (3 bytes,
-	// ecoado) + STATUS (3 digitos ASCII) + LEN (3 digitos ASCII com o
-	// tamanho decimal dos dados TLV que seguem), confirmado empiricamente
-	// contra hardware real (resposta ao comando GIX). Quando o envelope
-	// completo nao estiver presente (respostas curtas), cai de volta para o
-	// layout minimo (3 primeiros bytes como status) para nao quebrar.
 	if len(data) < 6 {
 		return nil, domainerror.ErrInvalidResponse
 	}
-	tagsStart := 6
 	response.StatusCode = string(data[3:6])
-	if len(data) >= 9 {
-		response.StatusCode = string(data[3:6])
-		declaredLength, err := strconv.Atoi(string(data[6:9]))
-		if err != nil || declaredLength < 0 || declaredLength != len(data)-9 {
-			return nil, domainerror.ErrInvalidResponse
-		}
-		tagsStart = 9
-	}
-	response.Data = append([]byte(nil), data[tagsStart:]...)
-	// A resposta ao OPN seguro possui CRKSEC em hexadecimal, com estrutura
-	// própria definida pelo protocolo seguro. Ela não é BER-TLV e precisa
-	// permanecer intacta para a camada RSA validar tamanho e descriptografar
-	// KSEC antes de qualquer outro comando protegido.
-	if string(data[:3]) == "OPN" {
+	if len(data) == 6 {
 		return response, nil
 	}
-	// GPN é uma resposta clássica posicional (PINBLK H16 + KSN H20), não TLV.
-	if string(data[:3]) == "GPN" {
-		return response, nil
-	}
-	if len(response.Data) > 0 && len(response.Data) < 4 {
-		return response, nil
-	}
-	pos := tagsStart
-	for pos+4 <= len(data) {
-		tag := uint16(data[pos])<<8 | uint16(data[pos+1])
-		length := int(data[pos+2])<<8 | int(data[pos+3])
-		pos += 4
-		if pos+length > len(data) {
-			return nil, domainerror.ErrInvalidResponse
-		}
-		value := append([]byte(nil), data[pos:pos+length]...)
-		response.RawTags[tag] = value
-		name, ok := tagNames[tag]
-		if ok {
-			response.Tags[name] = string(value)
-		}
-		pos += length
-	}
-	if pos != len(data) {
+	if len(data) < 9 {
 		return nil, domainerror.ErrInvalidResponse
+	}
+
+	commandID := string(data[:3])
+	pos := 6
+	for pos < len(data) {
+		if pos+3 > len(data) {
+			return nil, domainerror.ErrInvalidResponse
+		}
+		blockLength, err := strconv.Atoi(string(data[pos : pos+3]))
+		if err != nil || blockLength < 0 || blockLength > 999 || pos+3+blockLength > len(data) {
+			return nil, domainerror.ErrInvalidResponse
+		}
+		pos += 3
+		block := data[pos : pos+blockLength]
+		response.Data = append(response.Data, block...)
+		pos += blockLength
+
+		// OPN seguro e GPN possuem dados posicionais em vez de RSP_DATID TLV.
+		if commandID == "OPN" || commandID == "GPN" {
+			continue
+		}
+		blockPos := 0
+		for blockPos < len(block) {
+			if blockPos+4 > len(block) {
+				return nil, domainerror.ErrInvalidResponse
+			}
+			tag := uint16(block[blockPos])<<8 | uint16(block[blockPos+1])
+			length := int(block[blockPos+2])<<8 | int(block[blockPos+3])
+			blockPos += 4
+			if blockPos+length > len(block) {
+				return nil, domainerror.ErrInvalidResponse
+			}
+			value := append([]byte(nil), block[blockPos:blockPos+length]...)
+			response.RawTags[tag] = value
+			if name, ok := tagNames[tag]; ok {
+				response.Tags[name] = string(value)
+			}
+			blockPos += length
+		}
 	}
 	return response, nil
 }
+
+// DeviceInfoFromResponse converte as tags GIX conhecidas em informações tipadas.
 func DeviceInfoFromResponse(response *model.Response) model.DeviceInfo {
 	if response == nil {
 		return model.DeviceInfo{}
@@ -165,7 +163,6 @@ func DeviceInfoFromResponse(response *model.Response) model.DeviceInfo {
 	}
 	return info
 }
-func TagHex(value []byte) string { return strings.ToUpper(hex.EncodeToString(value)) }
 
 // DisplayCapabilitiesFromResponse converte as tags GIX em capacidades sem
 // depender de heurísticas específicas de fabricante.

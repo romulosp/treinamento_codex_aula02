@@ -113,12 +113,14 @@ type Service struct {
 	traceSensitive  map[command.Type]bool
 }
 
+// SetQRCodeGenerator instala o gerador usado por DisplayQRCode.
 func (s *Service) SetQRCodeGenerator(generator QRCodeGenerator) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.qrCodeGenerator = generator
 }
 
+// DisplayQRCode gera, carrega e exibe um QR Code como mídia PNG no pinpad.
 func (s *Service) DisplayQRCode(ctx context.Context, data string, size, margin, xPos, yPos int) (QRCodeResult, error) {
 	if err := ctx.Err(); err != nil {
 		return QRCodeResult{}, err
@@ -146,6 +148,7 @@ func (s *Service) DisplayQRCode(ctx context.Context, data string, size, margin, 
 	return result, nil
 }
 
+// TransactionGCX reserva a transação completa, ainda não implementada nesta Change.
 func (s *Service) TransactionGCX(context.Context, TransactionGCXRequest) (*model.GCXResponse, error) {
 	return nil, domainerror.ErrNotImplemented
 }
@@ -194,6 +197,7 @@ func (s *Service) SetTraceSensitive(kind command.Type, sensitive bool) {
 	delete(s.traceSensitive, kind)
 }
 
+// SetConfig valida e substitui a configuração enquanto o serviço está fechado.
 func (s *Service) SetConfig(cfg model.PinpadConfig) error {
 	if cfg.Port == "" || cfg.BaudRate <= 0 || cfg.Timeout <= 0 {
 		return fmt.Errorf("invalid pinpad configuration")
@@ -207,6 +211,7 @@ func (s *Service) SetConfig(cfg model.PinpadConfig) error {
 	return nil
 }
 
+// GetConfig devolve uma cópia da configuração atual.
 func (s *Service) GetConfig() model.PinpadConfig {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -402,11 +407,15 @@ func (s *Service) Shutdown() {
 	}
 	s.mu.Unlock()
 }
+
+// GetState devolve o estado atual do ciclo de vida do pinpad.
 func (s *Service) GetState() model.PinpadState {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.state
 }
+
+// Reset cancela a operação corrente por meio do handshake CAN/EOT.
 func (s *Service) Reset(ctx context.Context) error {
 	_, err := s.SendCommand(ctx, command.Command{Type: command.CommandCAN, Execute: func(operationContext context.Context) (*model.Response, error) {
 		if err := s.cancelHandshake(operationContext); err != nil {
@@ -416,6 +425,8 @@ func (s *Service) Reset(ctx context.Context) error {
 	}})
 	return err
 }
+
+// GetInfo executa GIX e converte suas tags em informações tipadas.
 func (s *Service) GetInfo(ctx context.Context) (*model.DeviceInfo, error) {
 	r, err := s.GetInfoRaw(ctx)
 	if err != nil {
@@ -424,11 +435,15 @@ func (s *Service) GetInfo(ctx context.Context) (*model.DeviceInfo, error) {
 	info := parser.DeviceInfoFromResponse(r)
 	return &info, nil
 }
+
+// GetInfoRaw executa GIX e preserva a resposta ABECS completa.
 func (s *Service) GetInfoRaw(ctx context.Context) (*model.Response, error) {
 	return s.SendCommand(ctx, command.Command{Type: command.CommandGIX, Execute: func(operationContext context.Context) (*model.Response, error) {
 		return s.exchangePayload(operationContext, command.CommandGIX, []byte("GIX000"))
 	}})
 }
+
+// GetDisplayCapabilities interpreta as capacidades de tela retornadas por GIX.
 func (s *Service) GetDisplayCapabilities(ctx context.Context) (*model.DisplayCapabilities, error) {
 	r, err := s.GetInfoRaw(ctx)
 	if err != nil {
@@ -505,6 +520,7 @@ func validateResponseCommand(kind command.Type, response *model.Response, err er
 	return response, nil
 }
 
+// DisplayDSP exibe duas linhas fixas de 16 bytes no display.
 func (s *Service) DisplayDSP(ctx context.Context, line1, line2 string) (*model.Response, error) {
 	payload, err := command.BuildDSPCommand(line1, line2)
 	if err != nil {
@@ -601,6 +617,8 @@ func (s *Service) FinalizeEMV(ctx context.Context, request command.FCXRequest) (
 	s.mu.Unlock()
 	return parser.ValidateFCXResponse(response, request)
 }
+
+// DisplayDEX exibe uma mensagem estendida de até 160 bytes.
 func (s *Service) DisplayDEX(ctx context.Context, message string) (*model.Response, error) {
 	payload, err := command.BuildDEXCommand(message)
 	if err != nil {
@@ -608,6 +626,8 @@ func (s *Service) DisplayDEX(ctx context.Context, message string) (*model.Respon
 	}
 	return s.sendPayload(ctx, command.CommandDEX, payload)
 }
+
+// DisplayMNU apresenta até 20 opções e devolve o índice escolhido pelo operador.
 func (s *Service) DisplayMNU(ctx context.Context, timeout int, title string, options []string) (parser.MNUResponse, error) {
 	payload, err := command.BuildMNUCommand(timeout, title, options)
 	if err != nil {
@@ -619,6 +639,8 @@ func (s *Service) DisplayMNU(ctx context.Context, timeout int, title string, opt
 	}
 	return parser.ParseMNUResponse(append([]byte(r.StatusCode), r.Data...))
 }
+
+// WaitForKeyPress executa GKY e converte RSP_STAT na tecla ABECS correspondente.
 func (s *Service) WaitForKeyPress(ctx context.Context, timeout int) (byte, error) {
 	if timeout < 0 {
 		return 0, fmt.Errorf("invalid GKY timeout")
@@ -638,6 +660,8 @@ func (s *Service) WaitForKeyPress(ctx context.Context, timeout int) (byte, error
 	}
 	return parser.ParseGKYStatus(r.StatusCode)
 }
+
+// SendGCXCommand inicia a captura de cartão com os campos GCX informados.
 func (s *Service) SendGCXCommand(ctx context.Context, amount, date, clock string, options byte) (*model.GCXResponse, error) {
 	payload, err := command.BuildGCXCommand(amount, date, clock, options)
 	if err != nil {
@@ -698,9 +722,12 @@ func (s *Service) SendMultimediaFile(ctx context.Context, name string, data []by
 	return nil
 }
 
+// LoadMultimediaFile é um alias de SendMultimediaFile preservado para a fachada.
 func (s *Service) LoadMultimediaFile(ctx context.Context, name string, data []byte, progress ProgressFunc) error {
 	return s.SendMultimediaFile(ctx, name, data, progress)
 }
+
+// DisplayImage exibe pelo nome uma mídia previamente carregada.
 func (s *Service) DisplayImage(ctx context.Context, name string) (*model.Response, error) {
 	payload, err := command.BuildDSICommand(name)
 	if err != nil {
@@ -708,10 +735,13 @@ func (s *Service) DisplayImage(ctx context.Context, name string) (*model.Respons
 	}
 	return s.sendPayload(ctx, command.CommandDSI, payload)
 }
+
+// DisplayDSI é um alias explícito da operação oferecida por DisplayImage.
 func (s *Service) DisplayDSI(ctx context.Context, name string) (*model.Response, error) {
 	return s.DisplayImage(ctx, name)
 }
 
+// TableLoadInitiate inicia a carga EMV para o adquirente e a versão informados.
 func (s *Service) TableLoadInitiate(ctx context.Context, acquirer, version string) (*model.Response, error) {
 	p, err := command.BuildTLICommand(acquirer, version)
 	if err != nil {
@@ -719,6 +749,8 @@ func (s *Service) TableLoadInitiate(ctx context.Context, acquirer, version strin
 	}
 	return s.sendPayload(ctx, command.CommandTLI, p)
 }
+
+// TableLoadRecord envia um bloco TLR previamente limitado a 999 bytes.
 func (s *Service) TableLoadRecord(ctx context.Context, records []string) (*model.Response, error) {
 	p, err := command.BuildTLRCommand(records)
 	if err != nil {
@@ -726,10 +758,18 @@ func (s *Service) TableLoadRecord(ctx context.Context, records []string) (*model
 	}
 	return s.sendPayload(ctx, command.CommandTLR, p)
 }
+
+// TableLoadEnd confirma a carga temporária por meio do comando literal TLE.
 func (s *Service) TableLoadEnd(ctx context.Context, _ string) (*model.Response, error) {
 	return s.sendPayload(ctx, command.CommandTLE, command.BuildTLECommand())
 }
+
+// LoadCompleteEMVTable executa TLI, particiona registros em TLR válidos e finaliza com TLE.
 func (s *Service) LoadCompleteEMVTable(ctx context.Context, acquirer, version string, records []string, progress ProgressFunc) error {
+	batches, err := buildTLRBatches(records)
+	if err != nil {
+		return fmt.Errorf("TLR: %w", err)
+	}
 	init, err := s.TableLoadInitiate(ctx, acquirer, version)
 	if err != nil {
 		return fmt.Errorf("TLI: %w", err)
@@ -737,16 +777,14 @@ func (s *Service) LoadCompleteEMVTable(ctx context.Context, acquirer, version st
 	if init == nil || (init.StatusCode != state.StatusOK && init.StatusCode != state.StatusTableVersionDifferent) {
 		return fmt.Errorf("TLI returned an invalid status")
 	}
-	for i := 0; i < len(records); i += command.TLRMaxRecords {
-		end := i + command.TLRMaxRecords
-		if end > len(records) {
-			end = len(records)
-		}
-		if _, err := s.TableLoadRecord(ctx, records[i:end]); err != nil {
+	processed := 0
+	for _, batch := range batches {
+		if _, err := s.sendPayload(ctx, command.CommandTLR, batch.payload); err != nil {
 			return fmt.Errorf("TLR: %w", err)
 		}
+		processed += batch.records
 		if progress != nil {
-			if err := progress(ctx, int64(end), int64(len(records))); err != nil {
+			if err := progress(ctx, int64(processed), int64(len(records))); err != nil {
 				return err
 			}
 		}
@@ -756,6 +794,40 @@ func (s *Service) LoadCompleteEMVTable(ctx context.Context, acquirer, version st
 	}
 	return nil
 }
+
+type tlrBatch struct {
+	payload []byte
+	records int
+}
+
+// buildTLRBatches divide registros respeitando simultaneamente NREC N2 e o
+// limite CMD_LEN de 999 bytes definido para o corpo do TLR no ABECS 2.12.
+func buildTLRBatches(records []string) ([]tlrBatch, error) {
+	for _, record := range records {
+		if _, err := command.BuildTLRCommand([]string{record}); err != nil {
+			return nil, err
+		}
+	}
+
+	batches := make([]tlrBatch, 0)
+	for start := 0; start < len(records); {
+		var payload []byte
+		end := start
+		for end < len(records) && end-start < command.TLRMaxRecords {
+			candidate, err := command.BuildTLRCommand(records[start : end+1])
+			if err != nil {
+				break
+			}
+			payload = candidate
+			end++
+		}
+		batches = append(batches, tlrBatch{payload: payload, records: end - start})
+		start = end
+	}
+	return batches, nil
+}
+
+// PurchaseGCX executa GCX e aplica as retentativas e mudanças de interface CTLS normativas.
 func (s *Service) PurchaseGCX(ctx context.Context, amount, date, clock string, enableCTLS, hideAmount bool) (*model.GCXResponse, error) {
 	options := command.GCXOptionWaitMagCard
 	if hideAmount {
@@ -799,6 +871,8 @@ func (s *Service) PurchaseGCX(ctx context.Context, amount, date, clock string, e
 		}
 	}
 }
+
+// LoadMultimediaPath lê uma mídia do disco e a transfere pelo fluxo MLI/MLR/MLE.
 func (s *Service) LoadMultimediaPath(ctx context.Context, path, name string, progress ProgressFunc) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -806,6 +880,8 @@ func (s *Service) LoadMultimediaPath(ctx context.Context, path, name string, pro
 	}
 	return s.SendMultimediaFile(ctx, name, bytes.Clone(data), progress)
 }
+
+// SendGPNCommandMK captura PIN com chave de trabalho MK/WK e devolve PIN block e KSN.
 func (s *Service) SendGPNCommandMK(ctx context.Context, keyIndex int, encryptedWorkingKey []byte, pan, message string) ([]byte, []byte, error) {
 	payload, err := command.BuildGPNCommandMK(keyIndex, encryptedWorkingKey, pan, message)
 	if err != nil {
@@ -817,6 +893,8 @@ func (s *Service) SendGPNCommandMK(ctx context.Context, keyIndex int, encryptedW
 	}
 	return command.ParseGPNResponse(r.Data)
 }
+
+// SendGPNCommandDUKPT captura PIN e devolve PIN block e KSN como dados sensíveis.
 func (s *Service) SendGPNCommandDUKPT(ctx context.Context, keyIndex int, pan, message string) ([]byte, []byte, error) {
 	payload, err := command.BuildGPNCommandDUKPT(keyIndex, pan, message)
 	if err != nil {
@@ -828,6 +906,8 @@ func (s *Service) SendGPNCommandDUKPT(ctx context.Context, keyIndex int, pan, me
 	}
 	return command.ParseGPNResponse(r.Data)
 }
+
+// SendCommand serializa uma operação tipada na fila única do dispositivo.
 func (s *Service) SendCommand(ctx context.Context, cmd command.Command) (*model.Response, error) {
 	return s.sendCommand(ctx, cmd, true)
 }

@@ -179,6 +179,8 @@ func declaresModule(contents []byte, expected string) bool {
 }
 
 func runMenu(reader *bufio.Reader, svc *service.Service, cfg model.PinpadConfig, logger *slog.Logger, tracer *logging.Tracer) error {
+	var lastGCX *model.GCXResponse
+	var lastGCXAmount string
 	for {
 		printMenu(cfg)
 		choice := readLine(reader, "Escolha uma opcao: ")
@@ -186,9 +188,15 @@ func runMenu(reader *bufio.Reader, svc *service.Service, cfg model.PinpadConfig,
 
 		switch choice {
 		case "1":
-			handleErr(logger, "Open", svc.Open(ctx))
+			if handleErr(logger, "Open", svc.Open(ctx)) {
+				lastGCX = nil
+				lastGCXAmount = ""
+			}
 		case "2":
-			handleErr(logger, "Close", svc.Close(ctx))
+			if handleErr(logger, "Close", svc.Close(ctx)) {
+				lastGCX = nil
+				lastGCXAmount = ""
+			}
 		case "3":
 			fmt.Printf("Estado atual do pinpad: %s\n", stateName(svc.GetState()))
 		case "4":
@@ -197,7 +205,10 @@ func runMenu(reader *bufio.Reader, svc *service.Service, cfg model.PinpadConfig,
 				printDeviceInfo(info)
 			}
 		case "5":
-			handleErr(logger, "Reset (CAN)", svc.Reset(ctx))
+			if handleErr(logger, "Reset (CAN)", svc.Reset(ctx)) {
+				lastGCX = nil
+				lastGCXAmount = ""
+			}
 		case "6":
 			fmt.Println("[ERRO] Comando indisponivel; use CAN na opcao 5.")
 		case "7":
@@ -224,6 +235,8 @@ func runMenu(reader *bufio.Reader, svc *service.Service, cfg model.PinpadConfig,
 				fmt.Printf("Tecla pressionada: 0x%02X\n", key)
 			}
 		case "11":
+			lastGCX = nil
+			lastGCXAmount = ""
 			enableCTLS, hideAmount, err := readGCXOptions(reader)
 			if err != nil {
 				fmt.Printf("[ERRO] Opcoes GCX: %v\n", err)
@@ -236,7 +249,12 @@ func runMenu(reader *bufio.Reader, svc *service.Service, cfg model.PinpadConfig,
 			ctx, cancel = context.WithTimeout(context.Background(), menuTimeout)
 			resp, err := svc.PurchaseGCX(ctx, amount, date, clock, enableCTLS, hideAmount)
 			if handleErr(logger, "PurchaseGCX (GCX)", err) {
+				lastGCX = resp
+				lastGCXAmount = amount
 				fmt.Printf("Tipo de cartao: %s\n", resp.CardType)
+				if resp.AidTableInfo != "" {
+					fmt.Printf("Informacoes das tabelas AID: %s\n", resp.AidTableInfo)
+				}
 			}
 		case "12":
 			response, err := svc.GetInfoRaw(ctx)
@@ -273,14 +291,38 @@ func runMenu(reader *bufio.Reader, svc *service.Service, cfg model.PinpadConfig,
 			records := splitRecords(readLine(reader, "Registros separados por ';': "))
 			handleErr(logger, "LoadCompleteEMVTable (TLI/TLR/TLE)", svc.LoadCompleteEMVTable(ctx, acquirer, version, records, printProgress))
 		case "19":
-			keyIndex := readInt(reader, "Indice da chave: ")
-			_, err := svc.GetTracks(ctx, command.GTKRequest{Tracks: "1111", DataMethod: "50", KeyIndex: &keyIndex})
+			request, err := readGTKRequest(reader)
+			if err != nil {
+				fmt.Printf("[ERRO] Opcoes GTK: %v\n", err)
+				break
+			}
+			cancel()
+			ctx, cancel = context.WithTimeout(context.Background(), menuTimeout)
+			tracks, err := svc.GetTracks(ctx, request)
 			if handleErr(logger, "GetTracks (GTK)", err) {
-				fmt.Println("Trilhas recebidas e mantidas redigidas no utilitario local.")
+				logged, traceErr := recordGTKResult(tracer, request, tracks)
+				if traceErr != nil {
+					cancel()
+					return fmt.Errorf("registrar trilhas GTK em claro: %w", traceErr)
+				}
+				if logged {
+					fmt.Println("Trilhas em claro registradas no arquivo de log ativo.")
+				} else {
+					fmt.Println("Trilhas criptografadas recebidas e mantidas redigidas.")
+				}
 			}
 		case "20":
-			_, err := svc.ContinueEMV(ctx, command.GOXRequest{AcquirerReference: "01", PinMethod: "3", KeyIndex: 1})
-			handleErr(logger, "ContinueEMV (GOX)", err)
+			request, err := readGOXRequest(reader, lastGCX, lastGCXAmount)
+			if err != nil {
+				fmt.Printf("[ERRO] Opcoes GOX: %v\n", err)
+				break
+			}
+			cancel()
+			ctx, cancel = context.WithTimeout(context.Background(), menuTimeout)
+			response, err := svc.ContinueEMV(ctx, request)
+			if handleErr(logger, "ContinueEMV (GOX)", err) {
+				fmt.Printf("Resultado EMV: %s\n", response.Result)
+			}
 		case "21":
 			_, err := svc.FinalizeEMV(ctx, command.FCXRequest{Options: "0000", Authorization: "00"})
 			handleErr(logger, "FinalizeEMV (FCX)", err)
@@ -349,7 +391,7 @@ func printMenu(cfg model.PinpadConfig) {
 	fmt.Println("16) Carregar arquivo de midia (MLI/MLR/MLE)")
 	fmt.Println("17) Exibir midia carregada (DSI)")
 	fmt.Println("18) Carregar tabela EMV (TLI/TLR/TLE)")
-	fmt.Println("19) Obter trilhas apos GCX elegivel (GTK, redigido)")
+	fmt.Println("19) Obter trilhas apos GCX elegivel (GTK)")
 	fmt.Println("20) Continuar transacao EMV (GOX)")
 	fmt.Println("21) Finalizar transacao EMV (FCX)")
 	fmt.Println("22) Capturar PIN MK/WK (GPN, redigido)")
@@ -443,6 +485,139 @@ func readGCXOptions(reader *bufio.Reader) (bool, bool, error) {
 		return false, false, fmt.Errorf("opcao de exibicao invalida")
 	}
 	return interfaceChoice == "2", visibilityChoice == "2", nil
+}
+
+func readGTKRequest(reader *bufio.Reader) (command.GTKRequest, error) {
+	fmt.Println("Modo de retorno das trilhas:")
+	fmt.Println("1) Em claro (sem chave)")
+	fmt.Println("2) Criptografadas com DUKPT TDES DAT#3/ECB (metodo 50)")
+	choice := readLine(reader, "Escolha o modo: ")
+	switch choice {
+	case "1":
+		return command.GTKRequest{}, nil
+	case "2":
+		keyText := readLine(reader, "Indice da chave DUKPT (00 a 99): ")
+		keyIndex, err := strconv.Atoi(keyText)
+		if err != nil || keyIndex < 0 || keyIndex > 99 {
+			return command.GTKRequest{}, fmt.Errorf("indice de chave invalido")
+		}
+		return command.GTKRequest{
+			Tracks:     "1111",
+			DataMethod: "50",
+			KeyIndex:   &keyIndex,
+		}, nil
+	default:
+		return command.GTKRequest{}, fmt.Errorf("modo de trilha invalido")
+	}
+}
+
+func recordGTKResult(tracer *logging.Tracer, request command.GTKRequest, response *model.GTKResponse) (bool, error) {
+	if request.DataMethod != "" {
+		return false, nil
+	}
+	if response == nil {
+		return false, fmt.Errorf("resposta GTK ausente")
+	}
+	return true, tracer.RecordGTKClearTracks(response.Track1, response.Track2, response.Track3)
+}
+
+func readGOXRequest(reader *bufio.Reader, gcx *model.GCXResponse, amount string) (command.GOXRequest, error) {
+	if gcx == nil || (gcx.CardType != command.GCXCardICC && gcx.CardType != command.GCXCardContactlessEMV) {
+		return command.GOXRequest{}, fmt.Errorf("execute antes um GCX com cartão ICC EMV ou CTLS EMV")
+	}
+	if len(amount) != 12 || !decimalText(amount) {
+		return command.GOXRequest{}, fmt.Errorf("valor do GCX ausente ou inválido")
+	}
+	acquirers, err := goxAcquirerReferences(gcx.AidTableInfo)
+	if err != nil {
+		return command.GOXRequest{}, err
+	}
+	fmt.Printf("Redes credenciadoras disponíveis: %s\n", strings.Join(acquirers, ", "))
+	acquirer := readLine(reader, fmt.Sprintf("Rede credenciadora (Enter = %s): ", acquirers[0]))
+	if acquirer == "" {
+		acquirer = acquirers[0]
+	}
+	if !containsString(acquirers, acquirer) {
+		return command.GOXRequest{}, fmt.Errorf("rede credenciadora não consta em PP_AIDTABINFO")
+	}
+
+	fmt.Println("Método de criptografia do PIN online:")
+	fmt.Println("0) MK/WK DES")
+	fmt.Println("1) MK/WK TDES")
+	fmt.Println("2) DUKPT DES")
+	fmt.Println("3) DUKPT TDES")
+	pinMethod := readLine(reader, "Escolha o método: ")
+	if len(pinMethod) != 1 || pinMethod[0] < '0' || pinMethod[0] > '3' {
+		return command.GOXRequest{}, fmt.Errorf("método de PIN inválido")
+	}
+	keyText := readLine(reader, "Índice da chave (00 a 99): ")
+	keyIndex, err := strconv.Atoi(keyText)
+	if err != nil || keyIndex < 0 || keyIndex > 99 {
+		return command.GOXRequest{}, fmt.Errorf("índice de chave inválido")
+	}
+
+	request := command.GOXRequest{
+		AcquirerReference: acquirer,
+		PinMethod:         pinMethod,
+		KeyIndex:          keyIndex,
+		Amount:            amount,
+	}
+	if pinMethod == "0" || pinMethod == "1" {
+		digits := 16
+		wantBytes := 8
+		if pinMethod == "1" {
+			digits = 32
+			wantBytes = 16
+		}
+		workingKeyHex := readLine(reader, fmt.Sprintf("WKENC (%d dígitos hexadecimais): ", digits))
+		workingKey, decodeErr := hex.DecodeString(workingKeyHex)
+		if decodeErr != nil || len(workingKey) != wantBytes {
+			return command.GOXRequest{}, fmt.Errorf("WKENC inválida para o método selecionado")
+		}
+		request.WorkingKey = workingKey
+	}
+	if _, err := command.BuildGOXCommand(request); err != nil {
+		return command.GOXRequest{}, err
+	}
+	return request, nil
+}
+
+func goxAcquirerReferences(aidTableInfo string) ([]string, error) {
+	if aidTableInfo == "" || len(aidTableInfo)%6 != 0 {
+		return nil, fmt.Errorf("PP_AIDTABINFO ausente ou inválido")
+	}
+	result := make([]string, 0, len(aidTableInfo)/6)
+	for offset := 0; offset < len(aidTableInfo); offset += 6 {
+		entry := aidTableInfo[offset : offset+6]
+		for _, value := range []byte(entry) {
+			if value < '0' || value > '9' {
+				return nil, fmt.Errorf("PP_AIDTABINFO ausente ou inválido")
+			}
+		}
+		acquirer := entry[:2]
+		if !containsString(result, acquirer) {
+			result = append(result, acquirer)
+		}
+	}
+	return result, nil
+}
+
+func containsString(values []string, wanted string) bool {
+	for _, value := range values {
+		if value == wanted {
+			return true
+		}
+	}
+	return false
+}
+
+func decimalText(value string) bool {
+	for index := range len(value) {
+		if value[index] < '0' || value[index] > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 func splitOptions(raw string) []string {

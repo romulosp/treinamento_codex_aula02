@@ -49,6 +49,11 @@ Autor: Rômulo Penha
    visibilidade do valor no CLI. Criar o contexto da operação depois dessas
    entradas e preservar seu prazo na fila, sem aplicar o timeout genérico da
    configuração ao GCX.
+   Na opção 19, coletar o modo GTK antes de iniciar a operação: claro envia
+   `GTK000`; criptografado usa método 50 e índice DUKPT validado.
+   Na opção 20, conservar a resposta e o valor do GCX; extrair as redes das
+   entradas N6 de `PP_AIDTABINFO`, coletar método/índice/WKENC de PIN e só
+   então iniciar o contexto do GOX.
 10. Implementar a comunicação segura RSA/AES somente após aprovação de `spec-protocolo-seguro.md`.
 11. Manter `TransactionGCX` como `ErrNotImplemented` enquanto sua tabela de parâmetros completos não estiver especificada e aprovada.
 12. Documentar todo código novo, convertido ou gerado conforme `.agents/skills/golang-documentation/SKILL.md`, incluindo comentários de pacote, símbolos exportados, fluxos internos complexos e exemplos executáveis aplicáveis.

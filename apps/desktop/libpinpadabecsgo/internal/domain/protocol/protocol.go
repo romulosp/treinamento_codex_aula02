@@ -7,6 +7,7 @@ import (
 	"fmt"
 )
 
+// Bytes de controle usados no enquadramento serial ABECS.
 const (
 	PP_SYN byte = 0x16
 	PP_ETB byte = 0x17

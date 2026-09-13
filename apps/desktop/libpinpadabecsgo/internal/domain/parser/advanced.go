@@ -3,6 +3,7 @@ package parser
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/command"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/model"
@@ -117,21 +118,38 @@ func ValidateGCXResponse(response *model.Response) (*model.GCXResponse, error) {
 			return nil, fmt.Errorf("missing or invalid PP_ICCSTAT")
 		}
 	case command.GCXCardICC, command.GCXCardContactlessEMV:
-		if result.AidTableInfo == "" || result.PAN == "" || len(result.PANSequence) != 2 || result.Label == "" {
+		if result.AidTableInfo == "" || len(result.PAN) < 2 || len(result.PAN) > 19 || !numeric(result.PAN) ||
+			len(result.PANSequence) != 2 || !numeric(result.PANSequence) || result.Label == "" || len(result.Label) > 16 {
 			return nil, fmt.Errorf("missing mandatory GCX ICC/CTLS field")
 		}
 	case command.GCXCardContactlessSimulated:
-		if result.AidTableInfo == "" || result.Label == "" {
+		if result.AidTableInfo == "" || result.Label == "" || len(result.Label) > 16 {
 			return nil, fmt.Errorf("missing mandatory GCX contactless field")
 		}
 	default:
 		return nil, fmt.Errorf("missing or invalid PP_CARDTYPE")
 	}
-	if result.AidTableInfo != "" && len(result.AidTableInfo)%6 != 0 {
+	if result.AidTableInfo != "" && (len(result.AidTableInfo) > 120 || len(result.AidTableInfo)%6 != 0) {
 		return nil, fmt.Errorf("invalid PP_AIDTABINFO")
 	}
-	if result.DeviceType != "" && len(result.DeviceType) != 2 {
+	if result.DeviceType != "" && (len(result.DeviceType) != 2 || !numeric(result.DeviceType)) {
 		return nil, fmt.Errorf("invalid PP_DEVTYPE")
+	}
+	if result.IssuerCountry != "" && (len(result.IssuerCountry) != 3 || !numeric(result.IssuerCountry)) {
+		return nil, fmt.Errorf("invalid PP_ISSCNTRY")
+	}
+	if result.ExpirationDate != "" {
+		if len(result.ExpirationDate) != 6 || !numeric(result.ExpirationDate) {
+			return nil, fmt.Errorf("invalid PP_CARDEXP")
+		}
+		if _, err := time.Parse("060102", result.ExpirationDate); err != nil {
+			return nil, fmt.Errorf("invalid PP_CARDEXP: %w", err)
+		}
+	}
+	if len(result.EMVData) > 0 {
+		if _, err := ParseBerTLV(result.EMVData); err != nil {
+			return nil, fmt.Errorf("invalid PP_EMVDATA: %w", err)
+		}
 	}
 	return result, nil
 }
@@ -163,6 +181,9 @@ func ValidateGTKResponse(response *model.Response, request command.GTKRequest) (
 		return nil, fmt.Errorf("missing GTK response")
 	}
 	result := GTKResponseFromResponse(response)
+	if len(result.EncryptedPAN) > 16 || len(result.Track1) > 88 || len(result.Track2) > 28 || len(result.Track3) > 60 {
+		return nil, fmt.Errorf("GTK card data exceeds ABECS limit")
+	}
 	dukpt := request.DataMethod == "30" || request.DataMethod == "40" || request.DataMethod == "50" || request.DataMethod == "51"
 	if dukpt {
 		for _, field := range []struct {
@@ -184,6 +205,9 @@ func ValidateGTKResponse(response *model.Response, request command.GTKRequest) (
 		if len(result.EncryptedRandom) != 256 {
 			return nil, fmt.Errorf("missing or invalid GTK encrypted random key")
 		}
+	}
+	if !dukpt && (len(result.EncryptedPANKey) != 0 || len(result.Track1KSN) != 0 || len(result.Track2KSN) != 0 || len(result.Track3KSN) != 0) {
+		return nil, fmt.Errorf("unexpected GTK KSN for non-DUKPT method")
 	}
 	return result, nil
 }
@@ -243,6 +267,11 @@ func ValidateGOXResponse(response *model.Response, request command.GOXRequest) (
 			return nil, fmt.Errorf("missing GOX EMV data")
 		}
 	}
+	if len(result.EMVData) > 0 {
+		if _, err := ParseBerTLV(result.EMVData); err != nil {
+			return nil, fmt.Errorf("invalid GOX EMV data: %w", err)
+		}
+	}
 	return result, nil
 }
 
@@ -260,7 +289,24 @@ func ValidateFCXResponse(response *model.Response, request command.FCXRequest) (
 			return nil, fmt.Errorf("missing FCX EMV data")
 		}
 	}
+	if len(result.EMVData) > 0 {
+		if _, err := ParseBerTLV(result.EMVData); err != nil {
+			return nil, fmt.Errorf("invalid FCX EMV data: %w", err)
+		}
+	}
+	if len(result.IssuerScripts) > 50 || len(result.IssuerScripts)%5 != 0 {
+		return nil, fmt.Errorf("invalid PP_ISRESULTS")
+	}
 	return result, nil
+}
+
+func numeric(value string) bool {
+	for index := range value {
+		if value[index] < '0' || value[index] > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 func parseEMVData(data []byte, destination map[uint32][]byte) {

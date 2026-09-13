@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+// ParseBerTLV interpreta objetos BER-TLV simples ou construídos e rejeita truncamento.
 func ParseBerTLV(data []byte) ([]tlv.BerTLV, error) {
 	out := make([]tlv.BerTLV, 0)
 	for len(data) > 0 {

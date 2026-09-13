@@ -2,16 +2,15 @@
 
 Autor: Rômulo Penha
 
-**Data da última evidência executada:** 2026-09-12
+**Data da última evidência executada:** 2026-09-13
 
-**Estado desta evidência:** `PENDENTE_DE_REVISAO_DA_IMPLEMENTACAO`
+**Estado desta evidência:** `PENDENTE_VALIDACAO_FISICA`
 
-**Fase atual da Change:** `IMPLEMENTADA`, aguardando revisão independente da
-implementação antes da validação formal.
+**Fase atual da Change:** `IMPLEMENTACAO_APROVADA`, com validação automatizada
+aprovada e matriz física integral pendente.
 
-> Os resultados abaixo são históricos e não validam RF-011/CA-026 nem
-> CA-L001 a CA-L017 após a revisão que identificou dois arquivos homônimos e o
-> destino esperado vazio. A nova validação deverá substituir esta conclusão.
+> As seções anteriores a “Conformidade unitária ABECS 2.12” preservam o
+> histórico. A seção de 2026-09-13 contém o resultado automatizado vigente.
 
 ## Ambiente
 
@@ -302,3 +301,191 @@ leitura e o teste exige mais de 50 segundos restantes, comprovando que o prazo
 não foi encurtado. A confirmação física requer executar novamente a opção 11
 com o binário recompilado e apresentar o cartão dentro dos 60 segundos que
 começam após a última entrada.
+
+## Conformidade unitária ABECS 2.12 — 2026-09-13
+
+**Estado de entrada:** `IMPLEMENTACAO_APROVADA`
+
+**Ambiente:** Windows, PowerShell, `go1.26.5`, `GOOS=windows`, `GOARCH=386`.
+
+**Manual:** *Pinpad Abecs — Protocolo de Comunicação e Funcionamento*, versão
+2.12 de 11-abr-2019.
+
+| Evidência | Comando/cenário | Código | Resultado |
+| --- | --- | ---: | --- |
+| VAL-ABECS-001 | `go test ./... -count=1` | 0 | Todos os 16 pacotes aprovados sem cache. |
+| VAL-ABECS-002 | `go vet ./...` | 0 | Nenhum diagnóstico. |
+| VAL-ABECS-003 | `go test ./... -coverprofile=coverage-abecs212-final -count=1` | 0 | Perfil concluído. |
+| VAL-ABECS-004 | `go tool cover -func=coverage-abecs212-final` | 0 | Cobertura total **81,6%**; command 87,9%, parser 89,2% e protocol 90,6%. |
+| VAL-ABECS-005 | `go build -o .\bin\libpinpadabecsgo.exe .\cmd\libpinpadabecsgo` | 0 | Build Windows aprovado; SHA-256 `E15A45C80A1250BEAD8B6ADC9052676301CD0FED51391759B58F9493F348387E`. |
+| VAL-ABECS-006 | `GOOS=linux GOARCH=amd64 go build ./...` | 0 | Build Linux amd64 aprovado. |
+| VAL-ABECS-007 | `go run golang.org/x/vuln/cmd/govulncheck@latest ./...` | 0 | Zero vulnerabilidades alcançáveis; foram informadas vulnerabilidades não alcançáveis em dependências. |
+| VAL-ABECS-008 | `go test -race ./... -count=1` | 1 | Limitação de ambiente: `-race is not supported on windows/386`. |
+| VAL-ABECS-009 | `go run golang.org/x/lint/golint@latest ./...` | 0 | Nenhum comentário exportado ausente; somente sugestões de nomes preservados. |
+| VAL-ABECS-010 | `git diff --check` | 0 | Nenhum erro de whitespace; avisos LF/CRLF são informativos. |
+| VAL-ABECS-011 | `go test ./internal/domain/command ./internal/domain/parser ./internal/domain/protocol ./internal/application/service -run 'ABECS212\|Published\|Exchange\|CancelHandshake\|TableLoad' -count=1 -v` | 0 | Vetores publicados, limites, enlace, CAN/EOT e TLR aprovados individualmente. |
+
+### Cenários comprovados
+
+- OPN clássico, OPN seguro RSA e pacote AES-CBC da página 170;
+- CLO S32, CLX, GIX, DSP, DEX, MNU da página 90 e todas as teclas GKY;
+- GPN da página 83, GTK da página 86, GOX da página 139 e comando FCX da
+  página 141;
+- MLI/MLR/MLE/DSI com CRC16 e vetores publicados;
+- TLI/TLR/TLE, continuação após status 000/020 e particionamento TLR por NREC e
+  `CMD_LEN1 <= 999`; o PKTDATA TLR máximo é 1005 e permanece abaixo de 1024;
+- GCX com AAMMDD, quatro combinações de GCXOPT, campos condicionais de resposta
+  e retentativas/mudança de interface CTLS;
+- respostas ABECS com múltiplos blocos N3 e rejeição de campos obrigatórios,
+  comprimentos, bits RUF, datas e BER-TLV inválidos;
+- enlace com ACK, NAK, três tentativas, NAK após CRC inválido, prazo CAN/EOT de
+  2 segundos e nenhuma confirmação enviada após resposta válida;
+- logging SPE/PP/RSP e redação de PAN, trilhas, chaves, PIN block e KSN.
+
+### Limite da evidência
+
+Os testes comprovam serialização, parsing, regras condicionais, estado e fluxo
+contra o manual. Eles não comprovam interoperabilidade de todos os comandos com
+um equipamento, cartões, kernels e tabelas reais.
+
+**Resultado automatizado:** `VALIDADA`
+
+**Estado da validação integral da Change:** `PENDENTE_VALIDACAO_FISICA`
+
+Para concluir a validação integral, ainda é necessária a matriz física dos
+comandos aplicáveis. A limitação do race detector deve ser reavaliada em
+`windows/amd64` ou Linux, mas não invalida a suíte unitária executada.
+
+## Seleção de trilhas GTK no utilitário local — 2026-09-13
+
+**Estado de entrada:** `IMPLEMENTACAO_APROVADA`
+
+**Ambiente:** Windows, PowerShell, `go1.26.5`, `GOOS=windows`, `GOARCH=386`.
+
+O rastro físico apresentou `GTK042` porque a opção 19 solicitava sempre o
+método DUKPT `50` no índice 02. Conforme a seção 3.3.12 do manual ABECS 2.12,
+o status `042` informa chave MK/DUKPT ausente. A correção permite escolher o
+retorno em claro, cujo comando é `GTK000` e não depende de chave, ou preservar
+o retorno criptografado com DUKPT.
+
+| Evidência | Comando/cenário | Código | Resultado |
+| --- | --- | ---: | --- |
+| VAL-GTK-CLI-001 | `go test ./cmd/libpinpadabecsgo ./internal/domain/command ./internal/application/service -run 'TestReadGTKRequest\|TestGTK\|TestAdvancedFlows' -count=1 -v` | 0 | Modo claro, DUKPT, entradas inválidas e contratos GTK aprovados. |
+| VAL-GTK-CLI-002 | `go test ./... -count=1` | 0 | Todos os 16 pacotes aprovados sem cache. |
+| VAL-GTK-CLI-003 | `go vet ./...` | 0 | Nenhum diagnóstico. |
+| VAL-GTK-CLI-004 | `go test ./... -coverprofile=coverage-abecs212-final -count=1` e `go tool cover -func=coverage-abecs212-final` | 0 | Cobertura total **81,5%**; CLI 62,4%, service 78,3%, command 87,9%, parser 89,2% e protocol 90,6%. |
+| VAL-GTK-CLI-005 | `go build -o .\bin\libpinpadabecsgo.exe .\cmd\libpinpadabecsgo` | 0 | Build Windows aprovado; SHA-256 `B93505AF1F67EDCCDF91CF77B8651CD5C851E0F826CE826B2583201E571A6BD8`. |
+| VAL-GTK-CLI-006 | `GOOS=linux GOARCH=386 go build -o build/libpinpadabecsgo-linux-386 ./cmd/libpinpadabecsgo` | 0 | Build Linux 386 aprovado; SHA-256 `0656930FB3681032E8EAB49D1CBD259F6D2398096E1411A58423921819AEABC3`. |
+
+Os testes verificam byte a byte que a escolha 1 produz `GTK000`, sem índice de
+chave, e que a escolha 2 produz os TLVs `SPE_MTHDDAT=50`,
+`SPE_TRACKS=1111` e `SPE_KEYIDX=02`. Modos inválidos, índice não numérico e
+índice acima de 99 são recusados antes da comunicação serial.
+
+**Resultado automatizado da correção:** `VALIDADA`
+
+**Validação física da correção:** `PENDENTE_VALIDACAO_FISICA`
+
+Para a confirmação física, uma nova inicialização GCX elegível deve preceder a
+opção 19, seguida da escolha 1. O resultado esperado é o envio `GTK000`, sem o
+status `042` associado à ausência de chave. O frame serial permanece redigido;
+o complemento posterior desta Change autoriza a linha textual `GTK_CLEAR` no
+arquivo do utilitário local.
+
+## Registro das trilhas GTK em claro — 2026-09-13
+
+**Estado de entrada:** `IMPLEMENTACAO_APROVADA`
+
+**Ambiente:** Windows, PowerShell, `go1.26.5`, `GOOS=windows`, `GOARCH=386`.
+
+| Evidência | Comando/cenário | Código | Resultado |
+| --- | --- | ---: | --- |
+| VAL-GTK-LOG-001 | `go test ./cmd/libpinpadabecsgo ./internal/infrastructure/logging -run 'TestReadGTKRequest\|TestRecordGTKResult\|TestTracerRecordsGTKClearTracks' -count=1 -v` | 0 | Seleção, conteúdo, campos vazios, escaping e ausência no modo DUKPT aprovados. |
+| VAL-GTK-LOG-002 | `go test ./... -count=1` | 0 | Todos os 16 pacotes aprovados sem cache. |
+| VAL-GTK-LOG-003 | `go vet ./...` | 0 | Nenhum diagnóstico após correção do cancelamento no caminho de falha do tracer. |
+| VAL-GTK-LOG-004 | `go test ./... -coverprofile=coverage-abecs212-final -count=1` e `go tool cover -func=coverage-abecs212-final` | 0 | Cobertura total **81,3%**; logging **88,8%**. |
+| VAL-GTK-LOG-005 | `go build -o .\bin\libpinpadabecsgo.exe .\cmd\libpinpadabecsgo` | 0 | Executável Windows aprovado; SHA-256 `36DB8CAACE5B1735943BAF85561EFC16279F4B22B22811812874CBEB22F0F4A6`. |
+
+A linha esperada no arquivo ativo possui o formato:
+
+```text
+[COM7#001] GTK_CLEAR TRACK1="<valor>" TRACK2="<valor>" TRACK3="<valor>" FUNC=cmd.libpinpadabecsgo.GTK DATA_HORA=<RFC3339Nano>
+```
+
+Os frames `SPE` e `PP` de GTK permanecem com `**REDACTED(<n> bytes)**`. A linha
+`GTK_CLEAR` só é produzida após resposta válida quando a escolha do CLI gera
+`GTK000`; o modo DUKPT não produz essa linha.
+
+**Resultado automatizado da correção:** `VALIDADA`
+
+**Validação física do conteúdo das trilhas:** `PENDENTE_VALIDACAO_FISICA`
+
+## Decodificação BCD/nibble do GTK em claro — 2026-09-13
+
+**Estado de entrada:** `IMPLEMENTACAO_APROVADA`
+
+**Fonte normativa:** manual ABECS 2.12, seções 5.4.2.1 e 5.4.2.2, páginas
+181–182.
+
+| Evidência | Comando/cenário | Código | Resultado |
+| --- | --- | ---: | --- |
+| VAL-GTK-BCD-001 | `go test ./internal/infrastructure/logging ./cmd/libpinpadabecsgo -run 'TestDecodeGTKClearNumericTrack\|TestTracerRecordsGTKClearTracks\|TestRecordGTKResult' -count=1 -v` | 0 | Vetor físico, vetor solicitado, separador, filler, campos vazios, escaping e entradas inválidas aprovados. |
+| VAL-GTK-BCD-002 | `go test ./... -count=1` | 0 | Todos os 16 pacotes aprovados sem cache. |
+| VAL-GTK-BCD-003 | `go vet ./...` | 0 | Nenhum diagnóstico. |
+| VAL-GTK-BCD-004 | `go test ./... -coverprofile=coverage-abecs212-final -count=1` | 0 | Cobertura total **81,4%**; logging **88,8%**. |
+| VAL-GTK-BCD-005 | `go build -o .\bin\libpinpadabecsgo.exe .\cmd\libpinpadabecsgo` | 0 | Executável Windows aprovado; SHA-256 `08D46A0A73A3753493AAD13FDCEF7295337DA81C86AE94E4CC97BB9CE07B70B3`. |
+
+O rastro físico fornecido foi usado diretamente como oráculo:
+
+```text
+54 28 20 60 97 98 40 97 D2 11 12 01 38 29 95 58 46 37 0F
+=> 5428206097984097=21112013829955846370
+```
+
+O nibble `D` foi convertido no delimitador `=` e o filler `F` final foi
+removido. O vetor correspondente ao formato apresentado pelo operador também
+foi validado:
+
+```text
+54 28 20 60 97 98 40 97 D1 12 23 36 65 5F
+=> 5428206097984097=1122336655
+```
+
+**Resultado automatizado:** `VALIDADA`
+
+**Confirmação no arquivo físico:** `PENDENTE_VALIDACAO_FISICA`
+
+## Correção da opção 20 GOX — 2026-09-13
+
+**Estado de entrada:** `IMPLEMENTACAO_APROVADA`
+
+**Ambiente:** Windows, PowerShell, `go1.26.5`, `GOOS=windows`, `GOARCH=386`.
+
+| Evidência | Comando/cenário | Código | Resultado |
+| --- | --- | ---: | --- |
+| VAL-GOX-CLI-001 | `go test ./cmd/libpinpadabecsgo ./internal/domain/command ./internal/application/service -run 'TestReadGOXRequest\|TestGOXAcquirerReferences\|TestGOXBuilder\|TestAdvancedFlows' -count=1 -v` | 0 | Contexto GCX, redes AID, PIN/WKENC, payload mínimo, vetor publicado e fluxo GCX→GTK→GOX aprovados. |
+| VAL-GOX-CLI-002 | `TestRunMenuRejectsGOXWithoutEligibleGCXBeforeService` | 0 | Ausência de GCX elegível é recusada antes do serviço. |
+| VAL-GOX-CLI-003 | `go test ./... -count=1` | 0 | Todos os 16 pacotes aprovados sem cache. |
+| VAL-GOX-CLI-004 | `go vet ./...` | 0 | Nenhum diagnóstico. |
+| VAL-GOX-CLI-005 | `go test ./... -coverprofile=coverage-abecs212-final -count=1` | 0 | Cobertura total **81,4%**; CLI **65,8%**, command **87,9%** e service **78,3%**. |
+| VAL-GOX-CLI-006 | `go build -o .\bin\libpinpadabecsgo.exe .\cmd\libpinpadabecsgo` | 0 | Executável Windows aprovado; SHA-256 `B5F5668881A17019DAB9D04BDD18C4AA71A0877C8B936D873097EC37B7206207`. |
+
+Para `PP_AIDTABINFO="080301"`, valor GCX `000000010000`, DUKPT TDES e índice
+07, o teste exige exatamente:
+
+```text
+GOX033
+  0013 000C 303030303030303130303030
+  0002 0001 33
+  0009 0002 3037
+  0010 0002 3038
+```
+
+O payload contém `SPE_ACQREF="08"`, derivado do GCX, e não contém o antigo
+valor fixo `01`. A confirmação de que o pinpad deixa de devolver `011` depende
+de repetir fisicamente GCX e GOX com uma chave PIN existente no índice
+escolhido.
+
+**Resultado automatizado:** `VALIDADA`
+
+**Confirmação física do GOX:** `PENDENTE_VALIDACAO_FISICA`

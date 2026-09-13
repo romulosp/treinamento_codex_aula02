@@ -94,3 +94,17 @@ func TestSecureOPNUsesRSA2048AndExtractsKSEC(t *testing.T) {
 		t.Fatal("expected secure payload length validation")
 	}
 }
+
+func TestGenerateSecureOPNReturnsMatchingRSAKeyAndPayload(t *testing.T) {
+	privateKey, payload, err := GenerateSecureOPN()
+	if err != nil {
+		t.Fatal(err)
+	}
+	want, err := BuildSecureOPN(&privateKey.PublicKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if privateKey.N.BitLen() != 2048 || privateKey.E != 65537 || !bytes.Equal(payload, want) {
+		t.Fatalf("OPN gerado não corresponde à chave RSA: bits=%d expoente=%d", privateKey.N.BitLen(), privateKey.E)
+	}
+}

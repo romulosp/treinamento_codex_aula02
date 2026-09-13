@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/application/service"
+	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/command"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/model"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/infrastructure/logging"
 )
@@ -203,6 +204,180 @@ func TestReadGCXOptions(t *testing.T) {
 	}
 }
 
+func TestReadGTKRequest(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     string
+		wantError bool
+		validate  func(*testing.T, command.GTKRequest)
+	}{
+		{
+			name:  "trilhas em claro",
+			input: "1\n",
+			validate: func(t *testing.T, request command.GTKRequest) {
+				payload, err := command.BuildGTKCommand(request)
+				if err != nil || string(payload) != "GTK000" || request.KeyIndex != nil {
+					t.Fatalf("GTK claro = %q, %#v, %v", payload, request, err)
+				}
+			},
+		},
+		{
+			name:  "trilhas DUKPT",
+			input: "2\n02\n",
+			validate: func(t *testing.T, request command.GTKRequest) {
+				if request.DataMethod != "50" || request.Tracks != "1111" || request.KeyIndex == nil || *request.KeyIndex != 2 {
+					t.Fatalf("GTK DUKPT = %#v", request)
+				}
+				payload, err := command.BuildGTKCommand(request)
+				if err != nil {
+					t.Fatal(err)
+				}
+				want := []byte{'G', 'T', 'K', '0', '2', '0', 0, 3, 0, 2, '5', '0', 0, 7, 0, 4, '1', '1', '1', '1', 0, 9, 0, 2, '0', '2'}
+				if !bytes.Equal(payload, want) {
+					t.Fatalf("GTK DUKPT = %X, want %X", payload, want)
+				}
+			},
+		},
+		{name: "modo inválido", input: "3\n", wantError: true},
+		{name: "índice não numérico", input: "2\nabc\n", wantError: true},
+		{name: "índice acima de N2", input: "2\n100\n", wantError: true},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var request command.GTKRequest
+			var err error
+			output := captureOutput(t, func() {
+				request, err = readGTKRequest(bufio.NewReader(strings.NewReader(test.input)))
+			})
+			if (err != nil) != test.wantError {
+				t.Fatalf("readGTKRequest()=%#v, %v", request, err)
+			}
+			if test.validate != nil {
+				test.validate(t, request)
+			}
+			if !strings.Contains(output, "Modo de retorno das trilhas") {
+				t.Fatalf("prompt GTK ausente: %q", output)
+			}
+		})
+	}
+}
+
+func TestRecordGTKResultLogsOnlyClearTracks(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "trace.log")
+	tracer := logging.NewTracer()
+	if active, err := tracer.SetLogDestination(path); err != nil || !active {
+		t.Fatalf("SetLogDestination active=%t err=%v", active, err)
+	}
+	response := &model.GTKResponse{
+		Track1: []byte("TRACK-ONE"),
+		Track2: []byte{0x54, 0x28, 0x20, 0x60, 0x97, 0x98, 0x40, 0x97, 0xD1, 0x12, 0x23, 0x36, 0x65, 0x5F},
+	}
+	logged, err := recordGTKResult(tracer, command.GTKRequest{}, response)
+	if err != nil || !logged {
+		t.Fatalf("clear GTK logged=%t err=%v", logged, err)
+	}
+	logged, err = recordGTKResult(tracer, command.GTKRequest{DataMethod: "50"}, response)
+	if err != nil || logged {
+		t.Fatalf("encrypted GTK logged=%t err=%v", logged, err)
+	}
+	if _, err := recordGTKResult(tracer, command.GTKRequest{}, nil); err == nil {
+		t.Fatal("missing clear GTK response was accepted")
+	}
+	if err := tracer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(content)
+	if strings.Count(text, "GTK_CLEAR") != 1 || !strings.Contains(text, `TRACK1="TRACK-ONE" TRACK2="5428206097984097=1122336655" TRACK3=""`) {
+		t.Fatalf("unexpected GTK clear trace: %q", text)
+	}
+}
+
+func TestReadGOXRequestUsesGCXContextAndBuildsExactPayload(t *testing.T) {
+	gcx := &model.GCXResponse{CardType: command.GCXCardICC, AidTableInfo: "080301"}
+	var request command.GOXRequest
+	var err error
+	output := captureOutput(t, func() {
+		request, err = readGOXRequest(bufio.NewReader(strings.NewReader("\n3\n07\n")), gcx, "000000010000")
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if request.AcquirerReference != "08" || request.PinMethod != "3" || request.KeyIndex != 7 || request.Amount != "000000010000" {
+		t.Fatalf("GOX request = %#v", request)
+	}
+	payload, err := command.BuildGOXCommand(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []byte{
+		'G', 'O', 'X', '0', '3', '3',
+		0x00, 0x13, 0x00, 0x0C, '0', '0', '0', '0', '0', '0', '0', '1', '0', '0', '0', '0',
+		0x00, 0x02, 0x00, 0x01, '3',
+		0x00, 0x09, 0x00, 0x02, '0', '7',
+		0x00, 0x10, 0x00, 0x02, '0', '8',
+	}
+	if !bytes.Equal(payload, want) {
+		t.Fatalf("GOX payload = %X, want %X", payload, want)
+	}
+	if !strings.Contains(output, "Redes credenciadoras disponíveis: 08") {
+		t.Fatalf("GOX prompt = %q", output)
+	}
+}
+
+func TestReadGOXRequestValidatesAcquirerPINMethodAndWorkingKey(t *testing.T) {
+	gcx := &model.GCXResponse{CardType: command.GCXCardContactlessEMV, AidTableInfo: "080301020503080402"}
+	request, err := readGOXRequest(
+		bufio.NewReader(strings.NewReader("02\n1\n09\n00112233445566778899AABBCCDDEEFF\n")),
+		gcx,
+		"000000000100",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if request.AcquirerReference != "02" || request.PinMethod != "1" || request.KeyIndex != 9 || len(request.WorkingKey) != 16 {
+		t.Fatalf("GOX MK/WK request = %#v", request)
+	}
+
+	tests := []struct {
+		name   string
+		gcx    *model.GCXResponse
+		amount string
+		input  string
+	}{
+		{name: "sem GCX", amount: "000000000100"},
+		{name: "cartão magnético", gcx: &model.GCXResponse{CardType: command.GCXCardMagnetic, AidTableInfo: "080301"}, amount: "000000000100"},
+		{name: "valor ausente", gcx: gcx},
+		{name: "AID inválido", gcx: &model.GCXResponse{CardType: command.GCXCardICC, AidTableInfo: "08030"}, amount: "000000000100"},
+		{name: "rede fora da lista", gcx: gcx, amount: "000000000100", input: "99\n"},
+		{name: "método inválido", gcx: gcx, amount: "000000000100", input: "\n4\n"},
+		{name: "índice inválido", gcx: gcx, amount: "000000000100", input: "\n3\n100\n"},
+		{name: "WKENC curta", gcx: gcx, amount: "000000000100", input: "\n1\n07\n1234\n"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if _, err := readGOXRequest(bufio.NewReader(strings.NewReader(test.input)), test.gcx, test.amount); err == nil {
+				t.Fatal("entrada GOX inválida foi aceita")
+			}
+		})
+	}
+}
+
+func TestGOXAcquirerReferences(t *testing.T) {
+	got, err := goxAcquirerReferences("080301020503080402")
+	if err != nil || strings.Join(got, ",") != "08,02" {
+		t.Fatalf("goxAcquirerReferences = %v, %v", got, err)
+	}
+	for _, invalid := range []string{"", "08030", "08A301"} {
+		if _, err := goxAcquirerReferences(invalid); err == nil {
+			t.Fatalf("PP_AIDTABINFO inválido aceito: %q", invalid)
+		}
+	}
+}
+
 func TestCLIPrintsMenuDeviceInfoAndResults(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	output := captureOutput(t, func() {
@@ -214,7 +389,7 @@ func TestCLIPrintsMenuDeviceInfoAndResults(t *testing.T) {
 	})
 	for _, expected := range []string{
 		"Menu de teste local", "numeroSerie:: serial", "modelo:: model", "[OK] GIX", "[ERRO] GIX",
-		"Abrir sessao segura (OPN RSA/AES)", "(MLI/MLR/MLE)", "(TLI/TLR/TLE)", "(GTK, redigido)",
+		"Abrir sessao segura (OPN RSA/AES)", "(MLI/MLR/MLE)", "(TLI/TLR/TLE)", "(GTK)",
 		"(GOX)", "(FCX)", "(GPN, redigido)", "QR Code", "GCX completa",
 	} {
 		if !strings.Contains(output, expected) {
@@ -266,5 +441,22 @@ func TestRunMenuRejectsInvalidGCXOptionsBeforePurchase(t *testing.T) {
 	}
 	if strings.Contains(output, "PurchaseGCX") {
 		t.Fatalf("GCX purchase started after invalid choice: %q", output)
+	}
+}
+
+func TestRunMenuRejectsGOXWithoutEligibleGCXBeforeService(t *testing.T) {
+	svc := service.New(model.DefaultConfig(), nil)
+	defer svc.Shutdown()
+	output := captureOutput(t, func() {
+		input := bytes.NewBufferString("20\n0\n")
+		if err := runMenu(bufio.NewReader(input), svc, model.DefaultConfig(), slog.New(slog.NewTextHandler(io.Discard, nil)), logging.NewTracer()); err != nil {
+			t.Fatal(err)
+		}
+	})
+	if !strings.Contains(output, "[ERRO] Opcoes GOX: execute antes um GCX") {
+		t.Fatalf("ausência de GCX não foi informada: %q", output)
+	}
+	if strings.Contains(output, "ContinueEMV") {
+		t.Fatalf("GOX chegou ao serviço sem GCX elegível: %q", output)
 	}
 }

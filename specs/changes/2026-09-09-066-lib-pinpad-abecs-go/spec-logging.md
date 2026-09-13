@@ -13,7 +13,7 @@ Autor: Rômulo Penha
 
 ## Papel do logging no projeto
 
-Esta SPEC define dois canais complementares: o `slog` operacional, que registra operação, duração e resultado, e o tracer bruto SPE/PP/RSP, que registra a comunicação serial suficiente para diagnosticar framing e protocolo. O tracer não é uma autorização para armazenar dados do cartão: redaction é aplicada antes da escrita e prevalece sobre a necessidade de diagnóstico.
+Esta SPEC define dois canais complementares: o `slog` operacional, que registra operação, duração e resultado, e o tracer bruto SPE/PP/RSP, que registra a comunicação serial suficiente para diagnosticar framing e protocolo. O tracer não é uma autorização geral para armazenar dados do cartão: redaction é aplicada antes da escrita e prevalece sobre a necessidade de diagnóstico. O utilitário local de laboratório possui uma exceção explícita para registrar o resultado GTK já interpretado quando o operador escolhe o modo em claro, conforme `spec-command-gtk.md`; o frame serial bruto continua redigido.
 
 O tracer pertence à infraestrutura. O domínio não deve importar `slog`, `os.File` ou conhecer o formato do arquivo. A serialização do comando deve fornecer apenas metadados seguros, como o tipo do comando e o status, ao tracer.
 
@@ -267,10 +267,11 @@ enviado. Operações reservadas ou rejeitadas antes da serialização, como
 
 ### RF-L006 — Redação de dados sensíveis
 
-O rastro de comunicação nunca deverá expor, em texto plano ou hexadecimal,
-valores reais de PAN, TRACK2, PIN, PIN block, KSN, WKENC, conteúdo de mídia,
-registros de tabela EMV, material RSA/AES/KSEC/IV, criptogramas ou dados EMV
-sensíveis, mesmo quando esses bytes fizerem parte do payload transmitido.
+Salvo a exceção local e explícita de RF-L006.1, o rastro de comunicação nunca
+deverá expor, em texto plano ou hexadecimal, valores reais de PAN, TRACK2, PIN,
+PIN block, KSN, WKENC, conteúdo de mídia, registros de tabela EMV, material
+RSA/AES/KSEC/IV, criptogramas ou dados EMV sensíveis, mesmo quando esses bytes
+fizerem parte do payload transmitido.
 
 A linha deverá substituir o frame de dados completo por
 `**REDACTED(<n> bytes)**`, preservando `CMD=` e o `STATUS=` da linha `RSP`, nos
@@ -288,6 +289,26 @@ fornecer ao adaptador, junto do comando ativo, a política de redaction necessá
 antes do I/O; o tracer não tenta descobrir segredo inspecionando offsets. A
 redação total elimina risco de vazamento parcial e prevalece sobre o valor de
 diagnóstico dos bytes.
+
+#### RF-L006.1 — Exceção local para GTK em claro
+
+Quando, e somente quando, o operador selecionar explicitamente “Em claro” na
+opção 19 do executável local, após uma resposta GTK `000` validada o CLI deve
+gravar uma linha textual `GTK_CLEAR TRACK1=<valor> TRACK2=<valor>
+TRACK3=<valor>` no mesmo arquivo ativo. Os valores devem ser delimitados e
+escapados para impedir quebra ou injeção de linha. Campos ausentes devem ser
+registrados como strings vazias.
+
+Antes da gravação, `TRACK1` deve ser tratada como ASCII e `TRACK2`/`TRACK3`
+devem ser convertidas da codificação de um símbolo por nibble definida na seção
+5.4.2.2 do manual: nibbles `0`–`9` representam dígitos, `D` representa o
+separador `=` e `F` é aceito somente como filler final. Outros nibbles ou `F`
+antes do final invalidam o registro.
+
+Essa linha é produzida pelo CLI a partir de `GTKResponse`; ela não altera a
+classificação sensível de `CommandGTK`, não libera os bytes `PP`, não inclui KSN
+nem material de chave e não é emitida para métodos criptografados. A API da
+biblioteca permanece sem logging automático desses valores.
 
 ### RF-L007 — Erros de sistema
 
@@ -348,7 +369,9 @@ preservadas de forma distinguível.
 
 - O rastro de comunicação é opt-in: desabilitado por padrão até que um destino seja configurado.
 - Direção de escrita é sempre `SPE`; direção de leitura é sempre `PP`.
-- Nenhuma linha de rastro poderá conter PAN, TRACK2, PIN, PIN block, KSN ou WKENC em claro.
+- Nenhuma linha de rastro poderá conter PAN, TRACK2, PIN, PIN block, KSN ou
+  WKENC em claro, exceto `TRACK1`/`TRACK2`/`TRACK3` na linha `GTK_CLEAR`
+  autorizada por RF-L006.1.
 - Reconfigurar o destino do log nunca poderá deixar um arquivo aberto sem uso (vazamento de descritor).
 
 ## Cenários e critérios de aceite
@@ -376,7 +399,8 @@ preservadas de forma distinguível.
 - [ ] **CA-L012:** em um cenário GCX de laboratório, a sequência registrada é
   `SPE CMD=GCX`, um ou mais `PP`, `RSP CMD=GCX STATUS=<código>` e `close()`
   quando aplicável; o conteúdo hexadecimal de GCX/GTK/GOX/FCX/GPN permanece
-  integralmente redigido.
+  integralmente redigido. A linha textual `GTK_CLEAR` prevista em RF-L006.1
+  não altera a redação do frame hexadecimal.
 - [ ] **CA-L013:** duas instâncias isoladas de `Tracer`, configuradas com
   destinos temporários distintos, não misturam linhas; uma construção sem
   tracer permanece desabilitada e não cria arquivo.

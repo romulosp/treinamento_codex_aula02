@@ -67,9 +67,19 @@ func TestParseAbecsResponsePreservesRawTags(t *testing.T) {
 	}
 }
 
-func TestParseAbecsResponsePreservesShortCommandData(t *testing.T) {
-	response, err := ParseAbecsResponse([]byte("MNU0000012"))
-	if err != nil || string(response.Data) != "2" || len(response.RawTags) != 0 {
-		t.Fatalf("short response = %#v, %v", response, err)
+func TestParseAbecsResponseSupportsMultipleBlocks(t *testing.T) {
+	data := []byte{'G', 'I', 'X', '0', '0', '0', '0', '0', '5', 0x80, 0x01, 0x00, 0x01, 'A', '0', '0', '5', 0x80, 0x03, 0x00, 0x01, 'B'}
+	response, err := ParseAbecsResponse(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(response.RawTags[0x8001]) != "A" || string(response.RawTags[0x8003]) != "B" || len(response.Data) != 10 {
+		t.Fatalf("multi-block response = %#v", response)
+	}
+}
+
+func TestParseAbecsResponseRejectsNonTLVCommandData(t *testing.T) {
+	if _, err := ParseAbecsResponse([]byte("MNU0000012")); err != domainerror.ErrInvalidResponse {
+		t.Fatalf("short response error = %v", err)
 	}
 }

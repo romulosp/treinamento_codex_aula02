@@ -3,6 +3,7 @@ package command
 // SPEParameter identifies a command parameter (SPE_xxx).
 type SPEParameter uint16
 
+// Identificadores SPE_xxx usados nos parâmetros dos Comandos Abecs.
 const (
 	SPEIDList              SPEParameter = 0x0001
 	SPEPinMethod           SPEParameter = 0x0002
@@ -44,6 +45,7 @@ const (
 	SPEGCDOption           SPEParameter = 0x0026
 )
 
+// Códigos de tecla devolvidos no RSP_STAT do GKY.
 const (
 	GKYKeyOK     byte = 0x00
 	GKYKeyF1     byte = 0x04
@@ -54,6 +56,7 @@ const (
 	GKYKeyCancel byte = 0x0D
 )
 
+// Formatos e limites posicionais do comando GPN.
 const (
 	GPNMethodMKWKTDESPIN       byte = '1'
 	GPNMethodDUKPTTDESPIN      byte = '3'
@@ -66,6 +69,7 @@ const (
 	GPNKSNSize                      = 20
 )
 
+// Tipos, opções e respostas de cartão usados pelo fluxo GCX.
 const (
 	GCXTransactionPurchase      byte = 0x00
 	GCXTransactionWithdrawal    byte = 0x01

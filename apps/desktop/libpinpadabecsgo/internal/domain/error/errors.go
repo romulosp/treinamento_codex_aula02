@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+// Erros sentinela classificam falhas de configuração, transporte, estado e contrato.
 var (
 	ErrPortNotConfigured            = errors.New("pinpad port not configured")
 	ErrPortUnavailable              = errors.New("pinpad port unavailable")

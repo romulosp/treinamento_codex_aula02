@@ -1,5 +1,6 @@
 package state
 
+// Códigos de status ABECS 2.12 usados pelos comandos implementados.
 const (
 	StatusOK                                  = "000"
 	StatusNoSecurity                          = "003"
@@ -71,6 +72,7 @@ var statusDescriptions = map[string]string{
 	StatusMultimediaError: "Erro multimídia",
 }
 
+// GetStatusDescription devolve a descrição em português de um RSP_STAT conhecido.
 func GetStatusDescription(status string) string {
 	if description, ok := statusDescriptions[status]; ok {
 		return description

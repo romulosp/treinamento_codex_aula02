@@ -19,8 +19,14 @@ manual publicar um exemplo completo, com o vetor publicado.
 
 ## Transporte
 
-- O pacote possui `SYN + PKTDATA substituído + ETB + CRC16`, com no máximo 2049
-  bytes de `PKTDATA`; comandos ABECS podem ocupar até 2044 bytes.
+- O pacote possui `SYN + PKTDATA substituído + ETB + CRC16`; o `PKTDATA`
+  original, antes das substituições, chega a 2049 bytes. Dados claros de um
+  “Comando Abecs” podem ocupar até 2044 bytes; o encapsulamento seguro pode
+  produzir `DC2 + criptograma` com 2049 bytes. Nos comandos clássicos, o limite
+  de `PKTDATA` é 1024 bytes.
+- Comandos e respostas ABECS podem conter vários blocos, cada um iniciado por
+  comprimento decimal `N3` de até 999 bytes. Cada parâmetro TLV permanece
+  inteiro dentro do bloco; o parser preserva todos os blocos e rejeita sobra.
 - Depois de cada envio, o host aguarda `ACK` ou `NAK` por no máximo 2 segundos.
   `NAK` ou ausência de confirmação retransmite o mesmo pacote, até três
   tentativas no total.
@@ -85,7 +91,10 @@ A resposta de sucesso é `GPN000036 + PINBLK(H16) + KSN(H20)`, convertida para
 - Status TLI `000` informa versão igual e `020` versão diferente; ambos iniciam
   a carga e devem prosseguir com TLR/TLE. Outros status encerram o fluxo.
 - TLR é `TLR + N3 + NREC(N2) + registros`. Cada registro começa por seu próprio
-  comprimento `N3`; o bloco total tem no máximo 999 bytes e não usa delimitador.
+  comprimento `N3`; o `CMD_LEN1` tem no máximo `999`, como determina a página
+  107 do manual, e não usa delimitador. `1024` é o limite legado do `PKTDATA`
+  completo: `TLR` + `CMD_LEN1` + corpo chegam a no máximo 1005 bytes. O valor
+  1024 não cabe no campo `N3` e não deve ser usado como limite do corpo TLR.
 - TLE é o payload literal `TLE`.
 
 ## Transação
@@ -103,7 +112,7 @@ A resposta de sucesso é `GPN000036 + PINBLK(H16) + KSN(H20)`, convertida para
   90,91`. IV é opcional em CBC e vale zero quando ausente. Índice e material de
   chave são condicionais ao método, conforme seção 3.3.12 do manual.
 - GOX exige adquirente `N2`, método de PIN `N1` e índice `N2`; WKENC é
-  condicional. Os campos opcionais respeitam os tamanhos da seção 3.7.2. A
+  condicional. Os campos opcionais respeitam os tamanhos da seção 3.7.3. A
   resposta exige `PP_GOXRES(N6)` e exige PIN block/KSN e EMV conforme a
   solicitação.
 - FCX usa opções `N4` (decisão `0`, `1` ou `2` e três zeros), ARC `A2`
@@ -124,13 +133,13 @@ A resposta de sucesso é `GPN000036 + PINBLK(H16) + KSN(H20)`, convertida para
 
 ## Critérios de aceite automatizados
 
-- [ ] Cada builder possui teste byte a byte de caso válido e tabela de entradas
+- [x] Cada builder possui teste byte a byte de caso válido e tabela de entradas
   inválidas baseada nos tipos e limites do manual.
-- [ ] Cada parser possui exemplos válidos, campos obrigatórios ausentes,
+- [x] Cada parser possui exemplos válidos, campos obrigatórios ausentes,
   comprimentos inválidos e valores condicionais inválidos.
-- [ ] Transporte cobre ACK, NAK, timeout de 2 s, três tentativas, NAK de resposta
+- [x] Transporte cobre ACK, NAK, timeout de 2 s, três tentativas, NAK de resposta
   corrompida, ausência de ACK para resposta válida e CAN/EOT.
-- [ ] Vetores publicados de MNU, GPN e comunicação segura são reproduzidos sem
+- [x] Vetores publicados de MNU, GPN e comunicação segura são reproduzidos sem
   alteração no teste unitário.
-- [ ] `go test ./...`, cobertura, `go vet ./...` e `go build ./...` terminam com
+- [x] `go test ./...`, cobertura, `go vet ./...` e `go build ./...` terminam com
   código zero; limitações do race detector e hardware são registradas.

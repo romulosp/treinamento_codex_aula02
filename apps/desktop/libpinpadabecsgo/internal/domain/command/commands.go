@@ -6,6 +6,7 @@ import "br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/model"
 // Type identifica um comando ABECS de três caracteres.
 type Type string
 
+// Identificadores dos comandos implementados ou formalmente reservados na Change.
 const (
 	CommandCAN Type = "CAN"
 	CommandOPN Type = "OPN"

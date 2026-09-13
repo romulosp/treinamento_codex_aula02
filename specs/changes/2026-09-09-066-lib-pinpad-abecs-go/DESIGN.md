@@ -56,6 +56,19 @@ A Change integra a comunicação com pinpad ABECS v2.12 em uma biblioteca Go hea
     comando blocante cuja duração pode superar o timeout genérico da
     configuração. No CLI, esse contexto começa depois que todas as entradas da
     opção 11 forem coletadas e validadas.
+18. A opção 19 do CLI cria `GTKRequest` a partir de uma escolha explícita. O
+    modo em claro omite método, trilhas e índice, produzindo `GTK000`; o modo
+    criptografado usa DUKPT TDES DAT#3/ECB (`50`) e exige índice 00..99 já
+    provisionado no pinpad.
+19. Após GTK bem-sucedido no modo em claro, somente o CLI local registra os
+    campos de trilha interpretados em uma linha `GTK_CLEAR`. O frame `PP`
+    permanece redigido e o modo criptografado não produz essa linha.
+20. Para esse registro, trilha 1 é ASCII. Trilhas 2 e 3 são expandidas da
+    representação BCD/nibble do ABECS 2.12; `D` é exibido como `=` e filler
+    `F` final é removido. Dados inválidos interrompem o registro.
+21. A opção 20 deriva as redes disponíveis das entradas N6 de
+    `GCXResponse.AidTableInfo`, conserva o valor N12 do GCX e coleta método,
+    índice e WKENC condicional antes de criar o contexto de 60 segundos do GOX.
 
 ## Arquitetura e componentes
 

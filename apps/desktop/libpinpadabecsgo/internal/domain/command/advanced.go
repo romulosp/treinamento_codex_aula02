@@ -12,6 +12,7 @@ import (
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/utilitario/crc"
 )
 
+// Limites dos blocos multimídia e de tabelas EMV definidos pelo ABECS 2.12.
 const (
 	MLRMaxBlockSize = 995
 	TLRMaxRecords   = 99
@@ -310,10 +311,12 @@ func BuildGPNCommand(request GPNRequest) ([]byte, error) {
 	return BuildPacketPayload(CommandGPN, body), nil
 }
 
+// BuildGPNCommandMK monta GPN para captura de PIN com chave MK/WK TDES.
 func BuildGPNCommandMK(keyIndex int, encryptedWorkingKey []byte, pan, message string) ([]byte, error) {
 	return BuildGPNCommand(GPNRequest{Method: '1', KeyIndex: keyIndex, EncryptedWorkingKey: encryptedWorkingKey, PAN: pan, MinDigits: 4, MaxDigits: 12, Message: message})
 }
 
+// BuildGPNCommandDUKPT monta GPN para captura de PIN com derivação DUKPT TDES.
 func BuildGPNCommandDUKPT(keyIndex int, pan, message string) ([]byte, error) {
 	return BuildGPNCommand(GPNRequest{Method: '3', KeyIndex: keyIndex, PAN: pan, MinDigits: 4, MaxDigits: 12, Message: message})
 }
@@ -333,5 +336,3 @@ func ParseGPNResponse(data []byte) (pinBlock, ksn []byte, err error) {
 	}
 	return pinBlock, ksn, nil
 }
-
-func CalculateFileCRC(data []byte) uint16 { return crc.CRC16CCITT(data) }

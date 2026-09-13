@@ -27,6 +27,7 @@ type fakePort struct {
 	writes           [][]byte
 	reads            [][]byte
 	readErr          error
+	readErrs         []error
 	writeErr         error
 	traceCmd         command.Type
 	traceRedact      bool
@@ -117,6 +118,13 @@ func (p *fakePort) Read(ctx context.Context) ([]byte, error) {
 	if p.readErr != nil {
 		return nil, p.readErr
 	}
+	if len(p.readErrs) > 0 {
+		err := p.readErrs[0]
+		p.readErrs = p.readErrs[1:]
+		if err != nil {
+			return nil, err
+		}
+	}
 	if len(p.reads) == 0 {
 		return nil, nil
 	}
@@ -197,6 +205,62 @@ func TestLoadCompleteEMVTableContinuesOnTableVersionDifferent(t *testing.T) {
 	}
 	if len(p.writes) != 5 {
 		t.Fatalf("writes = %d, want CAN, OPN, TLI, TLR and TLE", len(p.writes))
+	}
+}
+
+func TestTableLoadRecordSendsExactTLRPayload(t *testing.T) {
+	p := &fakePort{reads: [][]byte{response("OPN000"), response("TLR000")}}
+	s := New(model.DefaultConfig(), p)
+	defer s.Shutdown()
+	if err := s.Open(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.TableLoadRecord(context.Background(), []string{"ABC", "DE"}); err != nil {
+		t.Fatal(err)
+	}
+	payload, err := protocol.ValidatePacket(p.writes[2])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := string(payload), "TLR01302003ABC002DE"; got != want {
+		t.Fatalf("TLR = %q, want %q", got, want)
+	}
+}
+
+func TestLoadCompleteEMVTableSplitsTLRByProtocolBodyLimit(t *testing.T) {
+	p := &fakePort{reads: [][]byte{
+		response("OPN000"), response("TLI000"), response("TLR000"), response("TLR000"), response("TLE000"),
+	}}
+	s := New(model.DefaultConfig(), p)
+	defer s.Shutdown()
+	if err := s.Open(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	records := []string{strings.Repeat("A", 400), strings.Repeat("B", 400), strings.Repeat("C", 400)}
+	var progress []int64
+	if err := s.LoadCompleteEMVTable(context.Background(), "00", "TABVER0001", records, func(_ context.Context, current, _ int64) error {
+		progress = append(progress, current)
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if len(p.writes) != 6 {
+		t.Fatalf("writes = %d, want CAN, OPN, TLI, two TLR and TLE", len(p.writes))
+	}
+	for index, wantNREC := range []string{"02", "01"} {
+		payload, err := protocol.ValidatePacket(p.writes[index+3])
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := string(payload[6:8]); got != wantNREC {
+			t.Fatalf("TLR %d NREC = %q, want %q", index+1, got, wantNREC)
+		}
+		if len(payload)-6 > command.TLRMaxBlockSize {
+			t.Fatalf("TLR %d body = %d, max %d", index+1, len(payload)-6, command.TLRMaxBlockSize)
+		}
+	}
+	if fmt.Sprint(progress) != "[2 3]" {
+		t.Fatalf("progress = %v, want [2 3]", progress)
 	}
 }
 
@@ -642,6 +706,33 @@ func TestExchangeStopsAfterThreeNAKs(t *testing.T) {
 	}
 }
 
+func TestExchangeStopsAfterThreeMissingAcknowledgements(t *testing.T) {
+	port := &fakePort{}
+	svc := New(model.DefaultConfig(), port)
+	defer svc.Shutdown()
+
+	if _, err := svc.exchangeCommand(context.Background(), command.CommandGIX, protocol.BuildPacket([]byte("GIX000"))); !errors.Is(err, domainerror.ErrTimeout) {
+		t.Fatalf("erro = %v, want timeout", err)
+	}
+	if len(port.writes) != protocol.MaxAttempts {
+		t.Fatalf("tentativas = %d, want %d", len(port.writes), protocol.MaxAttempts)
+	}
+}
+
+func TestExchangeDoesNotAcknowledgeValidPinpadResponse(t *testing.T) {
+	port := &fakePort{reads: [][]byte{response("GIX000")}}
+	svc := New(model.DefaultConfig(), port)
+	defer svc.Shutdown()
+
+	commandPacket := protocol.BuildPacket([]byte("GIX000"))
+	if _, err := svc.exchangeCommand(context.Background(), command.CommandGIX, commandPacket); err != nil {
+		t.Fatal(err)
+	}
+	if len(port.writes) != 1 || !bytes.Equal(port.writes[0], commandPacket) {
+		t.Fatalf("escritas = % X, want somente o comando", port.writes)
+	}
+}
+
 func TestExchangeRequestsRetransmissionForInvalidCRC(t *testing.T) {
 	corrupted := protocol.BuildPacket([]byte("GIX000"))
 	corrupted[len(corrupted)-1] ^= 0xff
@@ -672,6 +763,28 @@ func TestOpenStartsWithCANAndUsesClassicOPN(t *testing.T) {
 	payload, err := protocol.ValidatePacket(port.writes[1])
 	if err != nil || string(payload) != "OPN" {
 		t.Fatalf("OPN = %q, %v", payload, err)
+	}
+}
+
+func TestCancelHandshakeRetriesCANAndUsesTwoSecondDeadline(t *testing.T) {
+	port := &fakePort{
+		disableAutoEOT: true,
+		readErrs:       []error{context.DeadlineExceeded, nil},
+		reads:          [][]byte{{protocol.PP_EOT}},
+	}
+	svc := New(model.DefaultConfig(), port)
+	defer svc.Shutdown()
+
+	started := time.Now()
+	if err := svc.cancelHandshake(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if len(port.writes) != 2 || !bytes.Equal(port.writes[0], []byte{protocol.PP_CAN}) || !bytes.Equal(port.writes[1], []byte{protocol.PP_CAN}) {
+		t.Fatalf("escritas = % X, want dois CAN", port.writes)
+	}
+	remaining := port.lastReadDeadline.Sub(started)
+	if remaining < 1900*time.Millisecond || remaining > 2100*time.Millisecond {
+		t.Fatalf("prazo EOT = %s, want aproximadamente 2s", remaining)
 	}
 }
 
