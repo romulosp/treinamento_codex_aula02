@@ -1,20 +1,106 @@
 package logging
 
 import (
-	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/command"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
+
+	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/command"
 )
 
 func TestRedactPayload(t *testing.T) {
+	if New() == nil {
+		t.Fatal("structured logger must be created")
+	}
 	if got := RedactPayload(command.CommandGPN, []byte{1, 2, 3}); got != "**REDACTED(3 bytes)**" {
 		t.Fatalf("sensitive payload = %q", got)
 	}
 	if got := RedactPayload(command.CommandGIX, []byte{0xAA}); got != "AA" {
 		t.Fatalf("ordinary payload = %q", got)
+	}
+}
+
+func TestTracerRecordsIOFailuresAndSanitizesLines(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "trace.log")
+	tracer := NewTracer()
+	if active, err := tracer.SetLogDestination(path); err != nil || !active {
+		t.Fatalf("SetLogDestination active=%t err=%v", active, err)
+	}
+	if err := tracer.RecordOpenFailure("COM\t9", 19200, errors.New("falha\ndo SO")); err != nil {
+		t.Fatal(err)
+	}
+	if err := tracer.RecordError("COM9", "read", errors.New("porta\rfechada")); err != nil {
+		t.Fatal(err)
+	}
+	if err := tracer.RecordOpen("COM9", 19200); err != nil {
+		t.Fatal(err)
+	}
+	if err := tracer.RecordClose(errors.New("close\nfailed")); err != nil {
+		t.Fatal(err)
+	}
+	if err := tracer.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(content)
+	for _, expected := range []string{
+		"[COM 9#OPEN] open(COM 9,19200,8,N,1)=>ERRO: falha do SO",
+		"[COM9#000] read()=>ERRO: porta fechada",
+		"[COM9#001] close()=>ERRO: close failed",
+	} {
+		if !strings.Contains(text, expected) {
+			t.Fatalf("trace does not contain %q: %q", expected, text)
+		}
+	}
+}
+
+func TestTracerReplacesAndDisablesDestinations(t *testing.T) {
+	directory := t.TempDir()
+	firstPath := filepath.Join(directory, "first.log")
+	secondPath := filepath.Join(directory, "second.log")
+	tracer := NewTracer()
+	if active, err := tracer.SetLogDestination(firstPath); err != nil || !active {
+		t.Fatalf("first destination active=%t err=%v", active, err)
+	}
+	if active, err := tracer.SetLogDestination(secondPath); err != nil || !active {
+		t.Fatalf("second destination active=%t err=%v", active, err)
+	}
+	renamed := filepath.Join(directory, "first-renamed.log")
+	if err := os.Rename(firstPath, renamed); err != nil {
+		t.Fatalf("previous destination remained open: %v", err)
+	}
+	if active, err := tracer.SetLogDestination(""); err != nil || !active {
+		t.Fatalf("disable active=%t err=%v", active, err)
+	}
+	if active, err := tracer.SetLogDestination(""); err != nil || !active {
+		t.Fatalf("second disable active=%t err=%v", active, err)
+	}
+}
+
+func TestNilAndDisabledTracerAreNoop(t *testing.T) {
+	var nilTracer *Tracer
+	if nilTracer.Err() != nil || nilTracer.Close() != nil || nilTracer.RecordOpen("COM7", 19200) != nil || nilTracer.RecordOpenFailure("COM7", 19200, errors.New("x")) != nil || nilTracer.RecordClose(nil) != nil || nilTracer.RecordSPE(command.CommandGIX, []byte{1}) != nil || nilTracer.RecordPP(command.CommandGIX, []byte{1}) != nil || nilTracer.RecordResponse(command.CommandGIX, "000") != nil || nilTracer.RecordError("COM7", "read", errors.New("x")) != nil {
+		t.Fatal("nil tracer must be a no-op")
+	}
+	disabled := NewTracer()
+	if err := disabled.RecordSPE(command.CommandGIX, []byte{1}); err != nil {
+		t.Fatal(err)
+	}
+	if err := disabled.RecordPP(command.CommandGIX, nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := disabled.RecordResponse("", ""); err != nil {
+		t.Fatal(err)
+	}
+	if err := disabled.RecordError("COM7", "read", nil); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -49,7 +135,7 @@ func TestTracerRecordsSessionAndAppends(t *testing.T) {
 			t.Fatalf("trace does not contain %q: %q", expected, text)
 		}
 	}
-	if strings.Count(text, "DATA_HORA=") != 5 {
+	if strings.Count(text, "DATA_HORA=") != 6 {
 		t.Fatalf("timestamp count = %d, trace=%q", strings.Count(text, "DATA_HORA="), text)
 	}
 
@@ -67,6 +153,110 @@ func TestTracerRecordsSessionAndAppends(t *testing.T) {
 	}
 	if strings.Count(string(content), "open(COM7,19200,8,N,1)=>OK") != 2 {
 		t.Fatalf("trace was not appended: %q", content)
+	}
+}
+
+func TestTracerCreatesNonEmptyFileWhenEnabled(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "trace.log")
+	tracer := NewTracer()
+	if active, err := tracer.SetLogDestination(path); err != nil || !active {
+		t.Fatalf("SetLogDestination active=%t err=%v", active, err)
+	}
+	if err := tracer.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(content)
+	if strings.TrimSpace(text) == "" {
+		t.Fatalf("trace file is empty after enabling the destination: %q", text)
+	}
+	if !strings.Contains(text, "TRACE destination=") {
+		t.Fatalf("trace does not contain activation marker: %q", text)
+	}
+}
+
+func TestTracerMakesPersistenceFailuresObservable(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "trace.log")
+	tracer := NewTracer()
+	if active, err := tracer.SetLogDestination(path); err != nil || !active {
+		t.Fatalf("SetLogDestination active=%t err=%v", active, err)
+	}
+
+	tracer.mu.Lock()
+	destination := tracer.destination
+	tracer.mu.Unlock()
+	if err := destination.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := tracer.RecordSPE(command.CommandGIX, []byte{0x16}); err == nil {
+		t.Fatal("expected the closed destination write to fail")
+	}
+	if tracer.Err() == nil {
+		t.Fatal("expected the persistence failure to remain observable")
+	}
+	if err := tracer.Close(); err == nil {
+		t.Fatal("expected final sync/close failure to be returned")
+	}
+}
+
+func TestTracerClassifiesEveryTypedCommandAndKeepsControlBytesVisible(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "trace.log")
+	tracer := NewTracer()
+	if active, err := tracer.SetLogDestination(path); err != nil || !active {
+		t.Fatalf("SetLogDestination active=%t err=%v", active, err)
+	}
+	if err := tracer.RecordOpen("COM7", 19200); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		kind      command.Type
+		sensitive bool
+	}{
+		{command.CommandCAN, false}, {command.CommandOPN, false}, {command.CommandCLO, false},
+		{command.CommandCLX, false}, {command.CommandGIX, false}, {command.CommandDSP, false},
+		{command.CommandDEX, false}, {command.CommandMNU, false}, {command.CommandDSI, false},
+		{command.CommandMLI, false}, {command.CommandMLR, true}, {command.CommandMLE, false},
+		{command.CommandTLI, false}, {command.CommandTLR, true}, {command.CommandTLE, false},
+		{command.CommandGKY, false}, {command.CommandGCX, true}, {command.CommandGTK, true},
+		{command.CommandGOX, true}, {command.CommandFCX, true}, {command.CommandGPN, true},
+	}
+	for _, test := range tests {
+		if err := tracer.RecordSPE(test.kind, []byte{0x16, 0x31, 0x17}); err != nil {
+			t.Fatalf("RecordSPE %s: %v", test.kind, err)
+		}
+		if err := tracer.RecordPP(test.kind, []byte{0x06}); err != nil {
+			t.Fatalf("RecordPP %s: %v", test.kind, err)
+		}
+	}
+	if err := tracer.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(content)
+	for _, test := range tests {
+		marker := "CMD=" + string(test.kind)
+		if strings.Count(text, marker) != 1 {
+			t.Fatalf("command %s was not recorded exactly once: %q", test.kind, text)
+		}
+		lineMarker := "SPE 16 31 17 " + marker
+		if test.sensitive {
+			lineMarker = "SPE **REDACTED(3 bytes)** " + marker
+		}
+		if !strings.Contains(text, lineMarker) {
+			t.Fatalf("command %s classification not found as %q: %q", test.kind, lineMarker, text)
+		}
+	}
+	if strings.Count(text, "PP  06") != len(tests) {
+		t.Fatalf("isolated ACK must remain visible for every command: %q", text)
 	}
 }
 
@@ -147,7 +337,7 @@ func TestTracerSerializesConcurrentLinesAndKeepsInstancesIsolated(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if lines := strings.Count(string(firstContent), "\n"); lines != 21 {
+	if lines := strings.Count(string(firstContent), "\n"); lines != 22 {
 		t.Fatalf("first line count = %d, trace=%q", lines, firstContent)
 	}
 	if strings.Contains(string(secondContent), "SPE") || !strings.Contains(string(secondContent), "[second#001] open(second,19200,8,N,1)=>OK") {

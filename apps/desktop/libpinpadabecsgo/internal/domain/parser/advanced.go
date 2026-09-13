@@ -1,10 +1,12 @@
 package parser
 
 import (
+	"fmt"
+	"strconv"
+
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/command"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/model"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/protocol"
-	"fmt"
 )
 
 // MNUResponse contém a opção selecionada e o status do comando MNU.
@@ -13,26 +15,58 @@ type MNUResponse struct {
 	Status        string
 }
 
-// ParseMNUResponse interpreta a resposta curta do comando MNU.
+// ParseMNUResponse interpreta a resposta do comando MNU.
+// O valor deve estar no TLV 0x804D como N2.
 func ParseMNUResponse(data []byte) (MNUResponse, error) {
-	if len(data) < 4 {
+	if len(data) < 9 {
 		return MNUResponse{}, fmt.Errorf("truncated MNU response")
 	}
-	return MNUResponse{SelectedIndex: int(data[3] - '0'), Status: string(data[:3])}, nil
+	status := string(data[:3])
+	if data[3] != 0x80 || data[4] != 0x4D {
+		return MNUResponse{}, fmt.Errorf("missing MNU PP_VALUE")
+	}
+	length := int(data[5])<<8 | int(data[6])
+	if length != 2 || len(data) != 7+length {
+		return MNUResponse{}, fmt.Errorf("invalid MNU selection")
+	}
+	value := string(data[7:9])
+	for i := range value {
+		if value[i] < '0' || value[i] > '9' {
+			return MNUResponse{}, fmt.Errorf("invalid MNU selection")
+		}
+	}
+	selected, err := strconv.Atoi(value)
+	if err != nil {
+		return MNUResponse{}, err
+	}
+	if selected < 1 || selected > 20 {
+		return MNUResponse{}, fmt.Errorf("MNU selection outside 01..20")
+	}
+	return MNUResponse{SelectedIndex: selected, Status: status}, nil
 }
 
 // IsDisplayResponseSuccess informa se o status ABECS equivale a sucesso.
 func IsDisplayResponseSuccess(status string) bool { return status == "000" }
 
-// ParseGKYKey interpreta a tecla opcional retornada por GKY.
-func ParseGKYKey(data []byte) (byte, error) {
-	if len(data) == 0 {
-		return command.GKYKeyNone, nil
+// ParseGKYStatus interpreta a tecla codificada no RSP_STAT do GKY.
+func ParseGKYStatus(status string) (byte, error) {
+	switch status {
+	case "000":
+		return command.GKYKeyOK, nil
+	case "004":
+		return command.GKYKeyF1, nil
+	case "005":
+		return command.GKYKeyF2, nil
+	case "006":
+		return command.GKYKeyF3, nil
+	case "007":
+		return command.GKYKeyF4, nil
+	case "008":
+		return command.GKYKeyClear, nil
+	case "013":
+		return command.GKYKeyCancel, nil
 	}
-	if data[0] < command.GKYKeyOK || data[0] > command.GKYKeyF4 {
-		return command.GKYKeyNone, fmt.Errorf("unknown GKY key")
-	}
-	return data[0], nil
+	return 0, fmt.Errorf("unknown GKY status %q", status)
 }
 
 // GCXResponseFromResponse converte tags GCX sem alterar respostas de outros comandos.
@@ -70,6 +104,38 @@ func GCXResponseFromResponse(response *model.Response) *model.GCXResponse {
 	return result
 }
 
+// ValidateGCXResponse verifica PP_CARDTYPE e os campos condicionais definidos
+// pela seção 3.7.1 do ABECS 2.12.
+func ValidateGCXResponse(response *model.Response) (*model.GCXResponse, error) {
+	if response == nil {
+		return nil, fmt.Errorf("missing GCX response")
+	}
+	result := GCXResponseFromResponse(response)
+	switch result.CardType {
+	case command.GCXCardMagnetic:
+		if len(result.ICCStatus) != 1 || (result.ICCStatus[0] != '0' && result.ICCStatus[0] != '1' && result.ICCStatus[0] != '2') {
+			return nil, fmt.Errorf("missing or invalid PP_ICCSTAT")
+		}
+	case command.GCXCardICC, command.GCXCardContactlessEMV:
+		if result.AidTableInfo == "" || result.PAN == "" || len(result.PANSequence) != 2 || result.Label == "" {
+			return nil, fmt.Errorf("missing mandatory GCX ICC/CTLS field")
+		}
+	case command.GCXCardContactlessSimulated:
+		if result.AidTableInfo == "" || result.Label == "" {
+			return nil, fmt.Errorf("missing mandatory GCX contactless field")
+		}
+	default:
+		return nil, fmt.Errorf("missing or invalid PP_CARDTYPE")
+	}
+	if result.AidTableInfo != "" && len(result.AidTableInfo)%6 != 0 {
+		return nil, fmt.Errorf("invalid PP_AIDTABINFO")
+	}
+	if result.DeviceType != "" && len(result.DeviceType) != 2 {
+		return nil, fmt.Errorf("invalid PP_DEVTYPE")
+	}
+	return result, nil
+}
+
 // GTKResponseFromResponse converte as tags de GTK sem compartilhar dados de
 // trilha ou KSN com outros modelos de comando.
 func GTKResponseFromResponse(response *model.Response) *model.GTKResponse {
@@ -88,6 +154,38 @@ func GTKResponseFromResponse(response *model.Response) *model.GTKResponse {
 	result.EncryptedPANKey = get(protocol.TagEncryptedPANKSN)
 	result.EncryptedRandom = get(protocol.TagEncryptedRandom)
 	return result
+}
+
+// ValidateGTKResponse verifica os campos condicionais gerados pelo método de
+// criptografia solicitado, sem exigir trilhas que o cartão não disponibilizou.
+func ValidateGTKResponse(response *model.Response, request command.GTKRequest) (*model.GTKResponse, error) {
+	if response == nil {
+		return nil, fmt.Errorf("missing GTK response")
+	}
+	result := GTKResponseFromResponse(response)
+	dukpt := request.DataMethod == "30" || request.DataMethod == "40" || request.DataMethod == "50" || request.DataMethod == "51"
+	if dukpt {
+		for _, field := range []struct {
+			value []byte
+			ksn   []byte
+			name  string
+		}{
+			{result.EncryptedPAN, result.EncryptedPANKey, "PAN"},
+			{result.Track1, result.Track1KSN, "track 1"},
+			{result.Track2, result.Track2KSN, "track 2"},
+			{result.Track3, result.Track3KSN, "track 3"},
+		} {
+			if len(field.value) > 0 && len(field.ksn) != 10 {
+				return nil, fmt.Errorf("missing or invalid GTK KSN for %s", field.name)
+			}
+		}
+	}
+	if request.DataMethod == "90" || request.DataMethod == "91" {
+		if len(result.EncryptedRandom) != 256 {
+			return nil, fmt.Errorf("missing or invalid GTK encrypted random key")
+		}
+	}
+	return result, nil
 }
 
 // GOXResponseFromResponse converte o resultado EMV e preserva dados de PIN e
@@ -117,6 +215,52 @@ func FCXResponseFromResponse(response *model.Response) *model.FCXResponse {
 	result.IssuerScripts = append([]byte(nil), response.RawTags[uint16(protocol.TagISResults)]...)
 	parseEMVData(result.EMVData, result.ParsedEMVData)
 	return result
+}
+
+// ValidateGOXResponse verifica campos mandatórios e condicionais da resposta.
+func ValidateGOXResponse(response *model.Response, request command.GOXRequest) (*model.GOXResponse, error) {
+	if response == nil {
+		return nil, fmt.Errorf("missing GOX response")
+	}
+	result := GOXResponseFromResponse(response)
+	if len(result.Result) != 6 ||
+		(result.Result[0] != '0' && result.Result[0] != '1' && result.Result[0] != '2') ||
+		(result.Result[1] != '0' && result.Result[1] != '1') ||
+		(result.Result[2] != '0' && result.Result[2] != '1' && result.Result[2] != '2') ||
+		(result.Result[3] != '0' && result.Result[3] != '1') || string(result.Result[4:]) != "00" {
+		return nil, fmt.Errorf("missing or invalid PP_GOXRES")
+	}
+	if result.Result[2] == '2' {
+		if len(result.PINBlock) != 8 {
+			return nil, fmt.Errorf("missing GOX PIN block")
+		}
+		if (request.PinMethod == "2" || request.PinMethod == "3") && len(result.KSN) != 10 {
+			return nil, fmt.Errorf("missing GOX KSN")
+		}
+	}
+	if len(request.TagList) > 0 {
+		if _, ok := response.RawTags[uint16(protocol.TagEMVData)]; !ok {
+			return nil, fmt.Errorf("missing GOX EMV data")
+		}
+	}
+	return result, nil
+}
+
+// ValidateFCXResponse verifica PP_FCXRES e o retorno EMV solicitado.
+func ValidateFCXResponse(response *model.Response, request command.FCXRequest) (*model.FCXResponse, error) {
+	if response == nil {
+		return nil, fmt.Errorf("missing FCX response")
+	}
+	result := FCXResponseFromResponse(response)
+	if len(result.Result) != 3 || (result.Result[0] != '0' && result.Result[0] != '1') || string(result.Result[1:]) != "00" {
+		return nil, fmt.Errorf("missing or invalid PP_FCXRES")
+	}
+	if len(request.TagList) > 0 {
+		if _, ok := response.RawTags[uint16(protocol.TagEMVData)]; !ok {
+			return nil, fmt.Errorf("missing FCX EMV data")
+		}
+	}
+	return result, nil
 }
 
 func parseEMVData(data []byte, destination map[uint32][]byte) {

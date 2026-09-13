@@ -28,7 +28,6 @@ const (
 	CommandFCX Type = "FCX"
 	CommandGKY Type = "GKY"
 	CommandGPN Type = "GPN"
-	CommandRST Type = "RST"
 )
 
 // GTKContract identifica o contrato tipado de obtenção de trilhas, separado
@@ -36,8 +35,8 @@ const (
 // captura do cartão.
 type GTKContract struct{ Type Type }
 
-// CLXContract identifica o comando visual não bloqueante que não fecha porta
-// serial nem sessão segura.
+// CLXContract identifica o comando visual não bloqueante que mantém a porta
+// serial aberta e encerra a sessão segura ativa no pinpad.
 type CLXContract struct{ Type Type }
 
 // GOXContract identifica a continuação do processamento EMV iniciada por GCX.

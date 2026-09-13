@@ -1,12 +1,41 @@
 package protocol
 
 import (
+	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/hex"
 	"fmt"
 	"testing"
 )
+
+func TestSecureSessionMatchesPublishedABECS212Vector(t *testing.T) {
+	key, err := hex.DecodeString("DB3B4D015432AB3223555A1F81759A94")
+	if err != nil {
+		t.Fatal(err)
+	}
+	clearData, err := hex.DecodeString("4749583031340001000A8001800480349101910E")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want, err := hex.DecodeString("12EA229EDD36F84C2AA7E00275105C3A8A787FC9B2883540AEE827BA1C5A039496")
+	if err != nil {
+		t.Fatal(err)
+	}
+	session := &SecureSession{live: true}
+	copy(session.key[:], key)
+	got, err := session.Protect(clearData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(got, want) {
+		t.Fatalf("PKTDATA seguro = %X, want %X", got, want)
+	}
+	decoded, err := session.Unprotect(want)
+	if err != nil || !bytes.Equal(decoded, clearData) {
+		t.Fatalf("Unprotect = %X, %v", decoded, err)
+	}
+}
 
 func TestSecureSessionProtectsAndValidatesPackets(t *testing.T) {
 	session := &SecureSession{live: true}

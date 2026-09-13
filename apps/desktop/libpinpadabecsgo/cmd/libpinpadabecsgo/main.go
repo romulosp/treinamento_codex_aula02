@@ -1,8 +1,20 @@
-// Command libpinpadabecsgo executa o menu local de validação manual da
-// biblioteca ABECS e configura seus adaptadores sem expor serviços de rede.
+// Command libpinpadabecsgo executa o menu local de validaÃ§Ã£o manual da
+// biblioteca ABECS e configura seus adaptadores sem expor serviÃ§os de rede.
 package main
 
 import (
+	"bufio"
+	"context"
+	"encoding/hex"
+	"errors"
+	"fmt"
+	"log/slog"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
+
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/application/service"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/command"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/model"
@@ -10,14 +22,6 @@ import (
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/infrastructure/config"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/infrastructure/logging"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/infrastructure/serial"
-	"bufio"
-	"context"
-	"fmt"
-	"log/slog"
-	"os"
-	"strconv"
-	"strings"
-	"time"
 )
 
 // menuTimeout e usado para operacoes que podem exigir interacao manual no
@@ -25,13 +29,22 @@ import (
 // de configuracao interrompa o teste antes da acao do operador.
 const menuTimeout = 60 * time.Second
 
+const (
+	modulePath          = "br.com.romulopenha/lib-pinpad-abecs-go"
+	defaultTraceRelPath = "logs/LogPinpadAbecs.txt"
+)
+
 func main() {
+	os.Exit(run())
+}
+
+func run() int {
 	logger := logging.New()
 	cfg, err := config.Load()
 	if err != nil {
 		logger.Error("invalid configuration", slog.Any("error", err))
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		return 1
 	}
 	logger.Info("configuracao carregada", slog.String("port", cfg.Port), slog.Int("baudRate", cfg.BaudRate), slog.Duration("timeout", cfg.Timeout))
 
@@ -40,34 +53,40 @@ func main() {
 	if err != nil {
 		logger.Error("falha ao configurar rastro serial", slog.Any("error", err))
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		return 1
 	}
-	if destination != "" {
-		logger.Info("rastro serial configurado", slog.String("arquivo", destination))
-	}
-	defer func() {
-		if closeErr := tracer.Close(); closeErr != nil {
-			logger.Error("falha ao fechar rastro serial", slog.Any("error", closeErr))
-		}
-	}()
+	logger.Info("rastro serial configurado", slog.String("arquivo", destination))
+	fmt.Printf("Log serial ativo: %s\n", destination)
 
 	port := serial.New(cfg.Port, cfg.BaudRate, cfg.Timeout)
 	port.SetTracer(tracer)
 	svc := service.New(cfg, port)
 	svc.SetTracer(tracer)
-	defer svc.Shutdown()
 
 	reader := bufio.NewReader(os.Stdin)
-	runMenu(reader, svc, cfg, logger)
+	menuErr := runMenu(reader, svc, cfg, logger, tracer)
+	svc.Shutdown()
+	traceErr := tracer.Err()
+	closeErr := tracer.Close()
+	if menuErr != nil || traceErr != nil || closeErr != nil {
+		err = errors.Join(menuErr, traceErr, closeErr)
+		logger.Error("falha no rastro serial", slog.Any("error", err))
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
+	return 0
 }
 
-// configureTracer habilita o rastro somente quando PINPAD_LOG_FILE foi
-// definido pelo operador ou pelo script local. Retorna o caminho ativo para
-// exibição no CLI e preserva a biblioteca sem destino padrão implícito.
+// configureTracer habilita o rastro do utilitÃ¡rio local no destino configurado
+// ou no arquivo canÃ´nico do mÃ³dulo. A biblioteca permanece opt-in porque essa
+// composiÃ§Ã£o explÃ­cita existe somente no executÃ¡vel de validaÃ§Ã£o.
 func configureTracer(tracer *logging.Tracer) (string, error) {
-	destination := strings.TrimSpace(os.Getenv("PINPAD_LOG_FILE"))
-	if destination == "" {
-		return "", nil
+	destination, err := resolveLogDestination(strings.TrimSpace(os.Getenv("PINPAD_LOG_FILE")))
+	if err != nil {
+		return "", err
+	}
+	if err := os.MkdirAll(filepath.Dir(destination), 0o755); err != nil {
+		return "", fmt.Errorf("criar diretorio do rastro serial: %w", err)
 	}
 	active, err := tracer.SetLogDestination(destination)
 	if err != nil {
@@ -79,7 +98,87 @@ func configureTracer(tracer *logging.Tracer) (string, error) {
 	return destination, nil
 }
 
-func runMenu(reader *bufio.Reader, svc *service.Service, cfg model.PinpadConfig, logger *slog.Logger) {
+// resolveLogDestination normaliza PINPAD_LOG_FILE sem depender do diretÃ³rio
+// de trabalho. Caminhos relativos usam a raiz do mÃ³dulo Go como base.
+func resolveLogDestination(configured string) (string, error) {
+	configured = strings.TrimSpace(configured)
+	if configured != "" && filepath.IsAbs(configured) {
+		return filepath.Clean(configured), nil
+	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", fmt.Errorf("obter diretorio de trabalho: %w", err)
+	}
+	executable, err := os.Executable()
+	if err != nil {
+		return "", fmt.Errorf("obter caminho do executavel: %w", err)
+	}
+	return resolveLogDestinationFrom(configured, cwd, filepath.Dir(executable))
+}
+
+func resolveLogDestinationFrom(configured string, searchStarts ...string) (string, error) {
+	configured = strings.TrimSpace(configured)
+	if configured != "" && filepath.IsAbs(configured) {
+		return filepath.Clean(configured), nil
+	}
+	root, err := findModuleRoot(searchStarts...)
+	if err != nil {
+		return "", fmt.Errorf("determinar raiz do modulo; defina PINPAD_LOG_FILE com caminho absoluto: %w", err)
+	}
+	if configured == "" {
+		configured = filepath.FromSlash(defaultTraceRelPath)
+	}
+	destination, err := filepath.Abs(filepath.Join(root, configured))
+	if err != nil {
+		return "", fmt.Errorf("normalizar destino do rastro serial: %w", err)
+	}
+	return filepath.Clean(destination), nil
+}
+
+func findModuleRoot(searchStarts ...string) (string, error) {
+	seen := make(map[string]struct{}, len(searchStarts))
+	for _, start := range searchStarts {
+		start = strings.TrimSpace(start)
+		if start == "" {
+			continue
+		}
+		directory, err := filepath.Abs(start)
+		if err != nil {
+			continue
+		}
+		for {
+			clean := filepath.Clean(directory)
+			if _, visited := seen[clean]; !visited {
+				seen[clean] = struct{}{}
+				contents, readErr := os.ReadFile(filepath.Join(clean, "go.mod"))
+				if readErr == nil && declaresModule(contents, modulePath) {
+					return clean, nil
+				}
+				if readErr != nil && !os.IsNotExist(readErr) {
+					return "", fmt.Errorf("ler go.mod em %s: %w", clean, readErr)
+				}
+			}
+			parent := filepath.Dir(clean)
+			if parent == clean {
+				break
+			}
+			directory = parent
+		}
+	}
+	return "", fmt.Errorf("modulo %s nao encontrado", modulePath)
+}
+
+func declaresModule(contents []byte, expected string) bool {
+	for _, line := range strings.Split(string(contents), "\n") {
+		fields := strings.Fields(line)
+		if len(fields) == 2 && fields[0] == "module" {
+			return fields[1] == expected
+		}
+	}
+	return false
+}
+
+func runMenu(reader *bufio.Reader, svc *service.Service, cfg model.PinpadConfig, logger *slog.Logger, tracer *logging.Tracer) error {
 	for {
 		printMenu(cfg)
 		choice := readLine(reader, "Escolha uma opcao: ")
@@ -100,7 +199,7 @@ func runMenu(reader *bufio.Reader, svc *service.Service, cfg model.PinpadConfig,
 		case "5":
 			handleErr(logger, "Reset (CAN)", svc.Reset(ctx))
 		case "6":
-			handleErr(logger, "Reset completo (RST)", svc.ResetPinpad(ctx))
+			fmt.Println("[ERRO] Comando indisponivel; use CAN na opcao 5.")
 		case "7":
 			line1 := readLine(reader, "Linha 1 (max 16 caracteres): ")
 			line2 := readLine(reader, "Linha 2 (max 16 caracteres): ")
@@ -125,10 +224,17 @@ func runMenu(reader *bufio.Reader, svc *service.Service, cfg model.PinpadConfig,
 				fmt.Printf("Tecla pressionada: 0x%02X\n", key)
 			}
 		case "11":
+			enableCTLS, hideAmount, err := readGCXOptions(reader)
+			if err != nil {
+				fmt.Printf("[ERRO] Opcoes GCX: %v\n", err)
+				break
+			}
 			amount := readLine(reader, "Valor da transacao (centavos, ex: 000000010000): ")
-			date := readLine(reader, "Data da transacao (DDMMAA): ")
+			date := readLine(reader, "Data da transacao (AAMMDD): ")
 			clock := readLine(reader, "Hora da transacao (HHMMSS): ")
-			resp, err := svc.PurchaseGCX(ctx, amount, date, clock, false, false)
+			cancel()
+			ctx, cancel = context.WithTimeout(context.Background(), menuTimeout)
+			resp, err := svc.PurchaseGCX(ctx, amount, date, clock, enableCTLS, hideAmount)
 			if handleErr(logger, "PurchaseGCX (GCX)", err) {
 				fmt.Printf("Tipo de cartao: %s\n", resp.CardType)
 			}
@@ -167,49 +273,54 @@ func runMenu(reader *bufio.Reader, svc *service.Service, cfg model.PinpadConfig,
 			records := splitRecords(readLine(reader, "Registros separados por ';': "))
 			handleErr(logger, "LoadCompleteEMVTable (TLI/TLR/TLE)", svc.LoadCompleteEMVTable(ctx, acquirer, version, records, printProgress))
 		case "19":
-			_, err := svc.SendGCXInitialization(ctx)
-			handleErr(logger, "SendGCXInitialization (GCX)", err)
-		case "20":
 			keyIndex := readInt(reader, "Indice da chave: ")
 			_, err := svc.GetTracks(ctx, command.GTKRequest{Tracks: "1111", DataMethod: "50", KeyIndex: &keyIndex})
 			if handleErr(logger, "GetTracks (GTK)", err) {
 				fmt.Println("Trilhas recebidas e mantidas redigidas no utilitario local.")
 			}
-		case "21":
+		case "20":
 			_, err := svc.ContinueEMV(ctx, command.GOXRequest{AcquirerReference: "01", PinMethod: "3", KeyIndex: 1})
 			handleErr(logger, "ContinueEMV (GOX)", err)
-		case "22":
+		case "21":
 			_, err := svc.FinalizeEMV(ctx, command.FCXRequest{Options: "0000", Authorization: "00"})
 			handleErr(logger, "FinalizeEMV (FCX)", err)
-		case "23":
+		case "22":
 			keyIndex := readInt(reader, "Indice da chave: ")
+			keyHex := readLine(reader, "WKENC TDES (32 digitos hexadecimais): ")
+			workingKey, decodeErr := hex.DecodeString(keyHex)
 			pan := readLine(reader, "PAN (nao sera exibido): ")
 			message := readLine(reader, "Mensagem de PIN: ")
-			_, _, err := svc.SendGPNCommandMK(ctx, keyIndex, pan, message)
+			err := decodeErr
+			if err == nil {
+				_, _, err = svc.SendGPNCommandMK(ctx, keyIndex, workingKey, pan, message)
+			}
 			if handleErr(logger, "SendGPNCommandMK (GPN)", err) {
 				fmt.Println("PIN coletado; PIN block e KSN foram redigidos.")
 			}
-		case "24":
-			ksn := readLine(reader, "KSN (nao sera exibido): ")
+		case "23":
+			keyIndex := readInt(reader, "Indice da chave DUKPT: ")
 			pan := readLine(reader, "PAN (nao sera exibido): ")
 			message := readLine(reader, "Mensagem de PIN: ")
-			_, _, err := svc.SendGPNCommandDUKPT(ctx, ksn, pan, message)
+			_, _, err := svc.SendGPNCommandDUKPT(ctx, keyIndex, pan, message)
 			if handleErr(logger, "SendGPNCommandDUKPT (GPN)", err) {
 				fmt.Println("PIN coletado; PIN block e KSN foram redigidos.")
 			}
-		case "25":
+		case "24":
 			fmt.Println("DisplayQRCode requer QRCodeGenerator injetado pelo consumidor; o CLI nao adiciona gerador concreto.")
-		case "26":
+		case "25":
 			_, err := svc.TransactionGCX(ctx, service.TransactionGCXRequest{})
 			handleErr(logger, "TransactionGCX completo (reservado)", err)
 		case "0":
 			cancel()
 			fmt.Println("Encerrando...")
-			return
+			return nil
 		default:
 			fmt.Println("Opcao invalida.")
 		}
 		cancel()
+		if traceErr := tracer.Err(); traceErr != nil {
+			return fmt.Errorf("persistir rastro serial: %w", traceErr)
+		}
 	}
 }
 
@@ -225,7 +336,7 @@ func printMenu(cfg model.PinpadConfig) {
 	fmt.Println(" 3) Status atual do pinpad")
 	fmt.Println(" 4) Obter informacoes do pinpad (GIX)")
 	fmt.Println(" 5) Reset rapido (CAN)")
-	fmt.Println(" 6) Reset completo do pinpad (RST)")
+	fmt.Println(" 6) Indisponivel no ABECS 2.12 (use CAN na opcao 5)")
 	fmt.Println(" 7) Exibir mensagem fixa (DSP)")
 	fmt.Println(" 8) Exibir mensagem estendida (DEX)")
 	fmt.Println(" 9) Exibir menu interativo (MNU)")
@@ -238,14 +349,13 @@ func printMenu(cfg model.PinpadConfig) {
 	fmt.Println("16) Carregar arquivo de midia (MLI/MLR/MLE)")
 	fmt.Println("17) Exibir midia carregada (DSI)")
 	fmt.Println("18) Carregar tabela EMV (TLI/TLR/TLE)")
-	fmt.Println("19) Inicializar transacao GCX")
-	fmt.Println("20) Obter trilhas apos GCX elegivel (GTK, redigido)")
-	fmt.Println("21) Continuar transacao EMV (GOX)")
-	fmt.Println("22) Finalizar transacao EMV (FCX)")
-	fmt.Println("23) Capturar PIN MK/WK (GPN, redigido)")
-	fmt.Println("24) Capturar PIN DUKPT (GPN, redigido)")
-	fmt.Println("25) Exibir QR Code (requer gerador injetado)")
-	fmt.Println("26) Transacao GCX completa (reservada na SPEC)")
+	fmt.Println("19) Obter trilhas apos GCX elegivel (GTK, redigido)")
+	fmt.Println("20) Continuar transacao EMV (GOX)")
+	fmt.Println("21) Finalizar transacao EMV (FCX)")
+	fmt.Println("22) Capturar PIN MK/WK (GPN, redigido)")
+	fmt.Println("23) Capturar PIN DUKPT (GPN, redigido)")
+	fmt.Println("24) Exibir QR Code (requer gerador injetado)")
+	fmt.Println("25) Transacao GCX completa (reservada na SPEC)")
 	fmt.Println(" 0) Sair")
 	fmt.Println("==========================================")
 }
@@ -263,7 +373,7 @@ func stateName(state model.PinpadState) string {
 
 // printDeviceInfo exibe os dados do GIX ja refinados (nomes legiveis e
 // campos compostos decompostos), conforme secao 6.4.3 da especificacao
-// ABECS. Dados brutos não são exibidos para evitar vazamento acidental.
+// ABECS. Dados brutos nÃ£o sÃ£o exibidos para evitar vazamento acidental.
 func printDeviceInfo(info *model.DeviceInfo) {
 	fmt.Println("--- Informacoes do pinpad (GIX) ---")
 	fmt.Printf("numeroSerie:: %s\n", info.SerialNumber)
@@ -316,6 +426,25 @@ func readInt(reader *bufio.Reader, prompt string) int {
 	return value
 }
 
+func readGCXOptions(reader *bufio.Reader) (bool, bool, error) {
+	fmt.Println("Modo de leitura do cartao:")
+	fmt.Println("1) Chip ou tarja (sem contactless)")
+	fmt.Println("2) Chip, tarja ou contactless")
+	interfaceChoice := readLine(reader, "Escolha o modo: ")
+	if interfaceChoice != "1" && interfaceChoice != "2" {
+		return false, false, fmt.Errorf("modo de leitura invalido")
+	}
+
+	fmt.Println("Exibir o valor durante a espera pelo cartao?")
+	fmt.Println("1) Sim, mostrar o valor")
+	fmt.Println("2) Nao, ocultar o valor")
+	visibilityChoice := readLine(reader, "Escolha a exibicao: ")
+	if visibilityChoice != "1" && visibilityChoice != "2" {
+		return false, false, fmt.Errorf("opcao de exibicao invalida")
+	}
+	return interfaceChoice == "2", visibilityChoice == "2", nil
+}
+
 func splitOptions(raw string) []string {
 	parts := strings.Split(raw, ",")
 	options := make([]string, 0, len(parts))
@@ -340,7 +469,7 @@ func splitRecords(raw string) []string {
 	return records
 }
 
-// printProgress informa apenas progresso agregado, sem imprimir payloads ou dados sensíveis.
+// printProgress informa apenas progresso agregado, sem imprimir payloads ou dados sensÃ­veis.
 func printProgress(_ context.Context, current, total int64) error {
 	fmt.Printf("Progresso: %d/%d\n", current, total)
 	return nil

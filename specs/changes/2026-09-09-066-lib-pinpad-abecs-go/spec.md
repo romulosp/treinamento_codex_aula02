@@ -1,13 +1,15 @@
 # SPEC: 066-lib-pinpad-abecs-go
 
+Autor: Rômulo Penha
+
 ## Status
 `SPEC_APROVADA`
 
 ## Descrição executiva
 
-Esta Change define a conversão do domínio de comunicação com pinpad ABECS do legado Java + JNI + C para uma biblioteca Go headless. O produto não é uma API web, não é um servidor e não deve abrir listeners de rede: ele fornece uma fachada Go interna para controlar uma porta serial real, serializar comandos e interpretar respostas do pinpad.
+Esta Change define a integração da comunicação com pinpad ABECS v2.12 em uma biblioteca Go headless. O produto não é uma API web, não é um servidor e não deve abrir listeners de rede: ele fornece uma fachada Go interna para controlar uma porta serial real, serializar comandos e interpretar respostas do pinpad.
 
-O objetivo de conversão integral não será considerado atendido pela simples existência de constantes, builders ou stubs. Cada comportamento relevante do legado deverá ser classificado como convertido, parcialmente convertido, fora de escopo formal ou pendente de uma Change específica. Comandos que tenham contrato próprio deverão possuir uma SPEC individual nesta Change ou em uma Change explicitamente referenciada.
+O objetivo de integração completa não será considerado atendido pela simples existência de constantes, builders ou stubs. Cada comportamento relevante do protocolo deverá ser classificado como integrado, parcialmente integrado, fora de escopo formal ou pendente de uma Change específica. Comandos que tenham contrato próprio deverão possuir uma SPEC individual nesta Change ou em uma Change explicitamente referenciada.
 
 As validações unitárias podem usar adaptadores determinísticos para framing, CRC, parser e fila. A validação de comunicação, status, timeout, cancelamento e comportamento do dispositivo deverá ser feita com pinpad físico e porta serial real. Um fake não pode ser usado para declarar a conversão funcional concluída.
 
@@ -71,13 +73,13 @@ Variáveis:
 
 - `PORTA_PINPAD`: opcional e prioritária; quando definida no ambiente do
   processo e não vazia, substitui a porta do modelo;
-- opcionais: `PINPAD_BAUDRATE`, `PINPAD_TIMEOUT`, `LOG_LEVEL`.
+- opcionais: `PINPAD_BAUDRATE`, `PINPAD_TIMEOUT`, `LOG_LEVEL` e
+  `PINPAD_LOG_FILE`.
 
 Defaults: porta `COM7`, baud rate `19200`, timeout `30s`, log `INFO`. O modelo
 `PinpadConfig` deverá conter `Port`, `BaudRate`, `Timeout`,
-`AutoLoadEMVTables`, `UseGCXInitialization`, `GCXInitTimeout`, `AcquirerIndex`
-e `TableVersion`, com defaults `COM7`, `19200`, `30s`, `false`, `true`, `5s`,
-`00` e `TABVER0001`, respectivamente. O carregamento operacional inicia com
+`AutoLoadEMVTables`, `AcquirerIndex` e `TableVersion`, com defaults `COM7`,
+`19200`, `30s`, `false`, `00` e `TABVER0001`, respectivamente. O carregamento operacional inicia com
 esses defaults e aplica as variáveis de ambiente definidas no processo; logo,
 ausência de `PORTA_PINPAD` usa `COM7`, enquanto valor presente e não vazio tem
 precedência. Um valor vazio, baud rate inválido ou timeout inválido retorna erro
@@ -112,9 +114,9 @@ Esta Change deverá gerar, em Go, os seguintes grupos de constantes e modelos, s
 
 - `protocol`: bytes de controle, tags `RSP_DATID`, bases de tags dinâmicas, tipos multimídia e limites `MLR`/`TLR`;
 - `state`: todos os códigos `RSP_STAT` de `ST_OK` a `ST_MFERR`, com `GetStatusDescription`;
-- `command`: todos os parâmetros `SPE_xxx`, códigos e modos `GKY`, métodos e tamanhos `GPN`, opções, tipos de transação e estados ICC de `GCX`, `GTK`, `GOX` e `FCX`;
+- `command`: todos os parâmetros `SPE_xxx`, códigos de tecla `GKY`, métodos e tamanhos `GPN`, opções, tipos de transação e estados ICC de `GCX`, `GTK`, `GOX` e `FCX`;
 - `model`: `BerTLV`, `GCXResponse` e modelos próprios de `GTK`, `GOX` e `FCX`, incluindo campos de dados EMV e tags sensíveis sujeitos a redaction;
-- `command`: catálogo, builders e contratos dos comandos `DSP`, `DEX`, `MNU`, `DSI`, `MLI`, `MLR`, `MLE`, `TLI`, `TLR`, `TLE`, `GKY`, `GPN`, `GCX`, `GTK`, `GOX`, `FCX`, `CLX` e `RST`.
+- `command`: catálogo, builders e contratos dos comandos `DSP`, `DEX`, `MNU`, `DSI`, `MLI`, `MLR`, `MLE`, `TLI`, `TLR`, `TLE`, `GKY`, `GPN`, `GCX`, `GTK`, `GOX`, `FCX` e `CLX`.
 
 Os artefatos futuros devem expor somente constantes, tipos, builders e contratos nesta Change; não devem implementar fluxo transacional para comandos avançados.
 
@@ -151,25 +153,34 @@ A fila terá capacidade 100, será FIFO, thread-safe e terá um único worker po
 
 ### RF-010 — Serviço principal
 
-Implementar `PinpadService` com `Open`, `Close`, `Reset`, `SendCommand`, `GetInfo`, `GetDisplayCapabilities` e `GetState`.
+Implementar `PinpadService` com `Open`, `Close`, `Reset` por CAN/EOT, `SendCommand`, `GetInfo`, `GetDisplayCapabilities` e `GetState`.
 
 Implementar completamente os comandos CAN, OPN, GIX e CLO:
 
 - CAN: entrada `0x18`, resposta esperada EOT;
-- OPN: payload `OPN000`, resposta ACK;
+- OPN: payload literal `OPN`, resposta ACK seguida de `OPN000`;
 - GIX: payload `GIX000`, resposta ACK e payload;
-- CLO: payload `CLO000`, resposta ACK.
+- CLO: payload `CLO032` + mensagem S32, resposta `CLO000`.
 
 `CLX` será implementado como encerramento visual não bloqueante, separado de
 `CLO` e da comunicação segura, conforme `spec-command-clx.md`. Para DSP, DEX,
-MNU, DSI, MLI, MLR, MLE, GCX, GTK, GOX, FCX, GKY, GPN, RST, TLI, TLR e TLE criar
+MNU, DSI, MLI, MLR, MLE, GCX, GTK, GOX, FCX, GKY, GPN, TLI, TLR e TLE criar
 os contratos, tipos, builders, parsers e fluxos definidos em RF-012 e nas SPECs
 individuais citadas. Os fluxos não poderão introduzir REST, servidor, UI ou
 transporte diferente da porta serial.
 
 ### RF-011 — Logging
 
-Usar `log/slog`, preferencialmente em formato estruturado com operação, duração e resultado. Não registrar PAN, TRACK2, PIN ou dados EMV sensíveis.
+Usar `log/slog` em formato estruturado para operação, duração e resultado e o
+`Tracer` definido em `spec-logging.md` para persistir o rastro serial ABECS. O
+utilitário local deve gravar no arquivo canônico os eventos `open`, `close`,
+`SPE`, `PP` e `RSP` de todo comando tipado que alcançar a porta serial. A
+criação de um arquivo vazio ou de um segundo arquivo homônimo em função do
+diretório de trabalho não satisfaz este requisito. Para comandos não sensíveis,
+`SPE` deve conter o pacote hexadecimal integral efetivamente escrito e cada
+`PP` deve conter exatamente os bytes de uma leitura física; o log estruturado
+de conclusão e a linha `RSP` não os substituem. Não registrar PAN, TRACK2, PIN,
+PIN block, KSN, chaves ou dados EMV sensíveis.
 
 ### RF-012 — Artefatos funcionais da comunicação ABECS
 
@@ -212,28 +223,32 @@ A implementação Go deverá gerar os artefatos abaixo. Os nomes são contratos 
 
 #### 6. GKY
 
-- builder do comando com modos `GKY_MODE_WAIT_KEY`, `GKY_MODE_CLEAR_BUFFER` e `GKY_MODE_GET_KEY`;
+- builder do comando literal `GKY`, sem modo ou parâmetro adicional;
 - parser dos códigos `GKY_KEY_OK`, `GKY_KEY_CANCEL`, `GKY_KEY_CLEAR`, `GKY_KEY_F1`, `GKY_KEY_F2`, `GKY_KEY_F3`, `GKY_KEY_F4` e `GKY_KEY_NONE`;
 - timeout e cancelamento distinguíveis de tecla não pressionada.
 
 #### 7. GCX
 
 - modelo `GCXResponse` e parser somente dos campos realmente retornados pelo comando `GCX`, conforme `spec-command-gcx.md`;
-- builder parametrizado por valor, data, hora e opções de transação, incluindo as tags `SPE_GCXOPT`, `SPE_TRNDATE`, `SPE_TRNTIME` e `SPE_AMOUNT`;
+- builder parametrizado por valor, data, hora e opções de transação, serializados
+  como parâmetros ABECS `SPE_AMOUNT` (`0x0013`, N12), `SPE_TRNDATE`
+  (`0x0015`, N6), `SPE_TRNTIME` (`0x0016`, N6) e `SPE_GCXOPT`
+  (`0x0017`, N5), cada um com identificador e comprimento binários;
 - `SendGCXCommand` e conveniência de compra somente com dados sensíveis protegidos em logs e respostas;
+- a conveniência de compra envia exatamente um `GCX` com os dados informados;
+  não existe envio preliminar com data/hora zeradas;
 - trilhas completas, KSN de trilha, PIN block, KSN de PIN e Issuer Script Results não serão inferidos de `GCX`; esses dados pertencem, quando aplicável, a `GTK`, `GOX` e `FCX`.
 
 #### 8. GPN
 
 - builders para MK/WK e DUKPT;
 - validação de método, índice de chave, WKENC, PAN, limites de PIN e mensagem de 32 caracteres;
-- parser de PIN block binário de 16 bytes e KSN de 20 bytes;
+- parser de PIN block H16 para 8 bytes e KSN H20 para 10 bytes;
 - `SendGPNCommand`, `SendGPNCommandMK` e `SendGPNCommandDUKPT`, sem registrar PAN, PIN, PIN block, WKENC ou KSN.
 
-#### 9. RST e ciclo de vida
+#### 9. Exclusão de RST
 
-- `BuildRSTCommand`/`SendRSTCommand`, ACK, resposta RST, status e timeout;
-- integração com `PinpadService`, estado `BUSY`, fila FIFO, cancelamento e shutdown seguro.
+RST não existe no manual ABECS 2.12 e não integra a biblioteca. O reset da operação usa CAN/EOT.
 
 #### 10. GTK, GOX, FCX e CLX
 
@@ -258,7 +273,7 @@ Os arquivos C++ fornecidos como anexos são somente entrada de requisitos para e
 
 | Origem funcional fornecida | Artefato Go especificado |
 | --- | --- |
-| `logInit`, `logClose`, `logString`, `logBytes` | infraestrutura de logging com `slog`, mutex e redaction |
+| `logInit`, `logClose`, `logString`, `logBytes` | infraestrutura de logging com `slog`, tracer serial em append, caminho canônico, mutex, visibilidade de escrita e redaction |
 | `openPinpad`, `closePinpad`, `readByte`, `waitResponse`, `sendCommand` | porta `SerialPort`, adaptador serial e serviço de transporte com `context.Context` |
 | `crc16_abecs`, `applySubstitution`, `buildPacket`, `buildAbecsCommand`, `readFullResponse` | pacote de protocolo ABECS e utilitários CRC/framing |
 | `bytesToString`, `bytesToHex`, `hexStringToBytes`, `bytesToHexString` | utilitários Go de bytes/hex com validação explícita |
@@ -271,7 +286,7 @@ Os arquivos C++ fornecidos como anexos são somente entrada de requisitos para e
 | `readFullResponseGCX`, `buildGCXOpt`, `buildPacketGCX`, `buildGCXCommand`, `sendGCXCommand`, `sendGCXPurchase` | modelo, builder, framing, parser e serviço GCX |
 | `comparePackets`, `logPacketFormatted`, `buildFixedGCXTest` | somente utilitários de teste/debug; não entram no fluxo produtivo nem registram dados sensíveis |
 | `sendGPNCommand`, `sendGPNCommandMK`, `sendGPNCommandDUKPT` | builders, validações, parser binário e serviço GPN com redaction obrigatória |
-| `sendRSTCommand` | comando RST e confirmação de resposta |
+| `sendRSTCommand` | excluído: RST não existe no manual ABECS 2.12; reset usa CAN/EOT |
 | `getTracks`, `closeEx`, `startGoOnChipEx`, `goOnChipEx`, `finishChipEx` | comandos e modelos próprios GTK, CLX, GOX e FCX, sem mistura de respostas entre fluxos |
 | `open` seguro, geração RSA e cifragem/decifragem AES do legado | comunicação segura isolada conforme `spec-protocolo-seguro.md`, sem JNI, CGO ou logging de chave |
 | constantes, `BerTlvObject` e `GCXResponse` | constantes Go, `BerTLV` e `GCXResponse` documentados nesta SPEC |
@@ -283,7 +298,7 @@ A biblioteca deverá gerar uma fachada Go equivalente ao contrato funcional de `
 #### Configuração e ciclo de vida
 
 - `SetConfig` e `GetConfig`, com cópia segura da configuração e validação dos campos;
-- `Open`, `Close`, `Reset` e `ResetPinpad`, com transições `CLOSED → OPEN → BUSY → OPEN`;
+- `Open`, `Close` e `Reset` por CAN/EOT, com transições `CLOSED → OPEN → BUSY → OPEN`;
 - `Close` executa o encerramento seguro por `CLO` quando houver sessão segura,
   limpa material temporário e só então fecha a porta; `CLX` também desativa a
   comunicação segura no pinpad, mas não fecha a porta física;
@@ -321,11 +336,23 @@ A biblioteca deverá gerar uma fachada Go equivalente ao contrato funcional de `
 
 #### Transação GCX
 
-Esta Change implementará o fluxo GCX no mesmo subconjunto já serializado em RF-012.7: valor, data (`DDMMYY`), hora (`HHMMSS`) e opções de transação (`GCXOpt`), usando as tags `SPE_GCXOPT`, `SPE_TRNDATE`, `SPE_TRNTIME` e `SPE_AMOUNT`.
+Esta Change implementará o fluxo GCX no mesmo subconjunto já serializado em RF-012.7: valor, data (`AAMMDD`), hora (`HHMMSS`) e opções de transação (`GCXOpt`), usando as tags `SPE_GCXOPT`, `SPE_TRNDATE`, `SPE_TRNTIME` e `SPE_AMOUNT`.
 
-- `SendGCXInitialization` e `PurchaseGCX` serão implementados com esses campos, delegando a `SendGCXCommand` de RF-012;
-- `PurchaseGCX` aceitará `enableCTLS` e `skipInit`, controlando `GCXOpt` e a chamada prévia de inicialização;
-- `UseGCXInitialization` e `GCXInitTimeout` aplicados pela configuração;
+- `PurchaseGCX` delegará uma única vez a `SendGCXCommand`, aceitando
+  `enableCTLS` para produzir `SPE_GCXOPT="10000"`; quando falso, produzirá
+  `SPE_GCXOPT="00000"`;
+- a opção 11 do utilitário local perguntará se deve aceitar chip/tarja ou
+  chip/tarja/contactless e se o valor deve ser mostrado ou ocultado, produzindo
+  `SPE_GCXOPT` igual a `00000`, `01000`, `10000` ou `11000`;
+- durante o GCX blocante, frames `NTM000` válidos serão tratados como
+  notificações intermediárias e a leitura continuará até a resposta final
+  `GCX`, sem enviar ACK para a notificação;
+- o prazo do GCX no utilitário local começará depois da leitura de modo,
+  visibilidade, valor, data e hora; a fachada preservará o prazo do contexto do
+  consumidor sem reduzi-lo ao timeout genérico de `PinpadConfig`;
+- `SendGCXInitialization`, `skipInit`, `UseGCXInitialization` e
+  `GCXInitTimeout` serão removidos porque o manual ABECS v2.12 não define uma
+  etapa GCX preliminar e exige data e hora válidas no próprio comando;
 - `TransactionGCX` com tipo de transação, referência do adquirente, tipo de aplicação, lista de AIDs, cashback, moeda, máscara de PAN, dados EMV e lista de tags **não será implementado nesta Change**: a serialização completa desses campos depende de tabela de tags, ordem e limites ainda não documentados nesta SPEC. O contrato Go (assinatura da interface/método) poderá existir como stub retornando `ErrNotImplemented`, para reserva de nome, mas nenhuma serialização inventada será escrita. A implementação completa de `TransactionGCX` fica para uma Change futura, quando a tabela de parâmetros for especificada;
 - nenhuma entrada ou resposta sensível será registrada em texto ou hexadecimal.
 
@@ -344,7 +371,7 @@ Esta Change implementará o fluxo GCX no mesmo subconjunto já serializado em RF
 #### Teclas, reset e PIN
 
 - `WaitForKeyPress`, com timeout em segundos e retorno dos códigos `GKY_KEY_*`;
-- `ResetPinpad`, com confirmação RST, estado BUSY e espera pós-reset configurável, sem `Sleep` bloqueante não cancelável;
+- Cancelamento e limpeza de operação usam CAN/EOT; não há ResetPinpad/RST.
 - `GetPIN`, `GetPIN_MK` e `GetPIN_DUKPT`, com validação de método, chave, WKENC, PAN, mensagem e timeout;
 - PIN block e KSN serão retornados somente ao chamador autorizado e nunca serão incluídos em logs, mensagens de erro ou métricas.
 
@@ -366,7 +393,7 @@ Todos os métodos da fachada deverão retornar erros Go estruturados, preservand
 | `transactionGCX` (parâmetros completos) | reservado como stub `ErrNotImplemented`; serialização completa fica para Change futura |
 | `getTracks`, `startGoOnChipEx`, `goOnChipEx`, `finishChipEx` | fachadas GTK, GOX e FCX com modelos de resposta próprios e redaction integral |
 | `closeEx` | fachada CLX visual não bloqueante; não fecha porta, mas o pinpad encerra sessão segura ativa |
-| `waitForKeyPress`, `resetPinpad` | GKY e RST na fachada |
+| `waitForKeyPress`, `resetPinpad` | GKY e reset por CAN/EOT na fachada |
 | `getPIN`, `getPIN_MK`, `getPIN_DUKPT` | fachada GPN com proteção de dados sensíveis |
 | `sendAndWaitResponse`, `sendEMVCommand`, `setError` | helpers internos, não exportados; `getMutex` não será exposto |
 
@@ -423,12 +450,12 @@ Cada comando abaixo deverá possuir uma SPEC individual, ou uma SPEC individual 
 
 | Grupo | Comandos | Conteúdo mínimo da SPEC |
 | --- | --- | --- |
-| Controle | `CAN`, `OPN`, `CLO`, `CLX`, `RST` | frame/payload, ACK/EOT, ciclo de vida, cancelamento e erros |
+| Controle | `CAN`, `OPN`, `CLO`, `CLX` | frame/payload, ACK/EOT, ciclo de vida, cancelamento e erros; RST é exclusão formal |
 | Informações | `GIX` | tags de dispositivo, display, multimídia e parsing |
 | Display | `DSP`, `DEX`, `MNU`, `DSI` | limites, formato de texto/imagem, retorno e timeout |
 | Multimídia | `MLI`, `MLR`, `MLE` | preparação, blocos, encerramento, CRC e progresso |
 | Tabelas | `TLI`, `TLR`, `TLE` | versão, lotes, status 020, limites e retomada |
-| Teclas | `GKY` | modos, códigos de tecla, timeout e cancelamento |
+| Teclas | `GKY` | payload literal, status de tecla, timeout e cancelamento |
 | Transação/cartão | `GCX`, `GTK`, `GOX`, `FCX` | parâmetros, tags permitidas, dados sensíveis e sequência |
 | PIN | `GPN` | MK/WK/DUKPT, validação e redaction integral |
 
@@ -445,6 +472,9 @@ Deverá existir `start_aplication.bat` na raiz do módulo para execução por us
 - preservar `PORTA_PINPAD` já definida no ambiente da sessão e atribuir `COM7`
   somente quando ela estiver ausente ou vazia; definir `PINPAD_BAUDRATE` e
   `PINPAD_TIMEOUT` somente na sessão do processo;
+- preservar `PINPAD_LOG_FILE` quando definida; quando ausente, definir o
+  caminho absoluto `<raiz-do-módulo>/logs/LogPinpadAbecs.txt`, criar o
+  diretório e exibir o destino efetivamente ativo;
 - definir `GOROOT` explicitamente quando o ambiente Go configurado estiver fora do PATH padrão;
 - usar cache de compilação e módulo dentro do diretório do módulo, quando necessário;
 - compilar o executável em um diretório local do módulo e executá-lo a partir desse diretório, evitando depender do executável temporário em `%LOCALAPPDATA%\go-build`;
@@ -520,9 +550,9 @@ no pinpad, sem fechar a porta física.
 - [ ] **CA-011:** `go test ./...`, cobertura, `go test -race ./...` e `go vet ./...` são executados e registrados.
 - [ ] **CA-012:** cobertura aplicável é igual ou superior a 80%, sem percentual inventado.
 - [ ] **CA-013:** nenhum log/teste contém dados sensíveis reais.
-- [ ] **CA-014:** builders e parsers derivados do legado cobrem display, multimídia, tabelas EMV, GKY, GCX (subconjunto RF-012.7), GTK, GOX, FCX, CLX, GPN e RST.
+- [ ] **CA-014:** builders e parsers cobrem display, multimídia, tabelas EMV, GKY, GCX (subconjunto RF-012.7), GTK, GOX, FCX, CLX e GPN; RST permanece excluído.
 - [ ] **CA-015:** transporte serial preserva bytes excedentes e suporta frames agrupados em uma ou várias leituras.
-- [ ] **CA-016:** fachada Go cobre ciclo de vida, `GetInfo`/`GetInfoRaw`, display, imagem, EMV, GCX (subconjunto), GTK, GOX, FCX, CLX, GKY, RST e GPN, sem expor `SendRawCommand`.
+- [ ] **CA-016:** fachada Go cobre ciclo de vida com reset por CAN/EOT, `GetInfo`/`GetInfoRaw`, display, imagem, EMV, GCX (subconjunto), GTK, GOX, FCX, CLX, GKY e GPN, sem expor `SendRawCommand`.
 - [ ] **CA-016a:** `DisplayQRCode` usa `QRCodeGenerator` injetado, retorna `ErrQRCodeGeneratorNotConfigured` quando ausente, valida tamanho 50-320 e margem 0-10, e reporta `xPos`/`yPos` como não suportados de forma explícita no resultado.
 - [ ] **CA-016b:** `TransactionGCX` completo retorna `ErrNotImplemented` sem serializar campos não especificados nesta SPEC.
 - [ ] **CA-016c:** `LoadCompleteEMVTable` reconhece `StatusTableVersionDifferent` como resultado válido de TLI e interrompe corretamente em falha de TLR/TLE.
@@ -535,3 +565,18 @@ no pinpad, sem fechar a porta física.
 - [ ] **CA-023:** a revisão da implementação registra a inspeção documental, incluindo pacotes, símbolos exportados, código gerado e divergências encontradas; qualquer lacuna bloqueia a aprovação.
 - [ ] **CA-024:** GTK, GOX, FCX e CLX possuem builders, parsers, modelos e fluxos próprios conforme suas SPECs individuais; nenhum campo de trilha, PIN/KSN ou Issuer Script Results é atribuído a `GCXResponse`.
 - [ ] **CA-025:** OPN seguro, pacote protegido e encerramento por CLO/CLX são validados no pinpad físico conforme `spec-protocolo-seguro.md`, sem registrar KSEC, RSA, AES, IV, PIN, PAN, KSN ou criptogramas; `CLX` é validado como comando visual que encerra a sessão segura do pinpad sem fechar a porta física.
+- [ ] **CA-026:** o utilitário local informa o caminho absoluto do único arquivo
+  de rastro ativo; o arquivo recebe um marcador de ativação antes do menu e,
+  para cada comando tipado que alcança a serial, registra a sequência aplicável
+  `SPE`, `PP*` e `RSP` conforme `spec-logging.md`, sem depender do diretório de
+  trabalho e sem expor dados sensíveis. Para GIX, a validação compara o pacote
+  hexadecimal integral da linha `SPE` com os bytes escritos e cada linha `PP`
+  com o respectivo retorno do driver.
+
+
+## RF-018 — Conformidade normativa ABECS 2.12
+
+Builders, parsers, transporte, comunicação segura, limites e testes seguem
+`spec-conformidade-abecs-v212.md`, que prevalece sobre texto anterior
+incompatível. RST fica excluído do catálogo e da fachada por não existir no
+manual adotado.

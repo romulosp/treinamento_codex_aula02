@@ -7,6 +7,7 @@ import (
 	domainerror "br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/error"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/infrastructure/logging"
 	"context"
+	"errors"
 	"fmt"
 	bugserial "go.bug.st/serial"
 	"sync"
@@ -33,6 +34,7 @@ type Adapter struct {
 	port    bugserial.Port
 	tracer  *logging.Tracer
 	command command.Type
+	redact  bool
 }
 
 // New cria um adaptador serial ainda fechado para a porta e baud rate informados.
@@ -57,6 +59,16 @@ func (a *Adapter) SetTraceCommand(kind command.Type) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.command = kind
+	a.redact = false
+}
+
+// SetTracePolicy informa o comando ativo e se todo o seu frame deve ser
+// redigido por estar sob sessão segura ou conter dados sensíveis do consumidor.
+func (a *Adapter) SetTracePolicy(kind command.Type, redact bool) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.command = kind
+	a.redact = redact
 }
 
 func (a *Adapter) Open() error {
@@ -67,20 +79,22 @@ func (a *Adapter) Open() error {
 	}
 	p, err := bugserial.Open(a.name, &bugserial.Mode{BaudRate: a.baud, DataBits: 8, Parity: bugserial.NoParity, StopBits: bugserial.OneStopBit})
 	if err != nil {
-		a.tracer.RecordOpenFailure(a.name, a.baud, err)
-		return fmt.Errorf("open serial port: %w", err)
+		wrapped := fmt.Errorf("open serial port: %w", err)
+		return errors.Join(wrapped, a.tracer.RecordOpenFailure(a.name, a.baud, wrapped))
 	}
 	readTimeout := a.timeout
 	if readTimeout > 100*time.Millisecond {
 		readTimeout = 100 * time.Millisecond
 	}
 	if err := p.SetReadTimeout(readTimeout); err != nil {
-		_ = p.Close()
-		a.tracer.RecordOpenFailure(a.name, a.baud, err)
-		return fmt.Errorf("set serial timeout: %w", err)
+		wrapped := fmt.Errorf("set serial timeout: %w", err)
+		return errors.Join(wrapped, p.Close(), a.tracer.RecordOpenFailure(a.name, a.baud, wrapped))
 	}
 	a.port = p
-	a.tracer.RecordOpen(a.name, a.baud)
+	if traceErr := a.tracer.RecordOpen(a.name, a.baud); traceErr != nil {
+		a.port = nil
+		return errors.Join(fmt.Errorf("record serial open trace: %w", traceErr), p.Close())
+	}
 	return nil
 }
 func (a *Adapter) Close() error {
@@ -91,11 +105,8 @@ func (a *Adapter) Close() error {
 	}
 	err := a.port.Close()
 	a.port = nil
-	a.tracer.RecordClose(err)
-	if err != nil {
-		return fmt.Errorf("close serial port: %w", err)
-	}
-	return nil
+	traceErr := a.tracer.RecordClose(err)
+	return errors.Join(wrapSerialError("close serial port", err), wrapSerialError("record serial close trace", traceErr))
 }
 
 // Read waits por bytes da serial respeitando o cancelamento do contexto. A
@@ -113,11 +124,11 @@ func (a *Adapter) Read(ctx context.Context) ([]byte, error) {
 	p := a.port
 	tracer := a.tracer
 	kind := a.command
+	redact := a.redact
 	a.mu.RUnlock()
 	if p == nil {
 		err := fmt.Errorf("serial port is closed")
-		tracer.RecordError(a.name, "read", err)
-		return nil, err
+		return nil, errors.Join(err, tracer.RecordError(a.name, "read", err))
 	}
 	dst := make([]byte, 256)
 	for {
@@ -130,12 +141,13 @@ func (a *Adapter) Read(ctx context.Context) ([]byte, error) {
 				return nil, ctx.Err()
 			}
 			wrapped := fmt.Errorf("read serial port: %w", err)
-			tracer.RecordError(a.name, "read", wrapped)
-			return nil, wrapped
+			return nil, errors.Join(wrapped, tracer.RecordError(a.name, "read", wrapped))
 		}
 		if n > 0 {
 			result := append([]byte(nil), dst[:n]...)
-			tracer.RecordPPFrom(kind, result, "serial.Adapter.Read")
+			if traceErr := tracer.RecordPPFromPolicy(kind, result, "serial.Adapter.Read", redact); traceErr != nil {
+				return nil, fmt.Errorf("record serial read trace: %w", traceErr)
+			}
 			return result, nil
 		}
 		if err := ctx.Err(); err != nil {
@@ -151,27 +163,34 @@ func (a *Adapter) Write(data []byte) error {
 	p := a.port
 	tracer := a.tracer
 	kind := a.command
+	redact := a.redact
 	a.mu.RUnlock()
 	if p == nil {
 		err := fmt.Errorf("serial port is closed")
-		tracer.RecordError(a.name, "write", err)
-		return err
+		return errors.Join(err, tracer.RecordError(a.name, "write", err))
 	}
 	n, err := p.Write(data)
 	if err != nil {
 		wrapped := fmt.Errorf("write serial port: %w", err)
-		tracer.RecordError(a.name, "write", wrapped)
-		return wrapped
+		return errors.Join(wrapped, tracer.RecordError(a.name, "write", wrapped))
 	}
 	if n != len(data) {
 		err := fmt.Errorf("short serial write: %d/%d", n, len(data))
-		tracer.RecordError(a.name, "write", err)
-		return err
+		return errors.Join(err, tracer.RecordError(a.name, "write", err))
 	}
-	tracer.RecordSPEFrom(kind, data, "serial.Adapter.Write")
+	if traceErr := tracer.RecordSPEFromPolicy(kind, data, "serial.Adapter.Write", redact); traceErr != nil {
+		return fmt.Errorf("record serial write trace: %w", traceErr)
+	}
 	return nil
 }
 func (a *Adapter) IsOpen() bool { a.mu.RLock(); defer a.mu.RUnlock(); return a.port != nil }
+
+func wrapSerialError(operation string, err error) error {
+	if err == nil {
+		return nil
+	}
+	return fmt.Errorf("%s: %w", operation, err)
+}
 
 // FakePort implementa a porta serial de forma determinística para testes.
 type FakePort struct {

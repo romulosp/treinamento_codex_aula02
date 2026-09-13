@@ -38,6 +38,19 @@ var tagNames = map[uint16]string{
 	0x8022: "SupportedFormats",
 }
 
+// ParseNotification valida uma mensagem intermediária NTM de comando blocante
+// e devolve seu texto sem tratá-lo como um bloco de parâmetros TLV.
+func ParseNotification(data []byte) (string, error) {
+	if len(data) < 9 || string(data[:3]) != "NTM" || string(data[3:6]) != "000" {
+		return "", domainerror.ErrInvalidNotification
+	}
+	length, err := strconv.Atoi(string(data[6:9]))
+	if err != nil || length < 0 || length > 32 || len(data) != 9+length {
+		return "", domainerror.ErrInvalidNotification
+	}
+	return string(data[9:]), nil
+}
+
 func ParseAbecsResponse(data []byte) (*model.Response, error) {
 	response := &model.Response{AckType: protocol.AckType(data), RawData: append([]byte(nil), data...), Tags: map[string]string{}, RawTags: map[uint16][]byte{}}
 	if len(data) == 1 {
@@ -73,10 +86,15 @@ func ParseAbecsResponse(data []byte) (*model.Response, error) {
 	if string(data[:3]) == "OPN" {
 		return response, nil
 	}
+	// GPN é uma resposta clássica posicional (PINBLK H16 + KSN H20), não TLV.
+	if string(data[:3]) == "GPN" {
+		return response, nil
+	}
 	if len(response.Data) > 0 && len(response.Data) < 4 {
 		return response, nil
 	}
-	for pos := tagsStart; pos+4 <= len(data); {
+	pos := tagsStart
+	for pos+4 <= len(data) {
 		tag := uint16(data[pos])<<8 | uint16(data[pos+1])
 		length := int(data[pos+2])<<8 | int(data[pos+3])
 		pos += 4
@@ -90,6 +108,9 @@ func ParseAbecsResponse(data []byte) (*model.Response, error) {
 			response.Tags[name] = string(value)
 		}
 		pos += length
+	}
+	if pos != len(data) {
+		return nil, domainerror.ErrInvalidResponse
 	}
 	return response, nil
 }
@@ -136,11 +157,11 @@ func DeviceInfoFromResponse(response *model.Response) model.DeviceInfo {
 		info.TextRows, _ = strconv.Atoi(textMode[:2])
 		info.TextCols, _ = strconv.Atoi(textMode[2:])
 	}
-	// GraphicData (RSP_DATID 0x8021) traz 4 digitos de largura seguidos de 4
-	// digitos de altura do display grafico, ex.: "03200240" = 320x240.
+	// GraphicData (RSP_DATID 0x8021) usa LLLLCCCC: linhas/altura e
+	// colunas/largura.
 	if graphicData := get("GraphicData"); len(graphicData) == 8 {
-		info.GraphicWidth, _ = strconv.Atoi(graphicData[:4])
-		info.GraphicHeight, _ = strconv.Atoi(graphicData[4:])
+		info.GraphicHeight, _ = strconv.Atoi(graphicData[:4])
+		info.GraphicWidth, _ = strconv.Atoi(graphicData[4:])
 	}
 	return info
 }
@@ -168,10 +189,10 @@ func DisplayCapabilitiesFromResponse(response *model.Response) model.DisplayCapa
 		capabilities.HasColor = raw[1] == '2'
 	}
 	if response != nil {
-		formats := strings.ToUpper(response.Tags["SupportedFormats"])
-		capabilities.SupportsPNG = strings.Contains(formats, "PNG")
-		capabilities.SupportsJPG = strings.Contains(formats, "JPG") || strings.Contains(formats, "JPEG")
-		capabilities.SupportsGIF = strings.Contains(formats, "GIF")
+		formats := response.Tags["SupportedFormats"]
+		capabilities.SupportsPNG = len(formats) > 0 && formats[0] == '1'
+		capabilities.SupportsJPG = len(formats) > 1 && formats[1] == '1'
+		capabilities.SupportsGIF = len(formats) > 2 && formats[2] == '1'
 	}
 	return capabilities
 }

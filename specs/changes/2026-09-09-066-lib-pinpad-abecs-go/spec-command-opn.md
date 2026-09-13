@@ -1,5 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comando OPN
 
+Autor: Rômulo Penha
+
 ## Status
 `SPEC_APROVADA`
 
@@ -8,7 +10,7 @@ Definir a abertura lógica de comunicação ABECS após a porta serial estar abe
 
 ## Escopo
 - Pacotes: `internal/application/service`, `internal/domain/command`, `internal/domain/parser` e `internal/infrastructure/logging`.
-- Payload lógico básico: `OPN000`, quando aplicável ao perfil do pinpad.
+- Payload lógico clássico: `OPN`.
 - `Open` deve controlar estados `CLOSED -> OPEN` e impedir dois workers de iniciar abertura concorrente.
 - OPN seguro/RSA/AES deve possuir SPEC complementar própria; esta SPEC não autoriza criptografia inventada.
 
@@ -28,3 +30,9 @@ Definir a abertura lógica de comunicação ABECS após a porta serial estar abe
 
 ## Referências
 `spec.md` RF-002, RF-007, RF-010 e `spec-logging.md`; manual ABECS v2.12.
+
+
+## Correção normativa de 2026-09-13
+
+O payload clássico é exatamente `OPN`. O OPN seguro substitui o clássico; não
+se envia um OPN clássico antes da negociação segura.

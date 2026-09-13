@@ -12,6 +12,7 @@
 **/target/
 **/.quarkus/
 **/*.log
+tmp/pdfs/gcx-pages/
 
 !scripts/
 !scripts/**
@@ -51,7 +52,7 @@ apps/desktop/libpinpadabecsgo/.gocache/
 apps/desktop/libpinpadabecsgo/.gomodcache/
 apps/desktop/libpinpadabecsgo/.bin/
 apps/desktop/libpinpadabecsgo/*.exe
-apps/desktop/libpinpadabecsgo/logs/LogPinpadAbecs.txt
+apps/desktop/libpinpadabecsgo/**/logs/LogPinpadAbecs.txt
 
 # Dependências, builds e credenciais locais: manter depois das regras de inclusão.
 **/node_modules/

@@ -79,6 +79,14 @@ func BuildPacket(payload []byte) []byte {
 	return append(packet, check[:]...)
 }
 
+// BuildPacketChecked aplica o limite de PKTDATA do ABECS 2.12.
+func BuildPacketChecked(payload []byte) ([]byte, error) {
+	if len(payload) > PacketDataMaxSize {
+		return nil, fmt.Errorf("ABECS packet data exceeds %d bytes", PacketDataMaxSize)
+	}
+	return BuildPacket(payload), nil
+}
+
 // BuildAbecsPayload monta o payload logico de um comando ABECS: identificador
 // de 3 caracteres, seguido do tamanho dos parametros em 3 digitos ASCII e, por
 // fim, os proprios parametros. Este payload ainda nao esta enquadrado (sem

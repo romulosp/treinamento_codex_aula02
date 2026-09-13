@@ -1,5 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comando DSI
 
+Autor: Rômulo Penha
+
 ## Status
 `SPEC_APROVADA`
 
@@ -20,3 +22,8 @@ Solicitar a exibição de um arquivo de imagem/multimídia previamente carregado
 
 ## Referências
 `spec.md` RF-012.4/RF-013, `spec-command-qrcode.md`; manual ABECS v2.12.
+
+
+## Correção normativa de 2026-09-13
+
+DSI serializa o nome alfanumérico A8 em `SPE_MFNAME`.

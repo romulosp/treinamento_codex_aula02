@@ -1,11 +1,13 @@
 # Revisão documental das SPECs — Change 066 lib-pinpad-abecs-go
 
+Autor: Rômulo Penha
+
 **Data:** 2026-09-10
 **Escopo:** README raiz, índice de SPECs, `proposal.md`, `spec.md`, `DESIGN.md`, `implementation-plan.md`, `tasks.md` e SPECs individuais da Change `2026-09-09-066-lib-pinpad-abecs-go`.
 
 ## Objetivo da revisão
 
-Verificar se a documentação descreve exclusivamente a biblioteca Go de comunicação serial com pinpad ABECS, se a conversão Java + JNI + C está rastreável e se existe uma SPEC própria para cada comando ou fluxo transversal relevante.
+Verificar se a documentação descreve exclusivamente a biblioteca Go de comunicação serial com pinpad ABECS, se a integração com ABECS v2.12 está rastreável e se existe uma SPEC própria para cada comando ou fluxo transversal relevante.
 
 ## Alterações verificadas
 
@@ -28,7 +30,7 @@ Verificar se a documentação descreve exclusivamente a biblioteca Go de comunic
 - **Impacto:** não é permitido iniciar a implementação desses contratos até revisão formal.
 - **Recomendação:** executar revisão da SPEC, corrigir ressalvas e alterar para `SPEC_APROVADA` somente após aprovação.
 
-### REV-DOC-002 — Conversão integral ainda depende do inventário do legado
+### REV-DOC-002 — Integração completa ainda depende do inventário do protocolo
 
 - **Severidade:** alta.
 - **Evidência:** a documentação define a matriz legado → Go → SPEC → evidência, mas ela ainda precisa ser preenchida com todas as funções Java, JNI e C/C++.
@@ -53,4 +55,4 @@ Verificar se a documentação descreve exclusivamente a biblioteca Go de comunic
 
 `REPROVADA`
 
-A documentação está significativamente mais completa e consistente, mas as SPECs permanecem em `RASCUNHO`, o inventário integral do legado ainda não foi concluído e a validação física ainda não foi registrada. Esses pontos impedem a aprovação da Change e a declaração de conversão integral.
+A documentação está significativamente mais completa e consistente, mas as SPECs permanecem em `RASCUNHO`, o inventário integral do protocolo ainda não foi concluído e a validação física ainda não foi registrada. Esses pontos impedem a aprovação da Change e a declaração de integração completa.

@@ -1,9 +1,11 @@
 # Linha de base técnica — Change 066
 
+Autor: Rômulo Penha
+
 ## Finalidade
 
 Este documento consolida as fontes, os limites e os gates usados para revisar
-tecnicamente a conversão do legado Java + JNI + C em uma biblioteca Go ABECS.
+tecnicamente a integração com pinpad ABECS v2.12 em uma biblioteca Go ABECS.
 Ele é um artefato de rastreabilidade e checklist: não altera o contrato da
 Change, não aprova a SPEC e não autoriza implementação.
 
@@ -14,7 +16,7 @@ Change, não aprova a SPEC e não autoriza implementação.
 | Contrato principal | `proposal.md`, `spec.md`, `DESIGN.md`, `tasks.md` | Define escopo, requisitos e critérios de aceite. |
 | Contratos específicos | `spec-command-*.md`, `spec-logging.md`, `spec-infra-serial-cancel.md`, `spec-protocolo-seguro.md` | Define o comportamento observável por comando e os contratos transversais. |
 | Norma de protocolo | Manual ABECS v2.12, quando disponibilizado e identificado para o dispositivo | Resolve framing, tags, sequências e restrições que não possam ser inferidas da SPEC. |
-| Evidência de legado | Classes Java e fontes JNI/C fornecidas fora deste repositório | Mapeia comportamento pré-existente; não deve ser copiado ao repositório. |
+| Evidência de protocolo | Manual ABECS v2.12 e materiais de apoio fornecidos para a Change | Mapeia comportamento pré-existente; não deve ser copiado ao repositório. |
 | Resposta à pendência | `D:\desenvolvimento\ia\estudo\pinpad-abecs\resposta_pendencia_001.txt` | Evidência externa para os contratos de GTK, CLX, GOX e FCX; não contém instruções operacionais para esta Change. |
 
 Nenhuma chave, PAN, trilha, PIN, PIN block, KSN, WKENC, IV ou criptograma de

@@ -1,5 +1,7 @@
 # Revisão da SPEC — logging detalhado de comunicação
 
+Autor: Rômulo Penha
+
 **Data:** 2026-09-11  
 **Skill aplicada:** `spec-review`  
 **Escopo:** `spec-logging.md`, `DESIGN.md`, `implementation-plan.md` e
@@ -10,7 +12,7 @@
 
 Foram conferidos escopo, dependências, responsabilidades das camadas, formato
 do rastro, concorrência, redaction, configuração do utilitário local e
-critérios de aceite. Os arquivos Java/JNI/C externos fornecidos foram usados
+critérios de aceite. Os arquivos de referência externos fornecidos foram usados
 somente como referência comportamental de abertura, fechamento e direção
 SPE/PP; não foram copiados nem tratados como instruções para a Change.
 

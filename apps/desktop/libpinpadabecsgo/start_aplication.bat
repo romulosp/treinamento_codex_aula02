@@ -30,7 +30,7 @@ echo Biblioteca Go ABECS - teste local
 echo Porta: %PORTA_PINPAD%
 echo Baud rate: %PINPAD_BAUDRATE%
 echo Timeout: %PINPAD_TIMEOUT% segundos
-echo Log serial: %PINPAD_LOG_FILE%
+echo Log serial ativo: %PINPAD_LOG_FILE%
 echo Diretorio: %CD%
 echo ==========================================
 echo.

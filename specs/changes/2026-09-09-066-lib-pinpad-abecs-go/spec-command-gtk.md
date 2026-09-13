@@ -1,5 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comando GTK
 
+Autor: Rômulo Penha
+
 ## Status
 `SPEC_APROVADA`
 
@@ -45,3 +47,12 @@ Nunca registrar trilhas, KSN, PAN, PIN block ou chaves em texto, hexadecimal, er
 ## Referências
 `spec-command-gcx.md`, `spec-logging.md`, `spec-protocolo-seguro.md`; manual
 ABECS v2.12, seção 3.3.12.
+
+
+## Complemento normativo de 2026-09-13
+
+DataMethod pode estar ausente para devolver as trilhas em claro ou ser 00, 01,
+10, 11, 30, 40, 50, 51, 90 ou 91. O método 40 representa DUKPT:TDES:DAT
+variante 2 em ECB e aparece no vetor publicado da página 86. IV é opcional em
+CBC e vale zero quando ausente. Índice, WKENC e chave pública RSA são exigidos
+conforme o método da seção 3.3.12.

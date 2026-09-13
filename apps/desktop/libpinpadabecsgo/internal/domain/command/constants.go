@@ -45,17 +45,13 @@ const (
 )
 
 const (
-	GKYKeyOK           byte = 0x01
-	GKYKeyCancel       byte = 0x02
-	GKYKeyClear        byte = 0x03
-	GKYKeyF1           byte = 0x04
-	GKYKeyF2           byte = 0x05
-	GKYKeyF3           byte = 0x06
-	GKYKeyF4           byte = 0x07
-	GKYKeyNone         byte = 0xFF
-	GKYModeWaitKey     byte = 0x00
-	GKYModeClearBuffer byte = 0x01
-	GKYModeGetKey      byte = 0x02
+	GKYKeyOK     byte = 0x00
+	GKYKeyF1     byte = 0x04
+	GKYKeyF2     byte = 0x05
+	GKYKeyF3     byte = 0x06
+	GKYKeyF4     byte = 0x07
+	GKYKeyClear  byte = 0x08
+	GKYKeyCancel byte = 0x0D
 )
 
 const (

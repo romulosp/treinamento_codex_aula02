@@ -1,7 +1,17 @@
 package protocol
 
+import "time"
+
 // PP_DC2 identifica PKTDATA protegido pela Comunicação Segura ABECS.
 const PP_DC2 byte = 0x12
+
+const (
+	PacketDataMaxSize      = 2049
+	CommandDataMaxSize     = 2044
+	MaxAttempts            = 3
+	AcknowledgementTimeout = 2 * time.Second
+	ResponseTimeout        = 10 * time.Second
+)
 
 // ResponseTag identifies a RSP_DATID value returned by the pinpad.
 type ResponseTag uint16

@@ -1,5 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comando GIX (informações do dispositivo)
 
+Autor: Rômulo Penha
+
 ## Status
 `SPEC_APROVADA`
 
@@ -81,3 +83,9 @@ Todos os cenários abaixo são validados por comunicação serial real com um pi
 - [ ] **CA-GIX-003:** `GetDisplayCapabilities`, executado contra um pinpad real cuja resposta `GIX` contenha `PP_MODEL`, `PP_MNNAME`, `PP_CAPAB`, `PP_DSPTXTSZ`, `PP_DSPGRSZ` e `PP_MFSUP`, preenche todos os campos correspondentes de `DisplayCapabilities`, incluindo suporte a CTLS e tipo de display (sem/mono/cor) extraídos exclusivamente dos dois primeiros caracteres de `PP_CAPAB`.
 - [ ] **CA-GIX-004:** `GetDisplayCapabilities`, executado contra um pinpad real cuja resposta `GIX` não traga `PP_MFSUP`, devolve o campo de multimídia no valor zero do tipo, sem erro.
 - [ ] **CA-GIX-005:** uma falha real de timeout/NAK reportada pelo pinpad/porta serial durante `GIX` propaga o erro tipado correspondente em `GetInfo`, `GetInfoRaw` e `GetDisplayCapabilities`.
+
+
+## Complemento normativo de 2026-09-13
+
+PP_MFSUP é uma cadeia de bits cujas posições 0, 1 e 2 indicam PNG, JPG e GIF.
+PP_DSPGRSZ tem formato LLLLCCCC: linhas/altura antes de colunas/largura.

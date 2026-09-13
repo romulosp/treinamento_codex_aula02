@@ -1,5 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comando FCX
 
+Autor: Rômulo Penha
+
 ## Status
 `SPEC_APROVADA`
 
@@ -41,3 +43,9 @@ EMV, PAN, trilhas, scripts e respostas criptográficas devem ser classificados p
 ## Referências
 `spec-command-gcx.md`, `spec-command-gox.md`, `spec-logging.md`; manual
 ABECS v2.12, seção 3.7.4.
+
+
+## Complemento normativo de 2026-09-13
+
+FCX usa opções N4 com decisão 0, 1 ou 2 e três zeros. ARC A2 é obrigatório nas
+decisões 0 e 1. A resposta exige PP_FCXRES N3 e PP_EMVDATA quando solicitado.

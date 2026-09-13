@@ -108,10 +108,10 @@ func (s *SecureSession) Protect(clearData []byte) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("create secure cipher: %w", err)
 	}
-	ciphertext := make([]byte, len(plain)+1)
-	ciphertext[0] = PP_DC2
-	cipher.NewCBCEncrypter(block, make([]byte, aes.BlockSize)).CryptBlocks(ciphertext[1:], plain)
-	return ciphertext, nil
+	packetData := make([]byte, 1+len(plain))
+	packetData[0] = PP_DC2
+	cipher.NewCBCEncrypter(block, make([]byte, aes.BlockSize)).CryptBlocks(packetData[1:], plain)
+	return packetData, nil
 }
 
 // Unprotect valida e decripta um PKTDATA iniciado por DC2, retornando apenas
@@ -122,7 +122,8 @@ func (s *SecureSession) Unprotect(packetData []byte) ([]byte, error) {
 		return nil, err
 	}
 	defer zero(key)
-	if len(packetData) < 1+aes.BlockSize || packetData[0] != PP_DC2 || (len(packetData)-1)%aes.BlockSize != 0 {
+	if len(packetData) < 1+aes.BlockSize || packetData[0] != PP_DC2 ||
+		(len(packetData)-1)%aes.BlockSize != 0 {
 		return nil, fmt.Errorf("invalid secure packet")
 	}
 	block, err := aes.NewCipher(key)

@@ -2,7 +2,9 @@ package serial
 
 import (
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/command"
+	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/protocol"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/infrastructure/logging"
+	"bytes"
 	"context"
 	"errors"
 	"io"
@@ -24,7 +26,65 @@ type testPort struct {
 	partialWrite bool
 }
 
-func TestAdapterRecordsRedactedPinpadReadsAndClose(t *testing.T) {
+func TestAdapterRecordsExactGIXPacketsAndReadFragments(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "trace.log")
+	tracer := logging.NewTracer()
+	if active, err := tracer.SetLogDestination(path); err != nil || !active {
+		t.Fatalf("SetLogDestination active=%t err=%v", active, err)
+	}
+	defer func() {
+		if err := tracer.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	sent := []byte{0x16, 0x47, 0x49, 0x58, 0x30, 0x30, 0x30, 0x17, 0x12, 0x34}
+	received := [][]byte{{protocol.PP_ACK}, {0x16, 0x47, 0x49, 0x58}, {0x30, 0x30, 0x30, 0x17, 0x56, 0x78}}
+	driver := &testPort{reads: received}
+	adapter := New("COM7", 19200, time.Second)
+	adapter.SetTracer(tracer)
+	adapter.port = driver
+	if err := tracer.RecordOpen("COM7", 19200); err != nil {
+		t.Fatal(err)
+	}
+	adapter.SetTraceCommand(command.CommandGIX)
+	if err := adapter.Write(sent); err != nil {
+		t.Fatal(err)
+	}
+	for index, expected := range received {
+		got, err := adapter.Read(context.Background())
+		if err != nil {
+			t.Fatalf("read %d: %v", index, err)
+		}
+		if !bytes.Equal(got, expected) {
+			t.Fatalf("read %d=% X want=% X", index, got, expected)
+		}
+	}
+
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(content)
+	for _, expected := range []string{
+		"[COM7#001] SPE 16 47 49 58 30 30 30 17 12 34 CMD=GIX FUNC=serial.Adapter.Write",
+		"[COM7#001] PP  06 FUNC=serial.Adapter.Read",
+		"[COM7#001] PP  16 47 49 58 FUNC=serial.Adapter.Read",
+		"[COM7#001] PP  30 30 30 17 56 78 FUNC=serial.Adapter.Read",
+	} {
+		if !strings.Contains(text, expected) {
+			t.Fatalf("trace does not contain %q: %q", expected, text)
+		}
+	}
+	if strings.Count(text, "] SPE ") != 1 || strings.Count(text, "] PP  ") != len(received) {
+		t.Fatalf("unexpected SPE/PP count: %q", text)
+	}
+	if len(driver.written) != 1 || !bytes.Equal(driver.written[0], sent) {
+		t.Fatalf("driver bytes=% X want=% X", driver.written, sent)
+	}
+}
+
+func TestAdapterRecordsExplicitlyRedactedPinpadReadsAndClose(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "trace.log")
 	tracer := logging.NewTracer()
 	if active, err := tracer.SetLogDestination(path); err != nil || !active {
@@ -40,7 +100,7 @@ func TestAdapterRecordsRedactedPinpadReadsAndClose(t *testing.T) {
 	adapter.SetTracer(tracer)
 	adapter.port = &testPort{reads: [][]byte{{0x12, 0x34, 0x56}}}
 	tracer.RecordOpen("COM1", 19200)
-	adapter.SetTraceCommand(command.CommandGPN)
+	adapter.SetTracePolicy(command.CommandDSP, true)
 	if err := adapter.Write([]byte{0xAB, 0xCD, 0xEF}); err != nil {
 		t.Fatal(err)
 	}

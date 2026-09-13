@@ -2,6 +2,8 @@ package command
 
 import "fmt"
 
+const maxCommandDataSize = 2044
+
 // Parameter representa um parâmetro TLV simplificado de um comando ABECS.
 // Value é copiado pelo builder e pode conter dados binários.
 type Parameter struct {
@@ -45,6 +47,9 @@ func BuildABECSPayload(kind Type, parameters []Parameter) ([]byte, error) {
 	for _, current := range blocks {
 		payload = append(payload, fmt.Sprintf("%03d", len(current))...)
 		payload = append(payload, current...)
+	}
+	if len(payload) > maxCommandDataSize {
+		return nil, fmt.Errorf("ABECS command data exceeds %d bytes", maxCommandDataSize)
 	}
 	return payload, nil
 }

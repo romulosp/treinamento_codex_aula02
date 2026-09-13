@@ -4,13 +4,17 @@
 package logging
 
 import (
-	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/command"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
+
+	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/command"
+	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/protocol"
 )
 
 // New cria o logger estruturado padrão da biblioteca.
@@ -26,6 +30,7 @@ type Tracer struct {
 	destination *os.File
 	session     string
 	nextSession uint64
+	lastErr     error
 }
 
 // NewTracer cria um Tracer desabilitado. A composição do executável pode
@@ -51,24 +56,42 @@ func (t *Tracer) SetLogDestination(filename string) (bool, error) {
 		if previous == nil {
 			return true, nil
 		}
-		if err := previous.Close(); err != nil {
-			return false, fmt.Errorf("close trace destination: %w", err)
+		syncErr := previous.Sync()
+		closeErr := previous.Close()
+		if syncErr != nil || closeErr != nil {
+			err := errors.Join(wrapTraceError("sync trace destination", syncErr), wrapTraceError("close trace destination", closeErr))
+			t.rememberError(err)
+			return false, err
 		}
 		return true, nil
 	}
+	absolute, err := filepath.Abs(filename)
+	if err != nil {
+		return false, fmt.Errorf("normalize trace destination: %w", err)
+	}
+	filename = filepath.Clean(absolute)
 
 	candidate, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
 	if err != nil {
 		return false, fmt.Errorf("open trace destination: %w", err)
 	}
+	if err := writeLine(candidate, "logging.Tracer.SetLogDestination", "TRACE destination=%s enabled", safeText(filename)); err != nil {
+		closeErr := candidate.Close()
+		return false, errors.Join(fmt.Errorf("activate trace destination: %w", err), wrapTraceError("close failed trace destination", closeErr))
+	}
 
 	t.mu.Lock()
 	previous := t.destination
 	t.destination = candidate
+	t.lastErr = nil
 	t.mu.Unlock()
 	if previous != nil {
-		if err := previous.Close(); err != nil {
-			return true, fmt.Errorf("close previous trace destination: %w", err)
+		syncErr := previous.Sync()
+		closeErr := previous.Close()
+		if syncErr != nil || closeErr != nil {
+			err := errors.Join(wrapTraceError("sync previous trace destination", syncErr), wrapTraceError("close previous trace destination", closeErr))
+			t.rememberError(err)
+			return true, err
 		}
 	}
 	return true, nil
@@ -84,12 +107,23 @@ func (t *Tracer) Close() error {
 	return err
 }
 
+// Err retorna a última falha de persistência observada pelo tracer. O erro é
+// limpo somente quando um novo destino é ativado com sucesso.
+func (t *Tracer) Err() error {
+	if t == nil {
+		return nil
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.lastErr
+}
+
 // RecordOpen inicia uma nova sessão lógica após a abertura física da porta e
 // registra seus parâmetros 8N1. A numeração só avança quando a abertura teve
 // êxito, preservando a correlação até RecordClose.
-func (t *Tracer) RecordOpen(port string, baud int) {
+func (t *Tracer) RecordOpen(port string, baud int) error {
 	if t == nil {
-		return
+		return nil
 	}
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -99,14 +133,14 @@ func (t *Tracer) RecordOpen(port string, baud int) {
 	}
 	t.nextSession++
 	t.session = fmt.Sprintf("%s#%03d", port, t.nextSession)
-	t.writeLineLocked("serial.Adapter.Open", "[%s] open(%s,%d,8,N,1)=>OK", t.session, port, baud)
+	return t.writeLineLocked("serial.Adapter.Open", "[%s] open(%s,%d,8,N,1)=>OK", t.session, port, baud)
 }
 
 // RecordOpenFailure registra uma tentativa de abertura que não criou uma
 // sessão. O marcador OPEN distingue essa falha de uma conexão bem-sucedida.
-func (t *Tracer) RecordOpenFailure(port string, baud int, err error) {
+func (t *Tracer) RecordOpenFailure(port string, baud int, err error) error {
 	if t == nil {
-		return
+		return nil
 	}
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -114,94 +148,114 @@ func (t *Tracer) RecordOpenFailure(port string, baud int, err error) {
 	if port == "" {
 		port = "PORT"
 	}
-	t.writeLineLocked("serial.Adapter.Open", "[%s#OPEN] open(%s,%d,8,N,1)=>ERRO: %s", port, port, baud, safeError(err))
+	return t.writeLineLocked("serial.Adapter.Open", "[%s#OPEN] open(%s,%d,8,N,1)=>ERRO: %s", port, port, baud, safeError(err))
 }
 
 // RecordClose registra o fechamento da sessão atual. Quando a porta devolve
 // erro, a linha preserva a sessão e descreve a falha sem expor dados de tráfego.
-func (t *Tracer) RecordClose(err error) {
+func (t *Tracer) RecordClose(err error) error {
 	if t == nil {
-		return
+		return nil
 	}
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	id := t.sessionIDLocked("")
+	var traceErr error
 	if err != nil {
-		t.writeLineLocked("serial.Adapter.Close", "[%s] close()=>ERRO: %s", id, safeError(err))
+		traceErr = t.writeLineLocked("serial.Adapter.Close", "[%s] close()=>ERRO: %s", id, safeError(err))
 	} else {
-		t.writeLineLocked("serial.Adapter.Close", "[%s] close()", id)
+		traceErr = t.writeLineLocked("serial.Adapter.Close", "[%s] close()", id)
 	}
 	t.session = ""
+	return traceErr
 }
 
 // RecordSPE registra bytes enviados após a confirmação de escrita pelo
 // adaptador. kind vazio representa byte de controle sem comando tipado.
-func (t *Tracer) RecordSPE(kind command.Type, data []byte) {
-	t.RecordSPEFrom(kind, data, "logging.Tracer.RecordSPE")
+func (t *Tracer) RecordSPE(kind command.Type, data []byte) error {
+	return t.RecordSPEFrom(kind, data, "logging.Tracer.RecordSPE")
 }
 
 // RecordSPEFrom registra bytes enviados depois que a função informada confirma
 // a escrita física. O nome da função permite diferenciar o ponto de envio sem
 // depender de inspeção de pilha em tempo de execução.
-func (t *Tracer) RecordSPEFrom(kind command.Type, data []byte, function string) {
+func (t *Tracer) RecordSPEFrom(kind command.Type, data []byte, function string) error {
+	return t.RecordSPEFromPolicy(kind, data, function, false)
+}
+
+// RecordSPEFromPolicy registra bytes enviados e permite que o ponto de
+// composição imponha redação total para comunicação segura ou conteúdo que o
+// consumidor classificou como sensível.
+func (t *Tracer) RecordSPEFromPolicy(kind command.Type, data []byte, function string, redact bool) error {
 	if t == nil {
-		return
+		return nil
 	}
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	payload := tracePayload(kind, data)
-	if kind == "" {
-		t.writeLineLocked(function, "[%s] SPE %s", t.sessionIDLocked(""), payload)
-		return
+	if t.destination == nil {
+		return nil
 	}
-	t.writeLineLocked(function, "[%s] SPE %s CMD=%s", t.sessionIDLocked(""), payload, safeText(string(kind)))
+	payload := tracePayload(kind, data, redact)
+	if kind == "" {
+		return t.writeLineLocked(function, "[%s] SPE %s", t.sessionIDLocked(""), payload)
+	}
+	return t.writeLineLocked(function, "[%s] SPE %s CMD=%s", t.sessionIDLocked(""), payload, safeText(string(kind)))
 }
 
 // RecordPP registra bytes retornados pelo pinpad a cada leitura do adaptador.
 // O tipo de comando ativo permite aplicar redação integral antes da escrita.
-func (t *Tracer) RecordPP(kind command.Type, data []byte) {
-	t.RecordPPFrom(kind, data, "logging.Tracer.RecordPP")
+func (t *Tracer) RecordPP(kind command.Type, data []byte) error {
+	return t.RecordPPFrom(kind, data, "logging.Tracer.RecordPP")
 }
 
 // RecordPPFrom registra bytes recebidos no ponto de leitura indicado. A linha
 // é emitida para cada retorno não vazio do driver, incluindo ACK, NAK e EOT.
-func (t *Tracer) RecordPPFrom(kind command.Type, data []byte, function string) {
+func (t *Tracer) RecordPPFrom(kind command.Type, data []byte, function string) error {
+	return t.RecordPPFromPolicy(kind, data, function, false)
+}
+
+// RecordPPFromPolicy registra os bytes de uma leitura física, aplicando a
+// política explícita de redação antes de qualquer formatação hexadecimal.
+func (t *Tracer) RecordPPFromPolicy(kind command.Type, data []byte, function string, redact bool) error {
 	if t == nil || len(data) == 0 {
-		return
+		return nil
 	}
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	t.writeLineLocked(function, "[%s] PP  %s", t.sessionIDLocked(""), tracePayload(kind, data))
+	if t.destination == nil {
+		return nil
+	}
+	return t.writeLineLocked(function, "[%s] PP  %s", t.sessionIDLocked(""), tracePayload(kind, data, redact))
 }
 
 // RecordResponse correlaciona uma resposta ABECS já interpretada com o comando
 // que a originou. Não repete os bytes registrados em SPE ou PP.
-func (t *Tracer) RecordResponse(kind command.Type, status string) {
+func (t *Tracer) RecordResponse(kind command.Type, status string) error {
 	if t == nil || kind == "" || status == "" {
-		return
+		return nil
 	}
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	t.writeLineLocked("service.exchangeCommand", "[%s] RSP CMD=%s STATUS=%s", t.sessionIDLocked(""), safeText(string(kind)), safeText(status))
+	return t.writeLineLocked("service.exchangeCommand", "[%s] RSP CMD=%s STATUS=%s", t.sessionIDLocked(""), safeText(string(kind)), safeText(status))
 }
 
 // RecordError registra uma falha de I/O do adaptador com o identificador da
 // sessão ativa ou, se ainda não houver sessão, com a porta que originou a falha.
-func (t *Tracer) RecordError(port, operation string, err error) {
+func (t *Tracer) RecordError(port, operation string, err error) error {
 	if t == nil || err == nil {
-		return
+		return nil
 	}
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	function := "serial.Adapter." + safeText(operation)
-	t.writeLineLocked(function, "[%s] %s()=>ERRO: %s", t.sessionIDLocked(port), safeText(operation), safeError(err))
+	return t.writeLineLocked(function, "[%s] %s()=>ERRO: %s", t.sessionIDLocked(port), safeText(operation), safeError(err))
 }
 
 // RedactPayload devolve um marcador auditável para comandos que podem conter
 // PAN, trilhas, PIN, KSN, chaves ou dados EMV sensíveis.
 func RedactPayload(kind command.Type, data []byte) string {
 	switch kind {
-	case command.CommandGCX, command.CommandGTK, command.CommandGOX, command.CommandFCX, command.CommandGPN:
+	case command.CommandMLR, command.CommandTLR, command.CommandGCX, command.CommandGTK, command.CommandGOX, command.CommandFCX, command.CommandGPN:
 		return fmt.Sprintf("**REDACTED(%d bytes)**", len(data))
 	default:
 		return fmt.Sprintf("%X", data)
@@ -219,17 +273,34 @@ func (t *Tracer) sessionIDLocked(port string) string {
 	return port + "#000"
 }
 
-func (t *Tracer) writeLineLocked(function, format string, args ...any) {
+func (t *Tracer) writeLineLocked(function, format string, args ...any) error {
 	if t.destination == nil {
-		return
+		return nil
 	}
-	line := fmt.Sprintf(format, args...)
-	timestamp := time.Now().Format(time.RFC3339Nano)
-	_, _ = fmt.Fprintf(t.destination, "%s FUNC=%s DATA_HORA=%s\n", line, safeText(function), timestamp)
+	err := writeLine(t.destination, function, format, args...)
+	if err != nil {
+		t.lastErr = err
+	}
+	return err
 }
 
-func tracePayload(kind command.Type, data []byte) string {
-	if isSensitive(kind) {
+func writeLine(destination *os.File, function, format string, args ...any) error {
+	line := fmt.Sprintf(format, args...)
+	timestamp := time.Now().Format(time.RFC3339Nano)
+	if _, err := fmt.Fprintf(destination, "%s FUNC=%s DATA_HORA=%s\n", line, safeText(function), timestamp); err != nil {
+		return fmt.Errorf("write trace line: %w", err)
+	}
+	if err := destination.Sync(); err != nil {
+		return fmt.Errorf("sync trace line: %w", err)
+	}
+	return nil
+}
+
+func tracePayload(kind command.Type, data []byte, forceRedaction bool) string {
+	if forceRedaction && !isVisibleControl(data) {
+		return fmt.Sprintf("**REDACTED(%d bytes)**", len(data))
+	}
+	if isSensitive(kind) && !isVisibleControl(data) {
 		return RedactPayload(kind, data)
 	}
 	if len(data) == 0 {
@@ -250,11 +321,39 @@ func tracePayload(kind command.Type, data []byte) string {
 
 func isSensitive(kind command.Type) bool {
 	switch kind {
-	case command.CommandGCX, command.CommandGTK, command.CommandGOX, command.CommandFCX, command.CommandGPN:
+	case command.CommandMLR, command.CommandTLR, command.CommandGCX, command.CommandGTK, command.CommandGOX, command.CommandFCX, command.CommandGPN:
 		return true
 	default:
 		return false
 	}
+}
+
+func isVisibleControl(data []byte) bool {
+	if len(data) != 1 {
+		return false
+	}
+	switch data[0] {
+	case protocol.PP_ACK, protocol.PP_NAK, protocol.PP_EOT, protocol.PP_CAN:
+		return true
+	default:
+		return false
+	}
+}
+
+func (t *Tracer) rememberError(err error) {
+	if t == nil || err == nil {
+		return
+	}
+	t.mu.Lock()
+	t.lastErr = err
+	t.mu.Unlock()
+}
+
+func wrapTraceError(operation string, err error) error {
+	if err == nil {
+		return nil
+	}
+	return fmt.Errorf("%s: %w", operation, err)
 }
 
 func safeError(err error) string {

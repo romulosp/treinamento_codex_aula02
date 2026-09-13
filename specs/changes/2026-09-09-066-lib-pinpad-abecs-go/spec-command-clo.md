@@ -1,5 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comando CLO
 
+Autor: Rômulo Penha
+
 ## Status
 `SPEC_APROVADA`
 
@@ -8,7 +10,7 @@ Definir o encerramento lógico da comunicação ABECS antes do fechamento da por
 
 ## Escopo
 - Pacotes: `internal/application/service`, `internal/domain/command`, `internal/domain/parser` e `internal/infrastructure/serial`.
-- Payload lógico: `CLO000`, conforme perfil suportado pelo manual.
+- Payload lógico: `CLO032` seguido de mensagem `S32`.
 - Não fechar a porta enquanto houver comando de hardware em execução, salvo shutdown/cancelamento explicitamente definido.
 
 ## Contrato
@@ -29,3 +31,9 @@ Definir o encerramento lógico da comunicação ABECS antes do fechamento da por
 
 ## Referências
 `spec.md` RF-010, RF-013, fila/worker e `spec-logging.md`; manual ABECS v2.12.
+
+
+## Correção normativa de 2026-09-13
+
+O payload é `CLO032` seguido de mensagem `S32`. Com KSEC ativa, o comando CLO
+é protegido e somente sua resposta chega em claro.

@@ -1,5 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comando GOX
 
+Autor: Rômulo Penha
+
 ## Status
 `SPEC_APROVADA`
 
@@ -44,3 +46,10 @@ PIN block, KSN, PAN, WKENC, KSEC e chaves nunca aparecem em logs. Respostas de e
 ## Referências
 `spec-command-gcx.md`, `spec-command-gpn.md`, `spec-logging.md`; manual
 ABECS v2.12, seção 3.7.3.
+
+
+## Complemento normativo de 2026-09-13
+
+GOX exige adquirente N2, método de PIN N1 e índice N2; WKENC é condicional. A
+resposta exige PP_GOXRES N6, PIN block/KSN quando indicado pelo resultado e
+PP_EMVDATA quando uma tag list foi solicitada, mesmo que vazio.

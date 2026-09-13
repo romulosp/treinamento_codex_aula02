@@ -1,5 +1,7 @@
 # Revisão da SPEC — 066-lib-pinpad-abecs-go
 
+Autor: Rômulo Penha
+
 **Data:** 2026-09-10  
 **Skill aplicada:** `spec-review`  
 **Escopo:** `proposal.md`, `spec.md`, `DESIGN.md`, `tasks.md`,
@@ -9,7 +11,7 @@ de `2026-09-10-spec-review-3.md`.
 ## Método
 
 Revisão cruzada do contrato principal, das SPECs de GTK, CLX, GOX, FCX e
-comunicação segura, do mapeamento para o legado Java/JNI/C e da evidência
+comunicação segura, do mapeamento para o protocolo ABECS v2.12 e da evidência
 externa sanitizada fornecida para a Change. Foram conferidos escopo, sequência,
 dependências, dados sensíveis, critérios de aceite e rastreabilidade. Não houve
 alteração de código, testes, dependências ou artefatos de validação.

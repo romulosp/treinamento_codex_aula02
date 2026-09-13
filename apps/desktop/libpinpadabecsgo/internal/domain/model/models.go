@@ -4,19 +4,17 @@ import "time"
 
 // PinpadConfig define conexão serial e opções operacionais da fachada.
 type PinpadConfig struct {
-	Port                 string
-	BaudRate             int
-	Timeout              time.Duration
-	AutoLoadEMVTables    bool
-	UseGCXInitialization bool
-	GCXInitTimeout       time.Duration
-	AcquirerIndex        string
-	TableVersion         string
+	Port              string
+	BaudRate          int
+	Timeout           time.Duration
+	AutoLoadEMVTables bool
+	AcquirerIndex     string
+	TableVersion      string
 }
 
 // DefaultConfig devolve a configuração aprovada para uso local inicial.
 func DefaultConfig() PinpadConfig {
-	return PinpadConfig{Port: "COM7", BaudRate: 19200, Timeout: 30 * time.Second, UseGCXInitialization: true, GCXInitTimeout: 5 * time.Second, AcquirerIndex: "00", TableVersion: "TABVER0001"}
+	return PinpadConfig{Port: "COM7", BaudRate: 19200, Timeout: 30 * time.Second, AcquirerIndex: "00", TableVersion: "TABVER0001"}
 }
 
 // PinpadState representa o estado observável da comunicação com o pinpad.

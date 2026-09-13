@@ -1,23 +1,31 @@
-# SPEC: 066-lib-pinpad-abecs-go — Comando RST
+# SPEC: 066-lib-pinpad-abecs-go — exclusão de RST
+
+Autor: Rômulo Penha
 
 ## Status
+
 `SPEC_APROVADA`
 
 ## Objetivo
-Reinicializar o estado lógico do pinpad por comando tipado, preservando o ciclo de vida da porta e do worker.
+
+Registrar que o manual ABECS 2.12 não define um comando `RST` e impedir o envio
+de um payload proprietário sob o nome de um comando ABECS.
 
 ## Contrato
-- Builder deve produzir somente o payload RST documentado.
-- Operação exige pinpad aberto e estado BUSY exclusivo.
-- Aguardar ACK/status e o tempo de estabilização definido pelo manual/configuração usando contexto, nunca sleep não cancelável.
-- Após sucesso, invalidar estado transitório da transação, sem fechar a porta automaticamente salvo regra do dispositivo.
-- Registrar `SPE CMD=RST`, `PP` e `RSP CMD=RST STATUS=...`.
+
+- Remover `RST` do catálogo, builders, fachada e menu local.
+- Não enviar `RST000`, `RST` ou qualquer variante pela serial.
+- Para abortar uma operação ou limpar comunicação residual, executar o
+  handshake CAN/EOT de `spec-infra-serial-cancel.md`.
+- Uma reinicialização física futura exige outra Change e documentação normativa
+  do fabricante do dispositivo.
 
 ## Critérios de aceite
-- [ ] RST real reinicializa o pinpad e permite nova operação.
-- [ ] Falha ou cancelamento devolve erro e deixa estado documentado.
-- [ ] Operações concorrentes são rejeitadas sem interleaving.
-- [ ] Shutdown durante RST é idempotente.
+
+- [ ] Nenhuma API ou opção do executável anuncia RST como comando ABECS 2.12.
+- [ ] Nenhum teste aceita `RST000` como payload válido.
+- [ ] O catálogo e a matriz de rastreabilidade registram RST como excluído.
 
 ## Referências
-`spec.md` RF-012.9/RF-013, `spec-infra-serial-cancel.md`; manual ABECS v2.12.
+
+`spec-conformidade-abecs-v212.md`, `spec-command-can.md` e manual ABECS 2.12.

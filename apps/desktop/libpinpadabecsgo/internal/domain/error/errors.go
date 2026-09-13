@@ -13,6 +13,7 @@ var (
 	ErrTimeout                      = errors.New("pinpad operation timed out")
 	ErrChecksumInvalid              = errors.New("invalid checksum")
 	ErrInvalidResponse              = errors.New("invalid pinpad response")
+	ErrInvalidNotification          = errors.New("invalid pinpad notification")
 	ErrNakReceived                  = errors.New("negative acknowledgement received")
 	ErrSessionAlreadyOwned          = errors.New("pinpad session already owned")
 	ErrNotSessionOwner              = errors.New("session is not pinpad owner")

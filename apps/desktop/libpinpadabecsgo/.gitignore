@@ -5,6 +5,8 @@
 .gocache/
 .gomodcache/
 .bin/
+bin/
+coverage-*
 
 # ===================================================================
 # Binários gerados
@@ -75,3 +77,6 @@ Desktop.ini
 # scripts úteis
 !*.bat
 !*.sh
+
+# Rastro serial local, inclusive artefatos homônimos em subdiretórios de teste.
+**/logs/LogPinpadAbecs.txt

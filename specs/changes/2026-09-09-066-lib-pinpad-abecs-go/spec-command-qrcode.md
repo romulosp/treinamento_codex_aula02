@@ -1,5 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — DisplayQRCode: aviso estruturado de posição
 
+Autor: Rômulo Penha
+
 ## Status
 `SPEC_APROVADA`
 

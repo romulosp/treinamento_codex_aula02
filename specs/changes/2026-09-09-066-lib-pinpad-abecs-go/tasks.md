@@ -1,8 +1,10 @@
 # Tarefas: 066-lib-pinpad-abecs-go
 
+Autor: Rômulo Penha
+
 ## Regra de leitura deste arquivo
 
-Os checks abaixo representam tarefas documentadas, não uma prova automática de que o comportamento está completo. A conversão integral Java + JNI + C somente poderá ser marcada como concluída depois da matriz legado → Go → SPEC → evidência, da revisão de implementação e da validação com pinpad físico real.
+Os checks abaixo representam tarefas documentadas, não uma prova automática de que o comportamento está completo. A integração completa ABECS v2.12 somente poderá ser marcada como concluída depois da matriz protocolo → Go → SPEC → evidência, da revisão de implementação e da validação com pinpad físico real.
 
 ## SPECs individuais
 
@@ -51,27 +53,57 @@ Todas as SPECs individuais permanecem sujeitas a revisão formal. A existência 
 - [x] Implementar worker único, contexto, cancelamento e shutdown.
 - [x] Implementar `PinpadService` e comandos CAN/OPN/GIX/CLO.
 - [x] Implementar builders, parsers e fachada de display DSP/DEX/MNU.
+- [x] Cobrir a resposta física MNU com comprimento `006` e seleção no campo
+  TLV `0x804D`, preservando índices de dois dígitos.
 - [x] Implementar fluxo serial de multimídia DSI/MLI/MLR/MLE.
 - [x] Implementar fluxo serial de tabelas EMV TLI/TLR/TLE.
 - [x] Implementar GKY, incluindo parser de teclas e timeout. (builder, parser e fachada WaitForKeyPress implementados)
-- [x] Implementar GCX, modelo, builder, parser e fluxo protegido (subconjunto valor/data/hora/opções).
+- [x] Corrigir o builder GCX para parâmetros ABECS `0013`, `0015`, `0016` e
+  `0017`, com valores N12/N6/N6/N5 e validação antes da serial.
+- [x] Remover o GCX preliminar com data/hora zeradas, sua configuração e sua
+  opção de menu; `PurchaseGCX` deve emitir exatamente um GCX.
+- [x] Criar regressão unitária byte a byte para CA-GCX-008 a CA-GCX-010.
+- [x] Implementar o consumo de zero ou mais notificações `NTM` antes da resposta
+  final GCX, sem escrita de ACK e sem interpretação TLV da mensagem.
+- [x] Perguntar na opção 11 se o GCX aceita chip/tarja ou
+  chip/tarja/contactless, se mostra ou oculta o valor, e validar as escolhas.
+- [x] Criar as regressões automatizadas CA-GCX-011 e CA-GCX-012.
+- [x] Iniciar o prazo da opção 11 após a coleta das entradas e preservar o
+  contexto do consumidor no GCX, sem aplicar o timeout genérico da configuração.
+- [x] Criar a regressão automatizada CA-GCX-013 para propagação do prazo.
 - [x] Implementar stub `ErrNotImplemented` para `TransactionGCX` com parâmetros completos.
 - [x] Implementar GPN MK/WK e DUKPT, validações e parser binário.
-- [x] Implementar RST e confirmação de resposta.
+- [x] Remover RST por ausência no manual ABECS 2.12.
 - [x] Especificar e implementar fachada de ciclo de vida e configuração.
 - [x] Implementar fachada de comandos básicos, display e capabilities.
 - [x] Implementar fachada de imagens, QR Code (via `QRCodeGenerator` injetável) e progresso.
 - [x] Implementar `ErrQRCodeGeneratorNotConfigured` e validação de tamanho/margem do QR Code.
 - [x] Implementar fachada de carga completa de tabelas EMV.
 - [x] Implementar fachada transacional GCX (subconjunto especificado) sem expor `SendRawCommand`.
-- [x] Implementar fachada GKY, RST e GPN.
+- [x] Implementar fachadas GKY e GPN; reset usa CAN/EOT e RST foi excluído.
 - [x] Testar concorrência, cancelamento, shutdown e redaction na fachada.
 - [x] Revisar e completar o contrato da fila FIFO, cancelamento e shutdown.
 - [x] Revisar e completar o contrato do `SessionManager` e expiração de 300 segundos.
 - [x] Confirmar que a bridge HTTP não será convertida nem adicionada ao módulo Go.
 - [x] Criar `start_aplication.bat` para execução local sem privilégios administrativos, com `COM7` temporário.
 - [x] Confirmar que `.gocache`, `.gomodcache`, `.bin` e executáveis locais não serão versionados.
-- [ ] Implementar logging `slog` com redaction e tracer SPE/PP/RSP conforme `spec-logging.md`, incluindo o destino local `logs/LogPinpadAbecs.txt`, `PINPAD_LOG_FILE`, eventos de ciclo de vida e coleta segura de evidências.
+- [x] Implementar logging `slog` com redaction e tracer SPE/PP/RSP conforme
+  `spec-logging.md`, incluindo destino absoluto canônico
+  `<raiz-do-módulo>/logs/LogPinpadAbecs.txt`, `PINPAD_LOG_FILE`, marcador de
+  ativação, caminho ativo exibido, eventos de ciclo de vida, cobertura de todos
+  os comandos tipados e coleta segura de evidências.
+- [x] Remover a dependência do diretório de trabalho na resolução do arquivo de
+  rastro e impedir a criação de `cmd/libpinpadabecsgo/logs/LogPinpadAbecs.txt`
+  ou de qualquer outro arquivo homônimo acidental.
+- [x] Fazer o adaptador serial real emitir uma única linha `SPE` após escrita
+  integral confirmada e uma linha `PP` por leitura não vazia; manter `RSP` no
+  serviço após interpretação do status, sem duplicação entre camadas.
+- [x] Criar teste de integração do adaptador com pacote GIX conhecido que
+  compare byte a byte o hexadecimal de `SPE` com o buffer escrito e cada `PP`
+  com o retorno de leitura, incluindo ACK isolado, resposta completa e resposta
+  fragmentada.
+- [x] Propagar ou tornar observável qualquer falha de escrita/flush/fechamento
+  do tracer; nenhuma falha de persistência poderá ser descartada silenciosamente.
 
 ## Documentação obrigatória do código
 
@@ -85,10 +117,10 @@ Todas as SPECs individuais permanecem sujeitas a revisão formal. A existência 
 - [ ] Verificar ausência de segredos e dados sensíveis em comentários, exemplos, fixtures e documentação.
 - [ ] Registrar a inspeção documental na revisão da implementação e em `validation.md`.
 
-## Conversão integral do legado
+## Integração completa do protocolo ABECS v2.12
 
-- [ ] Inventariar todas as classes Java, funções JNI e funções C/C++.
-- [ ] Criar matriz de rastreabilidade legado → pacote Go → SPEC → teste → evidência física.
+- [ ] Inventariar todas as funções e fluxos do protocolo ABECS v2.12 relevantes ao escopo.
+- [ ] Criar matriz de rastreabilidade protocolo → pacote Go → SPEC → teste → evidência física.
 - [ ] Implementar OPN/CLO e o protocolo seguro RSA/AES conforme `spec-protocolo-seguro.md`; implementar CLX como fluxo visual independente conforme `spec-command-clx.md`.
 - [ ] Implementar GTK, GOX e FCX em modelos próprios, sem misturar dados com GCX.
 - [ ] Implementar `TransactionGCX` somente após aprovação da SPEC de seus parâmetros completos.
@@ -107,12 +139,46 @@ Todas as SPECs individuais permanecem sujeitas a revisão formal. A existência 
 
 ## Estado da implementação
 
-`IMPLEMENTADA`. Os achados IMP-REV-001 a IMP-REV-015 foram tratados e a cobertura automatizada atingiu 81,7%. A Change deve seguir para nova revisão da implementação antes da validação formal. A conversão física integral permanece pendente de hardware.
+`IMPLEMENTADA`. O contrato de logging revisado em 2026-09-12 foi implementado,
+testado e exercitado no pinpad físico para o fluxo `Open → GIX → Close`. A
+serialização GCX foi corrigida conforme a seção 3.7.1 do manual ABECS v2.12 e
+possui regressão unitária byte a byte. O fluxo também consome notificações NTM
+até a resposta final e o CLI expõe as quatro combinações válidas de GCXOPT. A
+opção 11 também inicia seu prazo somente após as entradas, e o GCX preserva o
+contexto do consumidor sem ser limitado pelo timeout genérico. A
+Change aguarda revisão independente da implementação e validação formal; os
+demais fluxos físicos completos continuam pendentes conforme suas SPECs.
 - [x] Executar `go test ./... -coverprofile=coverage.out`.
 - [x] Executar `go tool cover -func=coverage.out` (perfil `coverage` no PowerShell; cobertura total aferida: 81,7%).
 - [x] Executar `go test -race ./...` (não suportado pela distribuição Go `windows/386`; limitação de ambiente registrada).
-- [ ] Validar build Windows/Linux ou registrar limitação objetiva.
+- [x] Validar build Windows/Linux ou registrar limitação objetiva.
 - [ ] Executar auditoria de segurança aplicável e revisar dependências.
+- [x] Testar a resolução do mesmo caminho absoluto a partir da raiz do módulo e
+  de `cmd/libpinpadabecsgo`, comprovando que somente um arquivo é criado.
+- [x] Testar a matriz de `CAN`, `OPN`, `CLO`, `CLX`, `GIX`, `DSP`, `DEX`, `MNU`,
+  `DSI`, `MLI`, `MLR`, `MLE`, `TLI`, `TLR`, `TLE`, `GKY`, `GCX`, `GTK`, `GOX`,
+  `FCX` e `GPN` quanto a `CMD=`, ordem e redaction aplicável.
 - [ ] Executar revisão de documentação Go conforme `golang-documentation` e registrar lacunas.
-- [ ] Registrar evidências em `validation.md`.
+- [x] Registrar evidências em `validation.md`.
 - [ ] Executar revisão da implementação, validação, aprovação e encerramento conforme workflow.
+
+
+## Correção de conformidade ABECS 2.12 — 2026-09-13
+
+- [x] Revisar o manual 2.12 e registrar divergências em revisão formal.
+- [x] Corrigir a fonte de verdade em `spec-conformidade-abecs-v212.md`.
+- [ ] Corrigir transporte ACK/NAK, retransmissão, prazos e CAN/EOT.
+- [ ] Corrigir OPN clássico/seguro, CLO e proteção de CLO/CLX.
+- [ ] Corrigir builders e parsers de display, MNU, GKY e GPN.
+- [ ] Corrigir multimídia MLI/MLR/MLE/DSI e CRC16.
+- [ ] Corrigir TLI/TLR/TLE e semântica dos status 000/020.
+- [ ] Corrigir data GCX, contratos GTK/GOX/FCX e validações condicionais.
+- [ ] Corrigir PP_MFSUP, PP_DSPGRSZ e catálogo de status.
+- [x] Remover RST do código, fachada e CLI.
+- [ ] Substituir falsos oráculos por testes byte a byte derivados do manual.
+- [ ] Executar revisão de implementação e validação formal.
+
+## Estado atual da implementação
+
+`EM_IMPLEMENTACAO`. A revisão de 2026-09-12 reprovou a implementação anterior;
+os checks históricos acima não comprovam conformidade com o manual 2.12.

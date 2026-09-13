@@ -6,6 +6,7 @@ import (
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/model"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/protocol"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/infrastructure/logging"
+	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
@@ -22,12 +23,15 @@ import (
 )
 
 type fakePort struct {
-	open     bool
-	writes   [][]byte
-	reads    [][]byte
-	readErr  error
-	writeErr error
-	traceCmd command.Type
+	open             bool
+	writes           [][]byte
+	reads            [][]byte
+	readErr          error
+	writeErr         error
+	traceCmd         command.Type
+	traceRedact      bool
+	lastReadDeadline time.Time
+	disableAutoEOT   bool
 }
 
 func TestServiceTracerPropagatesTypedCommandAndRecordsRSP(t *testing.T) {
@@ -59,6 +63,25 @@ func TestServiceTracerPropagatesTypedCommandAndRecordsRSP(t *testing.T) {
 	}
 }
 
+func TestServicePropagatesConsumerTraceRedactionPolicy(t *testing.T) {
+	p := &fakePort{}
+	s := New(model.DefaultConfig(), p)
+	s.SetTraceSensitive(command.CommandDSP, true)
+	s.setTraceCommand(command.CommandDSP, false)
+	if p.traceCmd != command.CommandDSP || !p.traceRedact {
+		t.Fatalf("trace policy command=%s redact=%t", p.traceCmd, p.traceRedact)
+	}
+	s.SetTraceSensitive(command.CommandDSP, false)
+	s.setTraceCommand(command.CommandDSP, false)
+	if p.traceRedact {
+		t.Fatal("trace redaction policy was not removed")
+	}
+	s.setTraceCommand(command.CommandOPN, true)
+	if p.traceCmd != command.CommandOPN || !p.traceRedact {
+		t.Fatalf("forced secure OPN policy command=%s redact=%t", p.traceCmd, p.traceRedact)
+	}
+}
+
 func (p *fakePort) Open() error  { p.open = true; return nil }
 func (p *fakePort) Close() error { p.open = false; return nil }
 func (p *fakePort) IsOpen() bool { return p.open }
@@ -67,9 +90,30 @@ func (p *fakePort) Write(b []byte) error {
 		return p.writeErr
 	}
 	p.writes = append(p.writes, append([]byte(nil), b...))
+	if !p.disableAutoEOT && len(b) == 1 && b[0] == protocol.PP_CAN &&
+		(len(p.reads) == 0 || len(p.reads[0]) != 1 || p.reads[0][0] != protocol.PP_EOT) {
+		p.reads = append([][]byte{{protocol.PP_EOT}}, p.reads...)
+	}
 	return nil
 }
-func (p *fakePort) Read(context.Context) ([]byte, error) {
+
+func TestCancelHandshakeIgnoresUnrelatedBytesUntilEOT(t *testing.T) {
+	port := &fakePort{
+		disableAutoEOT: true,
+		reads:          [][]byte{{0x01, protocol.PP_ACK}, {protocol.PP_EOT}},
+	}
+	svc := New(model.DefaultConfig(), port)
+	defer svc.Shutdown()
+
+	if err := svc.cancelHandshake(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if len(port.writes) != 1 || !bytes.Equal(port.writes[0], []byte{protocol.PP_CAN}) {
+		t.Fatalf("escritas = % X, want um CAN", port.writes)
+	}
+}
+func (p *fakePort) Read(ctx context.Context) ([]byte, error) {
+	p.lastReadDeadline, _ = ctx.Deadline()
 	if p.readErr != nil {
 		return nil, p.readErr
 	}
@@ -82,9 +126,27 @@ func (p *fakePort) Read(context.Context) ([]byte, error) {
 }
 
 func (p *fakePort) SetTraceCommand(kind command.Type) { p.traceCmd = kind }
+func (p *fakePort) SetTracePolicy(kind command.Type, redact bool) {
+	p.traceCmd = kind
+	p.traceRedact = redact
+}
 
 func response(payload string) []byte {
 	return append([]byte{protocol.PP_ACK}, protocol.BuildPacket([]byte(payload))...)
+}
+
+func validICCResponsePayload() []byte {
+	data := make([]byte, 0, 53)
+	appendTag := func(tag uint16, value string) {
+		data = append(data, byte(tag>>8), byte(tag), byte(len(value)>>8), byte(len(value)))
+		data = append(data, value...)
+	}
+	appendTag(uint16(protocol.TagCardType), command.GCXCardICC)
+	appendTag(uint16(protocol.TagAIDTableInfo), "080301")
+	appendTag(uint16(protocol.TagPAN), "4444333322221111")
+	appendTag(uint16(protocol.TagPANSequenceNumber), "01")
+	appendTag(uint16(protocol.TagLabel), "CREDITO")
+	return append([]byte(fmt.Sprintf("GCX000%03d", len(data))), data...)
 }
 
 func TestServiceOpenAndReset(t *testing.T) {
@@ -118,13 +180,13 @@ func TestServiceBasicGIXAndReset(t *testing.T) {
 	if err := s.Close(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if len(p.writes) != 4 {
-		t.Fatalf("expected OPN, GIX, CAN and CLO exchanges, got %d writes", len(p.writes))
+	if len(p.writes) != 5 {
+		t.Fatalf("expected initial CAN, OPN, GIX, CAN and CLO exchanges, got %d writes", len(p.writes))
 	}
 }
 
-func TestLoadCompleteEMVTableStopsOnTableVersionDifferent(t *testing.T) {
-	p := &fakePort{reads: [][]byte{response("OPN000"), response("TLI020"), response("CLO000")}}
+func TestLoadCompleteEMVTableContinuesOnTableVersionDifferent(t *testing.T) {
+	p := &fakePort{reads: [][]byte{response("OPN000"), response("TLI020"), response("TLR000"), response("TLE000")}}
 	s := New(model.DefaultConfig(), p)
 	defer s.Shutdown()
 	if err := s.Open(context.Background()); err != nil {
@@ -133,8 +195,8 @@ func TestLoadCompleteEMVTableStopsOnTableVersionDifferent(t *testing.T) {
 	if err := s.LoadCompleteEMVTable(context.Background(), "00", "TABVER0001", []string{"record"}, nil); err != nil {
 		t.Fatal(err)
 	}
-	if len(p.writes) != 2 {
-		t.Fatalf("writes = %d, want OPN and TLI", len(p.writes))
+	if len(p.writes) != 5 {
+		t.Fatalf("writes = %d, want CAN, OPN, TLI, TLR and TLE", len(p.writes))
 	}
 }
 
@@ -237,8 +299,7 @@ func TestQRCodeValidationAndTransactionStub(t *testing.T) {
 }
 
 func TestMenuAndKeyUseShortResponseData(t *testing.T) {
-	gkyPayload := append([]byte("GKY000001"), byte(command.GKYKeyF2))
-	p := &fakePort{reads: [][]byte{response("OPN000"), response("MNU0000012"), append([]byte{protocol.PP_ACK}, protocol.BuildPacket(gkyPayload)...)}}
+	p := &fakePort{reads: [][]byte{response("OPN000"), response("MNU000006\x80\x4D\x00\x02\x30\x32"), response("GKY005")}}
 	s := New(model.DefaultConfig(), p)
 	defer s.Shutdown()
 	if err := s.Open(context.Background()); err != nil {
@@ -254,8 +315,26 @@ func TestMenuAndKeyUseShortResponseData(t *testing.T) {
 	}
 }
 
+func TestDisplayMNUParsesRealTLVSelection(t *testing.T) {
+	menuData := append([]byte("MNU000006"), 0x80, 0x4D, 0x00, 0x02, '0', '3')
+	p := &fakePort{reads: [][]byte{
+		response("OPN000"),
+		append([]byte{protocol.PP_ACK}, protocol.BuildPacket(menuData)...),
+	}}
+	s := New(model.DefaultConfig(), p)
+	defer s.Shutdown()
+	if err := s.Open(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	menu, err := s.DisplayMNU(context.Background(), 30, "TESTE", []string{"OPCAO1", "OPCAO2", "OPCAO3"})
+	if err != nil || menu.Status != "000" || menu.SelectedIndex != 3 {
+		t.Fatalf("MNU real TLV = %#v, %v", menu, err)
+	}
+}
+
 func TestGPNParsesOnlyResponseData(t *testing.T) {
-	data := make([]byte, 36)
+	data := []byte(strings.Repeat("0", 36))
 	responsePayload := append([]byte("GPN000036"), data...)
 	p := &fakePort{reads: [][]byte{response("OPN000"), append([]byte{protocol.PP_ACK}, protocol.BuildPacket(responsePayload)...)}}
 	s := New(model.DefaultConfig(), p)
@@ -263,14 +342,14 @@ func TestGPNParsesOnlyResponseData(t *testing.T) {
 	if err := s.Open(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	pinBlock, ksn, err := s.SendGPNCommandDUKPT(context.Background(), "12345678901234567890", "1234", "mensagem")
-	if err != nil || len(pinBlock) != 16 || len(ksn) != 20 {
+	pinBlock, ksn, err := s.SendGPNCommandDUKPT(context.Background(), 1, "1234", "mensagem")
+	if err != nil || len(pinBlock) != 8 || len(ksn) != 10 {
 		t.Fatalf("GPN sizes=%d/%d err=%v", len(pinBlock), len(ksn), err)
 	}
 }
 
-func TestDisplayMultimediaTableAndResetFlows(t *testing.T) {
-	reads := [][]byte{response("OPN000"), response("DSP000"), response("DEX000"), response("DSI000"), response("MLI000"), response("MLR000"), response("MLE000"), response("TLI000"), response("TLR000"), response("TLE000"), response("RST000")}
+func TestDisplayMultimediaAndTableFlows(t *testing.T) {
+	reads := [][]byte{response("OPN000"), response("DSP000"), response("DEX000"), response("DSI000"), response("MLI000"), response("MLR000"), response("MLE000"), response("TLI000"), response("TLR000"), response("TLE000")}
 	s := New(model.DefaultConfig(), &fakePort{reads: reads})
 	defer s.Shutdown()
 	if err := s.Open(context.Background()); err != nil {
@@ -282,23 +361,21 @@ func TestDisplayMultimediaTableAndResetFlows(t *testing.T) {
 	if _, err := s.DisplayDEX(context.Background(), "mensagem"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.DisplayImage(context.Background(), "imagem"); err != nil {
+	if _, err := s.DisplayImage(context.Background(), "IMG00001"); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.SendMultimediaFile(context.Background(), "arquivo", []byte{1, 2}, nil); err != nil {
+	if err := s.SendMultimediaFile(context.Background(), "IMG00001", []byte("\x89PNG\r\n\x1a\n"), nil); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.LoadCompleteEMVTable(context.Background(), "00", "versao", []string{"registro"}, nil); err != nil {
-		t.Fatal(err)
-	}
-	if err := s.ResetPinpad(context.Background()); err != nil {
+	if err := s.LoadCompleteEMVTable(context.Background(), "00", "TABVER0001", []string{"registro"}, nil); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestAdvancedFlowsRespectSequenceAndKeepModelsSeparate(t *testing.T) {
-	gcxData := append([]byte("GCX000006"), []byte{0x80, 0x4F, 0x00, 0x02, '0', '3'}...)
-	gtkData := append([]byte("GTK000005"), []byte{0x80, 0x44, 0x00, 0x01, 0x01}...)
+	gcxData := validICCResponsePayload()
+	gtkData := append([]byte("GTK000019"), []byte{0x80, 0x44, 0x00, 0x01, 0x01}...)
+	gtkData = append(gtkData, []byte{0x80, 0x47, 0x00, 0x0A, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9}...)
 	goxData := append([]byte("GOX000010"), []byte{0x80, 0x56, 0x00, 0x06, '2', '0', '0', '0', '0', '0'}...)
 	fcxData := append([]byte("FCX000007"), []byte{0x80, 0x58, 0x00, 0x03, '0', '0', '0'}...)
 	p := &fakePort{reads: [][]byte{response("OPN000"), append([]byte{protocol.PP_ACK}, protocol.BuildPacket(gcxData)...), append([]byte{protocol.PP_ACK}, protocol.BuildPacket(gtkData)...), append([]byte{protocol.PP_ACK}, protocol.BuildPacket(goxData)...), append([]byte{protocol.PP_ACK}, protocol.BuildPacket(fcxData)...), response("CLX000")}}
@@ -333,13 +410,13 @@ func TestAdvancedFlowsRespectSequenceAndKeepModelsSeparate(t *testing.T) {
 }
 
 func TestServiceAdditionalFacadeFlows(t *testing.T) {
-	pinData := make([]byte, 16)
-	gpnPayload := append([]byte("GPN000016"), pinData...)
-	gcxPayload := append([]byte("GCX000006"), []byte{0x80, 0x4F, 0x00, 0x02, '0', '3'}...)
+	pinData := []byte(strings.Repeat("0", 36))
+	gpnPayload := append([]byte("GPN000036"), pinData...)
+	gcxPayload := validICCResponsePayload()
 	reads := [][]byte{
 		response("OPN000"), response("DSI000"), response("MLI000"), response("MLR000"), response("MLE000"),
 		append([]byte{protocol.PP_ACK}, protocol.BuildPacket(gpnPayload)...),
-		append([]byte{protocol.PP_ACK}, protocol.BuildPacket(gcxPayload)...), append([]byte{protocol.PP_ACK}, protocol.BuildPacket(gcxPayload)...),
+		append([]byte{protocol.PP_ACK}, protocol.BuildPacket(gcxPayload)...),
 		response("MLI000"), response("MLR000"), response("MLE000"), {protocol.PP_ACK},
 	}
 	p := &fakePort{reads: reads}
@@ -357,30 +434,61 @@ func TestServiceAdditionalFacadeFlows(t *testing.T) {
 	if err := s.SetConfig(config); !errors.Is(err, domainerror.ErrPinpadBusy) {
 		t.Fatalf("SetConfig while open = %v", err)
 	}
-	if _, err := s.DisplayDSI(context.Background(), "imagem"); err != nil {
+	if _, err := s.DisplayDSI(context.Background(), "IMG00001"); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.LoadMultimediaFile(context.Background(), "arquivo", []byte{1}, nil); err != nil {
+	if err := s.LoadMultimediaFile(context.Background(), "IMG00001", []byte("\x89PNG\r\n\x1a\n"), nil); err != nil {
 		t.Fatal(err)
 	}
-	if pinBlock, ksn, err := s.SendGPNCommandMK(context.Background(), 1, "1234567890123456", "ok"); err != nil || len(pinBlock) != 16 || len(ksn) != 0 {
+	if pinBlock, ksn, err := s.SendGPNCommandMK(context.Background(), 1, make([]byte, 16), "1234567890123456", "ok"); err != nil || len(pinBlock) != 8 || len(ksn) != 10 {
 		t.Fatalf("GPN MK sizes=%d/%d err=%v", len(pinBlock), len(ksn), err)
 	}
-	if _, err := s.SendGCXInitialization(context.Background()); err != nil {
+	writesBeforePurchase := len(p.writes)
+	if _, err := s.PurchaseGCX(context.Background(), "000000000100", "260909", "121314", true, false); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.PurchaseGCX(context.Background(), "000000000100", "090926", "121314", true, true); err != nil {
+	if got := len(p.writes) - writesBeforePurchase; got != 1 {
+		t.Fatalf("PurchaseGCX writes = %d, want 1", got)
+	}
+	path := t.TempDir() + "\\imagem.png"
+	if err := os.WriteFile(path, []byte("\x89PNG\r\n\x1a\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	path := t.TempDir() + "\\imagem.bin"
-	if err := os.WriteFile(path, []byte{2}, 0o600); err != nil {
-		t.Fatal(err)
-	}
-	if err := s.LoadMultimediaPath(context.Background(), path, "imagem", nil); err != nil {
+	if err := s.LoadMultimediaPath(context.Background(), path, "IMG00002", nil); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.exchangeAckOnly(context.Background(), []byte("ACK")); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestPurchaseGCXConsumesNotificationsAndPreservesCallerDeadline(t *testing.T) {
+	gcxPayload := validICCResponsePayload()
+	stream := append([]byte{protocol.PP_ACK}, protocol.BuildPacket([]byte("NTM000032"+strings.Repeat("A", 32)))...)
+	stream = append(stream, protocol.BuildPacket([]byte("NTM000032"+strings.Repeat("B", 32)))...)
+	stream = append(stream, protocol.BuildPacket(gcxPayload)...)
+	p := &fakePort{reads: [][]byte{response("OPN000"), stream}}
+	s := New(model.DefaultConfig(), p)
+	defer s.Shutdown()
+	if err := s.Open(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	writesBefore := len(p.writes)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+	result, err := s.PurchaseGCX(ctx, "000000000100", "260912", "225000", true, true)
+	if err != nil || result.CardType != command.GCXCardICC {
+		t.Fatalf("PurchaseGCX result=%#v err=%v", result, err)
+	}
+	if got := len(p.writes) - writesBefore; got != 1 {
+		t.Fatalf("writes after NTM = %d, want 1", got)
+	}
+	payload, err := protocol.ValidatePacket(p.writes[len(p.writes)-1])
+	if err != nil || string(payload[len(payload)-5:]) != "11000" {
+		t.Fatalf("GCX options payload=% X err=%v", payload, err)
+	}
+	if remaining := time.Until(p.lastReadDeadline); remaining < time.Second || remaining > 3*time.Second {
+		t.Fatalf("GCX ACK deadline remaining=%s, want about 2s", remaining)
 	}
 }
 
@@ -423,7 +531,7 @@ func TestOpenSecurePreservesAndInstallsEphemeralKSEC(t *testing.T) {
 	}
 	secureData := "256" + hex.EncodeToString(ciphertext)
 	securePayload := fmt.Sprintf("OPN000%03d%s", len(secureData), secureData)
-	p := &fakePort{reads: [][]byte{response("OPN000"), response(securePayload), response("CLO000")}}
+	p := &fakePort{reads: [][]byte{response(securePayload), response("CLO000")}}
 	s := New(model.DefaultConfig(), p)
 	defer s.Shutdown()
 	if err := s.OpenSecure(context.Background(), privateKey); err != nil {
@@ -505,6 +613,92 @@ func TestServiceResponseValidationAndByteStreamBoundaries(t *testing.T) {
 	cancel()
 	if _, err := stream.NextByte(canceled); !errors.Is(err, context.Canceled) {
 		t.Fatalf("canceled stream = %v", err)
+	}
+}
+
+func TestExchangeRetransmitsAfterNAK(t *testing.T) {
+	port := &fakePort{reads: [][]byte{{protocol.PP_NAK}, response("GIX000")}}
+	svc := New(model.DefaultConfig(), port)
+	defer svc.Shutdown()
+
+	if _, err := svc.exchangeCommand(context.Background(), command.CommandGIX, protocol.BuildPacket([]byte("GIX000"))); err != nil {
+		t.Fatal(err)
+	}
+	if len(port.writes) != 2 || !bytes.Equal(port.writes[0], port.writes[1]) {
+		t.Fatalf("retransmissões = %d; pacotes=% X", len(port.writes), port.writes)
+	}
+}
+
+func TestExchangeStopsAfterThreeNAKs(t *testing.T) {
+	port := &fakePort{reads: [][]byte{{protocol.PP_NAK}, {protocol.PP_NAK}, {protocol.PP_NAK}}}
+	svc := New(model.DefaultConfig(), port)
+	defer svc.Shutdown()
+
+	if _, err := svc.exchangeCommand(context.Background(), command.CommandGIX, protocol.BuildPacket([]byte("GIX000"))); !errors.Is(err, domainerror.ErrNakReceived) {
+		t.Fatalf("erro = %v", err)
+	}
+	if len(port.writes) != protocol.MaxAttempts {
+		t.Fatalf("tentativas = %d, want %d", len(port.writes), protocol.MaxAttempts)
+	}
+}
+
+func TestExchangeRequestsRetransmissionForInvalidCRC(t *testing.T) {
+	corrupted := protocol.BuildPacket([]byte("GIX000"))
+	corrupted[len(corrupted)-1] ^= 0xff
+	firstRead := append([]byte{protocol.PP_ACK}, corrupted...)
+	port := &fakePort{reads: [][]byte{firstRead, protocol.BuildPacket([]byte("GIX000"))}}
+	svc := New(model.DefaultConfig(), port)
+	defer svc.Shutdown()
+
+	if _, err := svc.exchangeCommand(context.Background(), command.CommandGIX, protocol.BuildPacket([]byte("GIX000"))); err != nil {
+		t.Fatal(err)
+	}
+	if len(port.writes) != 2 || len(port.writes[1]) != 1 || port.writes[1][0] != protocol.PP_NAK {
+		t.Fatalf("escritas = % X, want comando seguido de NAK", port.writes)
+	}
+}
+
+func TestOpenStartsWithCANAndUsesClassicOPN(t *testing.T) {
+	port := &fakePort{reads: [][]byte{response("OPN000")}}
+	svc := New(model.DefaultConfig(), port)
+	defer svc.Shutdown()
+
+	if err := svc.Open(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if len(port.writes) < 2 || !bytes.Equal(port.writes[0], []byte{protocol.PP_CAN}) {
+		t.Fatalf("primeira escrita = % X, want CAN", port.writes)
+	}
+	payload, err := protocol.ValidatePacket(port.writes[1])
+	if err != nil || string(payload) != "OPN" {
+		t.Fatalf("OPN = %q, %v", payload, err)
+	}
+}
+
+func TestPurchaseGCXAppliesContactlessFallback(t *testing.T) {
+	card := validICCResponsePayload()
+	port := &fakePort{reads: [][]byte{
+		response("OPN000"),
+		response("GCX081"),
+		response("GCX081"),
+		append([]byte{protocol.PP_ACK}, protocol.BuildPacket(card)...),
+	}}
+	svc := New(model.DefaultConfig(), port)
+	defer svc.Shutdown()
+	if err := svc.Open(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.PurchaseGCX(context.Background(), "000000000100", "260913", "090000", true, true); err != nil {
+		t.Fatal(err)
+	}
+	if len(port.writes) != 5 {
+		t.Fatalf("escritas = %d, want CAN, OPN e três GCX", len(port.writes))
+	}
+	for index, want := range []string{"11000", "11000", "01000"} {
+		payload, err := protocol.ValidatePacket(port.writes[index+2])
+		if err != nil || string(payload[len(payload)-5:]) != want {
+			t.Fatalf("GCX %d = %q, %v; want %s", index, payload, err, want)
+		}
 	}
 }
 

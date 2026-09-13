@@ -1,5 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comando GPN
 
+Autor: Rômulo Penha
+
 ## Status
 `SPEC_APROVADA`
 
@@ -25,3 +27,10 @@ GPN exige redaction integral de SPE/PP. Nunca registrar PAN, PIN, PIN block, KSN
 
 ## Referências
 `spec.md` RF-012.8/RF-013, `spec-logging.md`; manual ABECS v2.12.
+
+
+## Correção normativa de 2026-09-13
+
+O bloco GPN contém método N1, índice N2, WKENC H32, PANLEN N2, PAN A19,
+ENTRIES N1=1, mínimo N2, máximo N2 e mensagem S32. DUKPT usa WKENC zerado e não
+recebe KSN de entrada. A resposta exige `GPN000036 + PINBLK(H16) + KSN(H20)`.

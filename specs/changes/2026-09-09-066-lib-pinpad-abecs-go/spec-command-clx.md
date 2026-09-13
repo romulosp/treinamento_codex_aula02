@@ -1,5 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comando CLX
 
+Autor: Rômulo Penha
+
 ## Status
 `SPEC_APROVADA`
 

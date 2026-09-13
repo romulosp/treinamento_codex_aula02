@@ -1,5 +1,7 @@
 # Proposta: 066-lib-pinpad-abecs-go
 
+Autor: Rômulo Penha
+
 ## Status
 `SPEC_APROVADA`
 
@@ -20,7 +22,7 @@
 
 ## Problema e objetivo
 
-Criar a biblioteca Go reutilizável `lib-pinpad-abecs-go`, responsável exclusivamente pelo domínio de comunicação com dispositivos compatíveis com o protocolo ABECS através de comunicação serial Windows/Linux, convertendo integralmente o comportamento que estiver dentro do escopo do legado Java + JNI + C.
+Criar a biblioteca Go reutilizável `lib-pinpad-abecs-go`, responsável exclusivamente pela integração de comunicação com dispositivos compatíveis com o protocolo ABECS v2.12, através de comunicação serial Windows/Linux.
 
 A biblioteca será a base para futuras Changes de bridge HTTP, WebSocket, UI e integrações. Esta Change não criará servidor, API ou interface de usuário.
 
@@ -30,12 +32,15 @@ A biblioteca será a base para futuras Changes de bridge HTTP, WebSocket, UI e i
 - Arquitetura Clean Architecture, DDD e Ports and Adapters.
 - Adaptador serial com `go.bug.st/serial`, sem CGO.
 - Configuração por ambiente, modelo de pinpad, estados, erros e catálogo de comandos/status.
+- Logging operacional estruturado e rastro serial ABECS persistido em destino
+  canônico e observável, com `open`, `close`, `SPE`, `PP` e `RSP`, caminho
+  absoluto informado ao operador e redação obrigatória de dados sensíveis.
 - Comunicação segura ABECS conforme `spec-protocolo-seguro.md`: OPN seguro,
   negociação RSA de 2048 bits, `KSEC` temporária, pacotes AES-CBC e
   encerramento por CLO, sempre dependentes de confirmação no dispositivo.
 - CRC-16-CCITT, substitution, packet builder, leitura de resposta, parser ABECS e parser BER-TLV.
 - Implementação completa de serial, CRC, framing, parsers, `SessionManager`, `CommandQueue`, estados e comandos CAN/OPN/GIX/CLO.
-- Implementação Go dos builders, parsers e fluxos de comunicação especificados individualmente para CAN, OPN, CLO, CLX visual independente, GIX, DSP, DEX, MNU, DSI, MLI, MLR, MLE, TLI, TLR, TLE, GCX, GTK, GOX, FCX, GKY, GPN e RST, preservando contratos, status, cancelamento e redaction sem expor dados sensíveis.
+- Implementação Go dos comandos listados em `spec-conformidade-abecs-v212.md`; RST fica excluído por não existir no ABECS 2.12.
 - Fachada de biblioteca equivalente ao `PinpadService`, com configuração, ciclo de vida, estados, comandos de display, imagem, tabelas EMV, transações GCX, leitura de teclas, reset e captura de PIN.
 - Executável de validação em `cmd/libpinpadabecsgo`.
 - Script `start_aplication.bat` para teste local sem privilégios administrativos, com configuração temporária da porta serial e binário gerado no diretório do módulo.
@@ -51,11 +56,14 @@ REST, HTTP, WebSocket, DNS, Windows Service, Linux daemon, instalador, Docker, U
 - O acesso serial será isolado atrás de interface para permitir testes sem hardware.
 - Operações do hardware serão serializadas por uma fila FIFO com um worker por instância.
 - Dados PAN, trilhas, PIN e EMV sensível não serão registrados.
+- Um caminho de log relativo ao diretório de trabalho pode criar arquivos
+  homônimos e induzir diagnóstico incorreto; o utilitário local deverá resolver
+  um único caminho absoluto a partir da raiz do módulo e exibi-lo antes do menu.
 - A compatibilidade real com pinpad físico exige validação manual registrada. Fakes determinísticos podem testar framing, CRC, parsers, fila e erros, mas não podem ser usados para declarar que uma transação ou comando físico foi convertido com sucesso.
 
 ## Rastreabilidade por comando
 
-Cada comando incluído no escopo deverá ter uma SPEC própria, com payload, resposta, status, timeout, cancelamento, retransmissão, logging/redaction e critérios de aceite. A lista mínima é: `CAN`, `OPN`, `CLO`, `CLX`, `GIX`, `DSP`, `DEX`, `MNU`, `DSI`, `MLI`, `MLR`, `MLE`, `TLI`, `TLR`, `TLE`, `GKY`, `GCX`, `GTK`, `GOX`, `FCX`, `GPN` e `RST`. Logging e cancelamento serial possuem SPEC transversal própria.
+Cada comando incluído possui SPEC própria. A lista normativa e a exclusão de RST constam em `spec-conformidade-abecs-v212.md`.
 
 Nenhum comando poderá ser considerado convertido apenas porque seu nome existe no catálogo Go. O status da conversão deve distinguir builder, parser, fluxo serial, fachada e validação física.
 
@@ -72,3 +80,10 @@ Nenhum comando poderá ser considerado convertido apenas porque seu nome existe 
 Os requisitos detalhados fornecidos pelo usuário ampliam a Change além dos contratos anteriormente previstos. A nova SPEC deverá ser revisada e aprovada novamente antes da implementação desses fluxos. A autorização final para arquivamento continuará dependendo da validação manual do usuário.
 
 Nenhum arquivo legado `.h`, `.hpp`, `.c`, `.cpp`, `.cc` ou `.cxx` fará parte desta Change. A fonte de verdade será exclusivamente a documentação da Change, especialmente `spec.md`, `DESIGN.md` e `tasks.md`. Os diretórios locais `.gocache`, `.gomodcache` e `.bin` são artefatos de execução e não deverão ser versionados.
+
+
+## Correção normativa de 2026-09-13
+
+A implementação deve seguir `spec-conformidade-abecs-v212.md`. O comando RST
+foi excluído porque não existe no manual ABECS 2.12; cancelamento e limpeza de
+comunicação usam CAN/EOT.

@@ -1,5 +1,7 @@
 # SPEC: 066-lib-pinpad-abecs-go — Infraestrutura serial: cancelamento de leitura
 
+Autor: Rômulo Penha
+
 ## Status
 `SPEC_APROVADA`
 
@@ -65,3 +67,12 @@ Os cenários de integração de cancelamento são validados por comunicação se
 - [ ] **CA-SER-002:** teste com `Adapter` real conectado ao pinpad físico demonstra que cancelar o contexto durante uma leitura em andamento faz `Read` retornar em tempo limitado com o erro do contexto.
 - [ ] **CA-SER-003:** `byteStream` e `protocol.ReadFullResponse`, exercitados contra o pinpad real, continuam funcionando corretamente com a nova assinatura, sem regressão nos cenários de frame completo, ACK/NAK/EOT.
 - [ ] **CA-SER-004:** `go test -race ./...` cobre o cenário de cancelamento concorrente (com o `Adapter` real ou com o adaptador de teste de baixo nível) sem apontar corrida de dados.
+
+
+## Complemento normativo de transporte de 2026-09-13
+
+ACK/NAK possui prazo de 2 segundos e até três tentativas. Resposta não
+bloqueante possui prazo de 10 segundos. CRC/framing inválido gera NAK e nova
+espera, até três tentativas. Antes da comunicação e ao cancelar comando
+bloqueante, o host envia CAN isolado, aguarda EOT por 2 segundos, ignora outros
+bytes e repete até três vezes.

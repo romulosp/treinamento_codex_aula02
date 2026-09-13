@@ -1,8 +1,10 @@
 # Plano de implementação — 066-lib-pinpad-abecs-go
 
+Autor: Rômulo Penha
+
 ## Fatos observados
 
-- O módulo Go já existe em `apps/desktop/libpinpadabecsgo/`, mas a conversão integral ainda não foi concluída.
+- O módulo Go já existe em `apps/desktop/libpinpadabecsgo/`, mas a integração completa ainda não foi concluída.
 - A Change define uma biblioteca desktop/headless, sem servidor externo, HTTP, WebSocket ou UI. A fachada interna (`PinpadService`) faz parte do escopo como componente de biblioteca.
 - O módulo será criado em `apps/desktop/libpinpadabecsgo/` com `go.mod` `br.com.romulopenha/lib-pinpad-abecs-go`.
 - O ambiente disponível informa Go `1.26.5` em Windows 386.
@@ -16,8 +18,8 @@
 - Novos pacotes de domínio para modelos, protocolo, parsers, comandos, fila, sessão, estados e erros.
 - Adaptador serial real e fake sob infraestrutura.
 - Configuração por ambiente, logging `slog` e worker.
-- Fachada de aplicação (`internal/application/service`) equivalente a `PinpadService`, cobrindo ciclo de vida, display, imagens/QR Code, EMV, GCX (subconjunto), GKY, RST e GPN.
-- Builders, parsers e fluxos para DSP, DEX, MNU, DSI, MLI, MLR, MLE, TLI, TLR, TLE, GKY, GPN, GCX (subconjunto) e RST, além das SPECs pendentes de CAN, OPN, CLO/CLX, GTK, GOX, FCX e comunicação segura.
+- Fachada de aplicação cobrindo ciclo de vida, display, imagens/QR Code, EMV, GCX, GKY e GPN.
+- Builders, parsers e fluxos dos comandos aprovados em `spec-conformidade-abecs-v212.md`.
 - Fila `CommandQueue` com `Enqueue` não bloqueante, `Submit` bloqueante e `SessionManager` com relógio injectável.
 - Executável de validação em `cmd/libpinpadabecsgo`.
 - README operacional do módulo.
@@ -26,17 +28,27 @@
 
 ## Estratégia de implementação
 
-1. Inventariar o legado Java/JNI/C e classificar cada função como convertida, parcial, ausente ou fora de escopo.
+1. Inventariar o protocolo ABECS v2.12 e classificar cada função como integrada, parcial, ausente ou fora de escopo.
 2. Manter a matriz de SPEC individual por comando e obter aprovação formal antes de implementar cada lote.
 3. Consolidar modelos, constantes, erros e catálogo de status/comandos.
 4. Validar CRC, substitution, framing, leitura de resposta e parsers ABECS/BER-TLV com limites defensivos.
 5. Ajustar `SerialPort` para propagação de contexto e cancelamento efetivo.
 6. Implementar logging com redaction e tracer SPE/PP/RSP sem duplicação,
-   injetando a mesma instância no serviço e no adaptador serial; o script local
-   cria `logs/LogPinpadAbecs.txt` ou respeita `PINPAD_LOG_FILE`.
+   injetando a mesma instância no serviço e no adaptador serial. O adaptador
+   será a fonte única de `open`, `close`, `SPE`, `PP` e erros de I/O; o serviço
+   fornecerá o comando ativo e emitirá somente `RSP` após o parser obter o
+   status. O utilitário resolverá um destino absoluto canônico a partir da raiz
+   do módulo, respeitará `PINPAD_LOG_FILE`, gravará e validará um marcador de
+   ativação antes do menu e exibirá o caminho efetivamente aberto.
 7. Revisar `SessionManager`, fila FIFO de capacidade 100, worker único, cancelamento e shutdown.
-8. Implementar e validar individualmente CAN/OPN/GIX/CLO/CLX/RST.
+8. Implementar e validar individualmente CAN/OPN/GIX/CLO/CLX; registrar RST como exclusão normativa.
 9. Implementar e validar display, multimídia, tabelas EMV, GKY, GCX, GTK, GOX, FCX e GPN conforme suas SPECs.
+   Para GCX, montar os parâmetros ABECS `0013`, `0015`, `0016` e `0017`,
+   validar N12/N6/N6/N5, realizar uma única escrita por `PurchaseGCX`, consumir
+   notificações `NTM` até a resposta final e perguntar o modo de leitura e a
+   visibilidade do valor no CLI. Criar o contexto da operação depois dessas
+   entradas e preservar seu prazo na fila, sem aplicar o timeout genérico da
+   configuração ao GCX.
 10. Implementar a comunicação segura RSA/AES somente após aprovação de `spec-protocolo-seguro.md`.
 11. Manter `TransactionGCX` como `ErrNotImplemented` enquanto sua tabela de parâmetros completos não estiver especificada e aprovada.
 12. Documentar todo código novo, convertido ou gerado conforme `.agents/skills/golang-documentation/SKILL.md`, incluindo comentários de pacote, símbolos exportados, fluxos internos complexos e exemplos executáveis aplicáveis.
@@ -49,7 +61,18 @@
 - Testes de sessão com relógio controlável, incluindo conflito e expiração de 300 segundos.
 - Testes de fila para FIFO, capacidade 100, `ErrQueueFull` em `Enqueue`, `Submit` bloqueante com cancelamento de contexto, `Clear` e `Stop` sem execução pós-shutdown.
 - Testes de builders/parsers de display, multimídia, EMV, GKY, GCX (subconjunto) e GPN, incluindo redaction de PAN/PIN/KSN.
+- Teste GCX byte a byte com o vetor físico informado e teste da fachada que
+  rejeita entrada inválida e comprova uma única escrita serial por compra.
+- Teste GCX com duas notificações `NTM000032` seguidas da resposta final no
+  mesmo fluxo serial e teste das quatro combinações de `SPE_GCXOPT` escolhidas
+  no CLI. Teste de propagação comprovará que o prazo de 60 segundos fornecido
+  ao GCX não é reduzido pelo timeout genérico de 30 segundos.
 - Testes da fachada cobrindo ciclo de vida, `GetInfo`/`GetInfoRaw`, `DisplayQRCode` (com fake `QRCodeGenerator`, geração ausente e limites inválidos), `LoadCompleteEMVTable` (incluindo `StatusTableVersionDifferent`) e stub `ErrNotImplemented` de `TransactionGCX`.
+- Testes do tracer e da composição local cobrindo: execução a partir da raiz e
+  de `cmd/libpinpadabecsgo`; ausência de arquivos homônimos; marcador de
+  ativação imediatamente legível; caminho absoluto exibido; append; falha de
+  escrita/flush não silenciosa; matriz completa de comandos tipados; e
+  `SPE/PP/RSP` observáveis antes do encerramento do processo.
 - Cobertura mínima: 80% da produção aplicável, aferida por `go test ./... -coverprofile=coverage.out` e `go tool cover -func=coverage.out`.
 - Qualidade: `gofmt`, `go vet ./...`, `go test ./...`, `go test -race ./...` e build para o ambiente disponível.
 - O inventário de todos os arquivos `.go` e a associação com testes serão registrados em `validation.md`.

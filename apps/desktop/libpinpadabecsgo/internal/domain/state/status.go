@@ -23,7 +23,7 @@ const (
 	StatusPINBusy                             = "044"
 	StatusResponseOverflow                    = "045"
 	StatusCryptographicError                  = "046"
-	StatusSecurityError                       = "047"
+	StatusNoSAM                               = "051"
 	StatusDumbCard                            = "060"
 	StatusCardError                           = "061"
 	StatusCardApplicationInvalidated          = "067"
@@ -58,7 +58,7 @@ var statusDescriptions = map[string]string{
 	StatusInternalError: "Erro interno", StatusMagneticCardDataError: "Erro nos dados magnéticos",
 	StatusKeyError: "Erro de chave", StatusNoCard: "Nenhum cartão presente", StatusPINBusy: "PIN ocupado",
 	StatusResponseOverflow: "Resposta excedeu o limite", StatusCryptographicError: "Erro criptográfico",
-	StatusSecurityError: "Erro de segurança", StatusDumbCard: "Cartão sem suporte", StatusCardError: "Erro no cartão",
+	StatusNoSAM: "SAM não disponível", StatusDumbCard: "Cartão sem suporte", StatusCardError: "Erro no cartão",
 	StatusCardApplicationInvalidated: "Aplicação ICC invalidada", StatusCardProblems: "ICC inválido ou com problemas",
 	StatusCardInvalidData: "ICC com dados inválidos", StatusCardApplicationNotAllowed: "Modo inválido para ICC",
 	StatusCardApplicationNotAuthorized: "ICC não aceito", StatusFallbackError: "Erro sujeito a fallback",

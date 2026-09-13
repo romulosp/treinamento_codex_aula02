@@ -1,9 +1,15 @@
 # SPEC: 066-lib-pinpad-abecs-go — Logging detalhado de comunicação (SPE/PP)
 
+Autor: Rômulo Penha
+
 ## Status
 `SPEC_APROVADA`
 
-> Esta revisão acrescenta o destino operacional do utilitário local, a emissão obrigatória de eventos em todos os caminhos de I/O e o procedimento seguro de coleta de evidências. A revisão formal de 2026-09-11 aprovou este contrato; a implementação permanece pendente.
+> A revisão de 2026-09-12 torna o destino independente do diretório de
+> trabalho, define o adaptador serial como fonte única do rastro bruto, exige
+> marcador de ativação e torna falhas de persistência observáveis. A revisão
+> formal registrada em `reviews/2026-09-12-spec-logging-path-review.md` aprovou
+> este contrato; a implementação e a revalidação permanecem pendentes.
 
 ## Papel do logging no projeto
 
@@ -13,11 +19,15 @@ O tracer pertence à infraestrutura. O domínio não deve importar `slog`, `os.F
 
 ## Estado atual e lacuna observada
 
-Na data desta revisão, `internal/infrastructure/logging/logging.go` fornece
-somente o logger estruturado `slog` e `RedactPayload`. Não existe destino de
-arquivo, criação de sessão de porta, evento `open`/`close`, rastro `SPE`/`PP`
-ou linha `RSP`. Logo, a existência do `slog` não satisfaz esta SPEC e não pode
-ser usada como evidência de log serial.
+Na data desta revisão, a execução observada deixou
+`apps/desktop/libpinpadabecsgo/logs/LogPinpadAbecs.txt` com zero byte, enquanto
+um arquivo homônimo em
+`apps/desktop/libpinpadabecsgo/cmd/libpinpadabecsgo/logs/LogPinpadAbecs.txt`
+recebeu linhas. A causa contratual é o fallback relativo `logs/...`, cujo
+resultado varia com o diretório de trabalho do processo. A presença do `slog`
+no console e a existência de qualquer arquivo homônimo não satisfazem esta
+SPEC: deve existir um único destino canônico, explicitamente informado ao
+operador, contendo o rastro serial da execução corrente.
 
 O exemplo fornecido de cenário GCX confirma que o diagnóstico precisa manter a
 ordem `SPE → PP* → close`. O conteúdo de cartão e de portador eventualmente
@@ -37,7 +47,7 @@ em RF-L006.
 
 O log atual (`internal/infrastructure/logging/logging.go`) apenas cria um `slog.Logger` JSON genérico e não registra, byte a byte, o que é enviado ao pinpad e o que é recebido dele. Para investigar problemas de protocolo e evoluir o código com segurança, é necessário um rastro de comunicação no mesmo nível de detalhe do legado C/JNI fornecido como referência (arquivo `br_com_execucao_jbc_PinpadSerialProtocol.c`, funções `logString`, `logBytes`, `setLogDestination`, e as chamadas em `open`, `close`, `write` e `read`), sem transportar código ou comentários daquele arquivo para o repositório.
 
-Nível de detalhe do legado, usado apenas como referência de comportamento:
+Nível de detalhe do protocolo, usado apenas como referência de comportamento:
 
 - `setLogDestination(filename)`: define o arquivo de destino do log; `filename` vazio/nulo desliga o log; abre em modo *append*.
 - `open(...)`: registra `open(porta,baud,databits,parity,stopbits)=>handle`.
@@ -60,19 +70,46 @@ Nível de detalhe do legado, usado apenas como referência de comportamento:
 
 ## Contrato de formato
 
-Cada evento deve conter um identificador lógico de sessão da porta e uma linha única. O formato hexadecimal é sempre uppercase, dois caracteres por byte e separado por espaço. O identificador não é um handle do sistema operacional e não deve expor ponteiros, descritores ou dados do processo.
+Cada evento deve conter um identificador lógico de sessão da porta e uma linha
+única. O formato hexadecimal é sempre uppercase, dois caracteres por byte e
+separado por espaço. O identificador não é um handle do sistema operacional e
+não deve expor ponteiros, descritores ou dados do processo. Toda linha contém
+também `FUNC=<origem-funcional>` e `DATA_HORA=<RFC3339Nano-com-offset>`. A origem
+funcional é um identificador estável definido pela implementação, não um stack
+trace nem um caminho de código-fonte.
 
 Exemplos não sensíveis:
 
 ```text
-[COM7#001] open(COM7,19200,8,N,1)=>OK
-[COM7#001] SPE 16 47 49 58 30 30 30 17 12 34 CMD=GIX
-[COM7#001] PP  06
-[COM7#001] RSP CMD=GIX STATUS=000
-[COM7#001] close()
+TRACE destination=D:\...\libpinpadabecsgo\logs\LogPinpadAbecs.txt enabled FUNC=logging.Tracer.SetLogDestination DATA_HORA=2026-09-12T10:13:49.7000000-03:00
+[COM7#001] open(COM7,19200,8,N,1)=>OK FUNC=serial.Adapter.Open DATA_HORA=2026-09-12T10:13:49.7100000-03:00
+[COM7#001] SPE 16 47 49 58 30 30 30 17 12 34 CMD=GIX FUNC=serial.Adapter.Write DATA_HORA=2026-09-12T10:13:49.7200000-03:00
+[COM7#001] PP  06 FUNC=serial.Adapter.Read DATA_HORA=2026-09-12T10:13:49.7300000-03:00
+[COM7#001] RSP CMD=GIX STATUS=000 FUNC=service.ExchangeCommand DATA_HORA=2026-09-12T10:13:49.7800000-03:00
+[COM7#001] close() FUNC=serial.Adapter.Close DATA_HORA=2026-09-12T10:14:10.0000000-03:00
 ```
 
 Os exemplos acima são ilustrativos; os bytes reais devem ser derivados da transmissão observada. Para `GPN` e `GCX` sensível, o trecho hexadecimal é substituído integralmente por marcador de redaction.
+
+### Regra obrigatória — pacotes enviados e recebidos
+
+Não basta registrar a conclusão estruturada do comando, seu nome ou seu
+status. Para todo comando não sensível que alcançar a porta, o arquivo deve
+mostrar o pacote físico enviado e todos os bytes efetivamente recebidos. Para o
+GIX usado como exemplo, o rastro contém obrigatoriamente linhas com este
+formato:
+
+```text
+[COM7#001] SPE 16 47 49 58 30 30 30 17 12 34 CMD=GIX
+[COM7#001] PP  06
+```
+
+Se o frame de resposta chegar em outra leitura, deverá existir outra linha
+`PP` com o hexadecimal completo desse bloco. Se o driver fragmentar o frame,
+cada fragmento recebido deverá aparecer em sua própria linha `PP`, na ordem
+observada. `RSP CMD=GIX STATUS=000` é uma correlação adicional e nunca substitui
+`SPE` ou `PP`. Os sufixos obrigatórios `FUNC` e `DATA_HORA` podem seguir o
+conteúdo acima, sem remover nem alterar os bytes.
 
 ## Requisitos funcionais
 
@@ -82,6 +119,8 @@ O pacote `internal/infrastructure/logging` deverá expor um `Tracer` configuráv
 por uma operação equivalente a `SetLogDestination(filename string) (bool, error)`:
 
 - `filename` não vazio abre (ou cria) o arquivo em modo *append* e passa a direcionar todas as mensagens de rastro de comunicação para ele;
+- a ativação só retorna sucesso depois de escrever integralmente e tornar
+  legível no destino uma linha `TRACE destination=<caminho-absoluto> enabled`;
 - `filename` vazio desliga o rastro de comunicação (nenhuma mensagem `SPE`/`PP`/`open`/`close` é mais gravada);
 - chamar `SetLogDestination` novamente fecha o arquivo anterior antes de abrir o novo, sem vazar descritores de arquivo;
 - retorna `false`/erro quando não for possível abrir o arquivo no caminho informado (permissão, diretório inexistente etc.), preservando o destino anterior configurado;
@@ -114,12 +153,24 @@ tracer com a seguinte precedência:
 1. `PINPAD_LOG_FILE`, quando definida e não vazia, é o destino absoluto ou
    relativo informado pelo operador;
 2. quando a variável estiver ausente ou vazia, o script local define
-   temporariamente `logs/LogPinpadAbecs.txt`, relativo ao diretório do módulo;
+   temporariamente o caminho absoluto
+   `<raiz-do-módulo>/logs/LogPinpadAbecs.txt`;
 3. a biblioteca consumida por outro processo não infere nem cria esse caminho;
    o consumidor deve chamar a configuração de destino explicitamente.
 
-O script local deverá criar o diretório `logs/` antes de iniciar o executável.
-O arquivo `LogPinpadAbecs.txt` usa append UTF-8 e deve ser ignorado pelo Git.
+Todo destino é normalizado e exibido como caminho absoluto antes do menu. Um
+`PINPAD_LOG_FILE` relativo é resolvido contra a raiz do módulo, nunca contra o
+diretório de trabalho. Na ausência da variável, a composição local encontra a
+raiz do módulo pelo ancestral que contém o `go.mod` cujo `module` é
+`br.com.romulopenha/lib-pinpad-abecs-go`; a busca parte tanto do diretório de
+trabalho quanto do diretório do executável. Se a raiz não puder ser determinada,
+o CLI encerra antes do menu e orienta o operador a definir um destino explícito.
+
+O script local deverá criar o diretório `<raiz-do-módulo>/logs/` antes de
+iniciar o executável e definir `PINPAD_LOG_FILE` com esse caminho absoluto. O
+arquivo `LogPinpadAbecs.txt` usa append UTF-8 e deve ser ignorado pelo Git. O
+CLI e o script devem imprimir `Log serial ativo: <caminho-absoluto>`; não podem
+exibir apenas o valor relativo solicitado.
 Falha ao configurar o destino deve ser exibida pelo CLI e interromper a
 execução de validação local, pois sem rastro não é possível coletar evidência
 de erro do pinpad.
@@ -131,7 +182,14 @@ redigido antes do compartilhamento e sua origem deve ser preservada localmente.
 
 ### Correlação SPE/PP com comando e status
 
-Como a escrita na porta serial é sempre atômica (um pacote ABECS inteiro por chamada de `Write`), a linha `SPE` é gerada com o nome do comando já conhecido no momento da escrita. Como a leitura pode ser fragmentada pelo driver serial em múltiplas chamadas, cada chamada de leitura gera sua própria linha `PP` crua (fidelidade ao legado); o status ABECS só é conhecido depois que o parser reconhecer o pacote completo. Por isso, após decodificado, o serviço registra uma linha de correlação adicional, sem repetir o hexadecimal já gravado:
+Como a escrita lógica na porta serial corresponde a um pacote ABECS inteiro, o
+adaptador confirma que todos os bytes foram aceitos antes de gerar a linha
+`SPE`, usando o nome do comando ativo informado pelo serviço. Como a leitura
+pode ser fragmentada pelo driver serial em múltiplas chamadas, cada chamada de
+leitura gera sua própria linha `PP` crua (fidelidade ao legado); o status ABECS
+só é conhecido depois que o parser reconhecer o pacote completo. Por isso,
+após decodificado, o serviço registra uma linha de correlação adicional, sem
+repetir o hexadecimal já gravado:
 
 ```text
 [<id>] RSP CMD=<nome-do-comando> STATUS=<codigo-status>
@@ -163,7 +221,17 @@ Toda escrita na porta serial deverá gerar uma linha:
 [<id>] SPE <hex bytes separados por espaço>
 ```
 
-onde `<hex bytes>` é a representação hexadecimal maiúscula, dois dígitos por byte, exatamente dos bytes efetivamente enviados (payload já submetido a `ApplySubstitution`/`BuildPacket`), na ordem de transmissão. A camada de aplicação emite essa linha uma única vez, imediatamente após a confirmação de escrita bem-sucedida pelo adaptador, porque é ela que conhece o tipo do comando.
+onde `<hex bytes>` é a representação hexadecimal maiúscula, dois dígitos por
+byte, exatamente dos bytes efetivamente enviados (payload já submetido a
+`ApplySubstitution`/`BuildPacket`), na ordem de transmissão. O adaptador serial
+real emite essa linha uma única vez, imediatamente após confirmar a escrita
+integral. Antes de chamar `Write`, o serviço informa ao adaptador o comando
+tipado ativo; esse metadado não altera os bytes transmitidos e existe somente
+para `CMD=` e redaction.
+
+Para comandos não sensíveis, omitir `<hex bytes>`, registrar somente a carga
+lógica anterior ao framing ou substituir o pacote por mensagem textual viola
+este requisito.
 
 ### RF-L004 — Registro de bytes recebidos (PP)
 
@@ -175,9 +243,13 @@ Toda leitura da porta serial que retornar ao menos um byte deverá gerar uma lin
 
 com o mesmo formato hexadecimal de RF-L003, incluindo ACK/NAK/EOT isolados e frames completos.
 
+O `PP` deve conter os bytes devolvidos pela chamada física de leitura, antes de
+remoção de substitution, descarte de ACK ou parsing. O parser não pode consumir
+nem normalizar bytes antes da emissão dessa linha.
+
 ### RF-L005 — Identificação do comando e da direção
 
-Além do rastro hexadecimal bruto (RF-L003/RF-L004), a linha `SPE` correspondente ao envio de um comando deverá identificar o nome funcional do comando ABECS (por exemplo `OPN`, `GIX`, `CLO`, `DSP`, `GCX`, `GPN`, `GKY`, `RST` etc., conforme catálogo de `internal/domain/command`), pois esse nome já é conhecido no momento da escrita (ver "Correlação SPE/PP com comando e status"):
+comandos pertencentes ao catálogo normativo de `internal/domain/command`):
 
 ```text
 [<id>] SPE <hex> CMD=<nome-do-comando>
@@ -185,9 +257,37 @@ Além do rastro hexadecimal bruto (RF-L003/RF-L004), a linha `SPE` correspondent
 
 Quando a escrita não corresponder a um comando tipado (por exemplo, envio isolado de CAN/NAK como parte do protocolo de baixo nível), a linha deverá omitir `CMD=` e conter apenas o rastro hexadecimal, sem inventar um nome de comando. O status resultante (`RSP_STAT`) é registrado na linha de correlação `RSP`, conforme descrito acima, e não na linha `PP` bruta.
 
+A cobertura obrigatória inclui todos os comandos tipados do catálogo desta
+Change: `CAN`, `OPN`, `CLO`, `CLX`, `GIX`, `DSP`, `DEX`, `MNU`, `DSI`, `MLI`,
+`MLR`, `MLE`, `TLI`, `TLR`, `TLE`, `GKY`, `GCX`, `GTK`, `GOX`, `FCX`, `GPN` e
+A operação composta gera uma sequência para cada comando realmente enviado.
+enviado. Operações reservadas ou rejeitadas antes da serialização, como
+`TransactionGCX` enquanto retornar `ErrNotImplemented`, não inventam uma linha
+`SPE`.
+
 ### RF-L006 — Redação de dados sensíveis
 
-O rastro de comunicação nunca deverá expor, em texto plano ou hexadecimal, valores reais de PAN, TRACK2, PIN, PIN block, KSN, WKENC ou dados EMV sensíveis, mesmo quando esses bytes fizerem parte do payload transmitido. Para comandos classificados como sensíveis (`GPN` em qualquer direção; `GCX` e respostas que carreguem tags de trilha, PAN, PIN block ou KSN), a linha de log deverá substituir o hexadecimal completo do payload por um marcador de redação (por exemplo `**REDACTED(<n> bytes)**`), preservando os cabeçalhos `CMD=`/`STATUS=`. A redação total do payload (em vez de redação parcial por campo) é a estratégia adotada nesta SPEC por ser mais simples de auditar e por eliminar o risco de vazamento parcial por erro de cálculo de offset. Esta regra é a mesma já definida em RF-011 e RF-012.1 de `spec.md`, aplicada agora também ao rastro byte a byte.
+O rastro de comunicação nunca deverá expor, em texto plano ou hexadecimal,
+valores reais de PAN, TRACK2, PIN, PIN block, KSN, WKENC, conteúdo de mídia,
+registros de tabela EMV, material RSA/AES/KSEC/IV, criptogramas ou dados EMV
+sensíveis, mesmo quando esses bytes fizerem parte do payload transmitido.
+
+A linha deverá substituir o frame de dados completo por
+`**REDACTED(<n> bytes)**`, preservando `CMD=` e o `STATUS=` da linha `RSP`, nos
+seguintes casos:
+
+- `GPN`, `GCX`, `GTK`, `GOX` e `FCX`, em qualquer direção;
+- blocos `MLR` e registros `TLR`;
+- negociação `OPN` que transporte material RSA/KSEC;
+- qualquer pacote enviado ou recebido sob comunicação segura;
+- DSP, DEX, MNU ou outro comando que o consumidor marque como sensível.
+
+Bytes de controle isolados ACK, NAK, EOT e CAN não contêm payload e permanecem
+visíveis em hexadecimal, mesmo durante um comando redigido. A aplicação deve
+fornecer ao adaptador, junto do comando ativo, a política de redaction necessária
+antes do I/O; o tracer não tenta descobrir segredo inspecionando offsets. A
+redação total elimina risco de vazamento parcial e prevalece sobre o valor de
+diagnóstico dos bytes.
 
 ### RF-L007 — Erros de sistema
 
@@ -199,14 +299,13 @@ A instrumentação de RF-L002 a RF-L007 deverá ser aplicada ao adaptador real d
 
 ### RF-L008.1 — Ordem, uma única emissão e sessão de porta
 
-- O adaptador serial real é a fonte única dos eventos `open`, `close`, `PP` e
-  falhas de I/O; a camada de aplicação não poderá repetir os mesmos bytes nem
-  os mesmos erros.
-- A camada de aplicação é a fonte única de `SPE CMD=<tipo>` e
-  `RSP CMD=<tipo> STATUS=<código>`. Ela registra `SPE` somente depois de o
-  adaptador confirmar a escrita; em falha, somente o evento de erro do
-  adaptador é escrito. Assim, a linha representa bytes efetivamente enviados,
-  sem uma segunda emissão no adaptador.
+- O adaptador serial real é a fonte única dos eventos `open`, `close`, `SPE`,
+  `PP` e falhas de I/O; a camada de aplicação não poderá repetir os mesmos
+  bytes nem os mesmos erros.
+- A camada de aplicação informa o comando ativo antes de `Write` e é a fonte
+  única de `RSP CMD=<tipo> STATUS=<código>`. Em falha de escrita, o adaptador
+  registra somente o evento de erro; não existe `SPE` para bytes cuja escrita
+  integral não foi confirmada.
 - A sessão lógica deve ser incrementada somente após uma abertura bem-sucedida
   e permanecer igual até `close()`. O formato recomendado é `[COM7#001]`; um
   número de handle de C/JNI é somente referência histórica e não faz parte do
@@ -219,6 +318,23 @@ A instrumentação de RF-L002 a RF-L007 deverá ser aplicada ao adaptador real d
 ### RF-L009 — Desempenho e concorrência
 
 O rastro de comunicação deverá usar exclusão mútua (`sync.Mutex` ou equivalente) para proteger a escrita no arquivo de destino, prevenindo intercalação de bytes entre goroutines. A ausência de destino configurado (RF-L001) não deverá adicionar overhead perceptível (nenhuma formatação de hexa deverá ocorrer quando o rastro estiver desligado).
+
+### RF-L010 — Visibilidade e falhas de persistência
+
+Cada linha deve ser integralmente entregue ao arquivo antes de a operação de
+rastro retornar. Se a implementação usar buffer em espaço de usuário, deverá
+executar `Flush` após cada linha; o encerramento deverá executar o flush final
+antes de fechar o descritor. Uma leitura independente do arquivo durante a
+execução deve observar o marcador de ativação e todos os eventos já concluídos,
+sem exigir o encerramento do CLI.
+
+Erros de escrita, flush ou fechamento não podem ser descartados. O tracer deve
+retorná-los ao ponto de composição ou publicá-los por um mecanismo explícito e
+testável. No utilitário de validação local, qualquer falha desse tipo deve ser
+exibida em `stderr`, registrada no `slog` quando possível e encerrar a sessão
+de validação com código diferente de zero. A biblioteca não deve substituir o
+erro primário de comunicação; quando ambos existirem, as causas devem ser
+preservadas de forma distinguível.
 
 ## Requisitos não funcionais
 
@@ -240,16 +356,23 @@ O rastro de comunicação deverá usar exclusão mútua (`sync.Mutex` ou equival
 - [ ] **CA-L001:** `SetLogDestination` com caminho válido cria/abre o arquivo em modo *append* e passa a registrar `open`, `close`, `SPE` e `PP`.
 - [ ] **CA-L002:** `SetLogDestination("")` desliga o rastro; nenhuma linha adicional é gravada após a chamada.
 - [ ] **CA-L003:** chamadas sucessivas de `SetLogDestination` fecham o arquivo anterior sem vazar descritor (verificável via teste que abre, troca de destino e verifica que o arquivo antigo pode ser removido/renomeado no SO).
-- [ ] **CA-L004:** escrita de um payload conhecido gera linha `SPE` com hexadecimal exatamente igual aos bytes enviados, incluindo casos com `0x13`, `0x16`, `0x17` após `ApplySubstitution`.
-- [ ] **CA-L005:** leitura de ACK, NAK, EOT e de um frame completo geram linhas `PP` com o hexadecimal correspondente.
+- [ ] **CA-L004:** escrita de um payload conhecido gera linha `SPE` com
+  hexadecimal exatamente igual ao buffer entregue e aceito integralmente pelo
+  driver, incluindo framing, CRC e casos com `0x13`, `0x16`, `0x17` após
+  `ApplySubstitution`; registrar apenas `CMD=` ou payload lógico reprova o teste.
+- [ ] **CA-L005:** cada retorno não vazio do driver para ACK, NAK, EOT, frame
+  completo ou fragmento gera uma linha `PP` cujo hexadecimal é byte a byte
+  igual ao buffer recebido, antes do parser; registrar apenas status ou resposta
+  resumida reprova o teste.
 - [ ] **CA-L006:** envio de um comando decodificável (por exemplo `OPN`) inclui `CMD=OPN` na linha `SPE`; a resposta correspondente gera uma linha `RSP CMD=OPN STATUS=<codigo>` após a decodificação completa.
 - [ ] **CA-L007:** envio/recebimento de comando `GPN`/`GCX` com dados sensíveis simulados demonstra que o payload aparece totalmente redigido (`**REDACTED(<n> bytes)**`) no log, mantendo `CMD=`/`STATUS=`.
 - [ ] **CA-L008:** falha simulada de abertura da porta gera linha `open(...)=>ERRO: <mensagem>` e `SetLogDestination`/estado de log preservam o destino anterior.
 - [ ] **CA-L009:** `go test -race ./...` cobre gravação concorrente de múltiplas linhas de rastro sem corrida de dados.
 - [ ] **CA-L010:** com o rastro desligado (nenhum destino configurado), nenhuma linha `SPE`/`PP`/`open`/`close` é produzida e nenhuma alocação de formatação hexadecimal ocorre no caminho crítico (validável por teste ou benchmark comparativo).
-- [ ] **CA-L011:** executar o script local sem `PINPAD_LOG_FILE` cria
-  `logs/LogPinpadAbecs.txt` no diretório do módulo; o destino explícito definido
-  pelo operador prevalece e nenhum dos dois arquivos é versionado.
+- [ ] **CA-L011:** executar o script local sem `PINPAD_LOG_FILE` cria e ativa o
+  caminho absoluto `<raiz-do-módulo>/logs/LogPinpadAbecs.txt`; o destino
+  explícito definido pelo operador prevalece e nenhum dos dois arquivos é
+  versionado.
 - [ ] **CA-L012:** em um cenário GCX de laboratório, a sequência registrada é
   `SPE CMD=GCX`, um ou mais `PP`, `RSP CMD=GCX STATUS=<código>` e `close()`
   quando aplicável; o conteúdo hexadecimal de GCX/GTK/GOX/FCX/GPN permanece
@@ -257,6 +380,23 @@ O rastro de comunicação deverá usar exclusão mútua (`sync.Mutex` ou equival
 - [ ] **CA-L013:** duas instâncias isoladas de `Tracer`, configuradas com
   destinos temporários distintos, não misturam linhas; uma construção sem
   tracer permanece desabilitada e não cria arquivo.
+- [ ] **CA-L014:** iniciar o CLI a partir da raiz do módulo e de
+  `cmd/libpinpadabecsgo` resolve e exibe o mesmo caminho absoluto
+  `<raiz-do-módulo>/logs/LogPinpadAbecs.txt`; nenhum arquivo homônimo é criado
+  sob `cmd/`, `.bin/` ou outro diretório de trabalho.
+- [ ] **CA-L015:** imediatamente após a configuração e antes de `Open`, uma
+  leitura independente encontra a linha `TRACE ... enabled`; após um GIX bem-
+  sucedido e antes de encerrar o processo, encontra `SPE CMD=GIX`, ao menos um
+  `PP` e `RSP CMD=GIX STATUS=000`, todos com `FUNC` e `DATA_HORA` válidos. A
+  evidência deve comparar os bytes da linha `SPE` com o buffer escrito e os
+  bytes de cada linha `PP` com cada retorno físico de leitura.
+- [ ] **CA-L016:** teste orientado a tabela percorre `CAN`, `OPN`, `CLO`, `CLX`,
+  `GIX`, `DSP`, `DEX`, `MNU`, `DSI`, `MLI`, `MLR`, `MLE`, `TLI`, `TLR`, `TLE`,
+  `GKY`, `GCX`, `GTK`, `GOX`, `FCX` e `GPN`, comprovando `CMD=`, ordem,
+  emissão única e redaction conforme a classificação do comando.
+- [ ] **CA-L017:** falhas simuladas de escrita, flush e fechamento do destino
+  são observáveis e não permitem que o CLI de validação continue ou finalize
+  com código zero como se o rastro estivesse íntegro.
 
 ## Validação
 
@@ -266,3 +406,9 @@ confirmação de que os eventos correspondem aos bytes efetivamente trocados dev
 ser repetida com pinpad físico, porta serial real e dados de teste de
 laboratório. Logs de validação não podem ser anexados se contiverem PAN, PIN,
 KSN, trilhas, chaves ou dados de portador.
+
+A validação operacional deve registrar o diretório de trabalho, o caminho
+absoluto exibido pelo CLI, o tamanho do arquivo antes/depois e a leitura do
+arquivo ainda durante o processo. Visualizadores que não recarregam arquivos
+automaticamente devem ser atualizados ou reabertos; a evidência primária é a
+leitura independente do caminho absoluto informado pelo CLI.

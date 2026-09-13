@@ -1,15 +1,17 @@
 # SPEC: 066-lib-pinpad-abecs-go — Comunicação segura ABECS
 
+Autor: Rômulo Penha
+
 ## Status
 `SPEC_APROVADA`
 
 ## Objetivo
-Definir a conversão da comunicação segura existente no legado Java + JNI + C
-para Go, sem misturar criptografia com o parser de comandos em claro. Esta
-SPEC é transversal e integra o escopo desta Change para `OPN` seguro, `CLO`,
-`CLX`, pacotes iniciados por `DC2` e comandos protegidos. `CLX` permanece uma
-operação visual na fachada, mas o pinpad encerra a comunicação segura e limpa
-`KSEC` quando o recebe, conforme manual ABECS v2.12, seção 6.4.5.
+Definir a integração da comunicação segura ABECS v2.12 em Go, sem misturar
+criptografia com o parser de comandos em claro. Esta SPEC é transversal e
+integra o escopo desta Change para `OPN` seguro, `CLO`, `CLX`, pacotes
+iniciados por `DC2` e comandos protegidos. `CLX` permanece uma operação
+visual na fachada, mas o pinpad encerra a comunicação segura e limpa `KSEC`
+quando o recebe, conforme manual ABECS v2.12, seção 6.4.5.
 
 ## Escopo
 - RSA PKCS#1 usado na negociação prevista pelo manual.
@@ -56,7 +58,11 @@ porta; ainda assim, `KSEC`, IV e outros buffers temporários devem ser limpos e
 a fachada deve retornar a estado consistente.
 
 ### RF-SEC-006 — Redaction
-SPE, PP, RSP, `slog`, erros e métricas nunca podem conter RSA, KSEC, AES, IV, PIN, PIN block, KSN, PAN ou pacote cifrado convertido em texto.
+SPE, PP, RSP, `slog`, erros e métricas nunca podem conter RSA, KSEC, AES, IV,
+PIN, PIN block, KSN, PAN nem pacote cifrado em texto ou hexadecimal. O tracer
+preserva `CMD=`/`STATUS=` e substitui integralmente frames de negociação ou de
+comunicação segura por `**REDACTED(<n> bytes)**`; somente bytes de controle
+isolados permanecem visíveis, conforme `spec-logging.md`.
 
 ## Segurança e validação
 
@@ -68,7 +74,7 @@ SPE, PP, RSP, `slog`, erros e métricas nunca podem conter RSA, KSEC, AES, IV, P
 
 ## Critérios de aceite
 
-- [ ] Inventário do legado identifica cada função JNI/C de RSA/AES e seu equivalente Go.
+- [ ] Inventário do protocolo identifica cada função de RSA/AES e seu equivalente Go.
 - [ ] Manual e dispositivo utilizado confirmam formato, chaves, padding, IV e sequência.
 - [ ] OPN seguro é aceito pelo pinpad físico real.
 - [ ] Um comando protegido é enviado e respondido corretamente sem dados em claro no log.
@@ -84,4 +90,12 @@ SPE, PP, RSP, `slog`, erros e métricas nunca podem conter RSA, KSEC, AES, IV, P
 `spec-logging.md`.
 
 ## Referências
-Manual ABECS v2.12, seções de OPN seguro e comunicação protegida; funções equivalentes identificadas nos fontes Java/JNI/C. A revisão formal deve confirmar se a versão do manual usada pelo dispositivo é compatível.
+Manual ABECS v2.12, seções de OPN seguro e comunicação protegida; funções equivalentes identificadas nas fontes de referência do protocolo. A revisão formal deve confirmar se a versão do manual usada pelo dispositivo é compatível.
+
+
+## Correção normativa de 2026-09-13
+
+O OPN seguro substitui o OPN clássico. O bloco claro interno é
+`DATALEN(X2) + DATACRC(X2) + CLRDATA + zero padding`, cifrado por AES-CBC com
+KSEC de 16 bytes e IV zerado e precedido somente por DC2. Após OPN, CLO e CLX também são comandos
+protegidos; apenas as respostas de CLO e CLX chegam em claro.

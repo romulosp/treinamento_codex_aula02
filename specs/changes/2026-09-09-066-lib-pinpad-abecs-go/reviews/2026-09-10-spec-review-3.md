@@ -1,5 +1,7 @@
 # Revisão da SPEC (execução do orquestrador Spec Driven) — 066-lib-pinpad-abecs-go
 
+Autor: Rômulo Penha
+
 **Data:** 2026-09-10
 **Skill aplicada:** `spec-review`
 **Escopo:** `spec.md`, `proposal.md`, `DESIGN.md`, `tasks.md`, `implementation-plan.md` e consistência com as SPECs individuais referenciadas (`spec-command-*.md`, `spec-logging.md`, `spec-infra-serial-cancel.md`, `spec-protocolo-seguro.md`).
@@ -7,7 +9,7 @@
 
 ## Método
 
-Leitura integral de `spec.md`, `proposal.md`, `DESIGN.md`, `tasks.md` e `implementation-plan.md`, com verificação cruzada de completude entre: (a) o escopo declarado em `proposal.md`; (b) a matriz obrigatória de comandos do RF-015.1; (c) as seções técnicas RF-004, RF-010 e RF-012, que deveriam detalhar contratos, builders, parsers e fluxos de cada comando em escopo; (d) as SPECs individuais já existentes no diretório da Change.
+Leitura integral de `spec.md`, `proposal.md`, `DESIGN.md`, `tasks.md` e `implementation-plan.md`, com verificação cruzada de completude entre: (a) o escopo declarado em `proposal.md`; (b) a matriz obrigatória de comandos do RF-015.1; (c) as seções técnicas RF-004, RF-010 e RF-012, que deveriam detalhar contratos, builders, parsers e fluxos de cada comando em escopo; (d) as SPECs individuais já existentes no diretório da Change, alinhadas à integração do protocolo ABECS v2.12.
 
 ## Achados
 
@@ -35,7 +37,7 @@ Leitura integral de `spec.md`, `proposal.md`, `DESIGN.md`, `tasks.md` e `impleme
 ### REV-004 — Comunicação segura (RSA/AES/OPN seguro/KSEC) não possui nenhuma decisão de escopo em `spec.md`
 
 - **Severidade:** Alta.
-- **Evidência:** `spec-protocolo-seguro.md` existe no mesmo diretório da Change e `tasks.md` já prevê "Implementar OPN/CLO/CLX e o protocolo seguro RSA/AES conforme `spec-protocolo-seguro.md`" na seção "Conversão integral do legado". Nenhum RF de `spec.md` (RF-001 a RF-017) menciona comunicação segura, RSA, AES, KSEC ou `OPN` seguro. O documento também não lista `spec-protocolo-seguro.md` em "Referências e dependências".
+- **Evidência:** `spec-protocolo-seguro.md` existe no mesmo diretório da Change e `tasks.md` já prevê "Implementar OPN/CLO/CLX e o protocolo seguro RSA/AES conforme `spec-protocolo-seguro.md`" na seção "Integração completa do protocolo ABECS v2.12". Nenhum RF de `spec.md` (RF-001 a RF-017) menciona comunicação segura, RSA, AES, KSEC ou `OPN` seguro. O documento também não lista `spec-protocolo-seguro.md` em "Referências e dependências".
 - **Impacto:** viola o próprio critério de completude declarado na descrição executiva de `spec.md` (toda funcionalidade do legado deve ser classificada como convertida, parcial, fora de escopo ou pendente de Change futura). Diferente do tratamento dado a `TransactionGCX` — que foi explicitamente excluído do escopo desta Change, com justificativa registrada em RF-013 — a comunicação segura simplesmente não é mencionada, deixando ambíguo se está dentro do escopo (e portanto exige contrato) ou fora dele (e portanto exige uma exclusão explícita, como a de RF-015 para a bridge HTTP).
 - **Recomendação:** adicionar um RF específico que decida explicitamente o escopo da comunicação segura nesta Change — dentro do escopo com contrato mínimo e remissão a `spec-protocolo-seguro.md`, ou formalmente deferida para uma Change futura, com o mesmo nível de justificativa usado para `TransactionGCX`.
 

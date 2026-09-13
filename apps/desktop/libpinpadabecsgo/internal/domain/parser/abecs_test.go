@@ -3,8 +3,39 @@ package parser
 import (
 	domainerror "br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/error"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/protocol"
+	"errors"
+	"strings"
 	"testing"
 )
+
+func TestParseNotification(t *testing.T) {
+	tests := []struct {
+		name    string
+		payload string
+		want    string
+		valid   bool
+	}{
+		{name: "32 byte message", payload: "NTM000032" + strings.Repeat("A", 32), want: strings.Repeat("A", 32), valid: true},
+		{name: "empty message", payload: "NTM000000", valid: true},
+		{name: "wrong status", payload: "NTM001000"},
+		{name: "length mismatch", payload: "NTM000032short"},
+		{name: "message too large", payload: "NTM000033" + strings.Repeat("A", 33)},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := ParseNotification([]byte(test.payload))
+			if test.valid {
+				if err != nil || got != test.want {
+					t.Fatalf("ParseNotification()=%q, %v", got, err)
+				}
+				return
+			}
+			if !errors.Is(err, domainerror.ErrInvalidNotification) {
+				t.Fatalf("ParseNotification error=%v", err)
+			}
+		})
+	}
+}
 
 func TestParseAbecsAck(t *testing.T) {
 	r, err := ParseAbecsResponse([]byte{protocol.PP_ACK})
@@ -19,6 +50,9 @@ func TestParseAbecsResponseRejectsNAKAndTruncatedTLV(t *testing.T) {
 	}
 	if _, err := ParseAbecsResponse([]byte("GIX000004\x80\x01\x00\x02A")); err != domainerror.ErrInvalidResponse {
 		t.Fatalf("truncated error = %v", err)
+	}
+	if _, err := ParseAbecsResponse([]byte("GIX000005\x80\x01\x00\x00A")); err != domainerror.ErrInvalidResponse {
+		t.Fatalf("trailing data error = %v", err)
 	}
 }
 

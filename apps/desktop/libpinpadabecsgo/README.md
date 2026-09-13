@@ -1,6 +1,6 @@
 # lib-pinpad-abecs-go
 
-Biblioteca Go para comunicação serial com dispositivos compatíveis com ABECS 2.20.
+Biblioteca Go para comunicação serial com dispositivos compatíveis com ABECS 2.12.
 
 ## Escopo
 
@@ -12,14 +12,23 @@ Este módulo não possui REST, WebSocket, UI ou servidor. O executável em `cmd/
 - `PINPAD_BAUDRATE`: opcional, padrão `19200`.
 - `PINPAD_TIMEOUT`: opcional em segundos, padrão `30`.
 - `LOG_LEVEL`: reservado para configuração futura do logger.
-- `PINPAD_LOG_FILE`: habilita o rastro serial SPE/PP/RSP no arquivo indicado. O
-  `start_aplication.bat` cria `logs/` e usa `logs/LogPinpadAbecs.txt` quando a
-  variável estiver ausente ou vazia.
+- `PINPAD_LOG_FILE`: habilita o rastro serial SPE/PP/RSP no arquivo indicado.
+  Caminhos relativos são resolvidos contra a raiz deste módulo, nunca contra o
+  diretório de trabalho. `start_aplication.bat` e o `executar projeto.bat` da
+  raiz criam `logs/` e definem o caminho absoluto
+  `<raiz-do-módulo>/logs/LogPinpadAbecs.txt` quando a variável estiver vazia.
+
+Antes de mostrar o menu, o executável imprime
+`Log serial ativo: <caminho-absoluto>`. Esse é o único arquivo que deve ser
+aberto para acompanhar a execução; um arquivo homônimo dentro de `cmd/` é um
+artefato antigo e não é usado pela aplicação.
 
 O rastro é desabilitado por padrão na biblioteca. O arquivo é criado em append
-UTF-8, não deve ser versionado e só pode ser compartilhado após confirmar a
-ausência de PAN, trilhas, PIN, PIN block, KSN, chaves e dados pessoais. GCX,
-GTK, GOX, FCX e GPN são redigidos integralmente pelo tracer.
+UTF-8, com uma linha de ativação imediatamente visível, não deve ser versionado
+e só pode ser compartilhado após confirmar a
+ausência de PAN, trilhas, PIN, PIN block, KSN, chaves e dados pessoais. OPN
+seguro, MLR, TLR, GCX, GTK, GOX, FCX e GPN são redigidos integralmente pelo
+tracer; bytes de controle isolados permanecem visíveis.
 
 Cada retorno não vazio de `Adapter.Read` gera uma linha `PP`, inclusive ACK,
 NAK, EOT e fragmentos de frame. Cada `Adapter.Write` confirmado gera uma linha
