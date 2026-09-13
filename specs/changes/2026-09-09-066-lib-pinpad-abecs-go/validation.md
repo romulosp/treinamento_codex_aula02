@@ -489,3 +489,56 @@ escolhido.
 **Resultado automatizado:** `VALIDADA`
 
 **Confirmação física do GOX:** `PENDENTE_VALIDACAO_FISICA`
+
+## Correção da opção 21 FCX e diagnóstico do GOX047 — 2026-09-13
+
+**Estado de entrada:** `IMPLEMENTACAO_APROVADA`
+
+**Ambiente:** Windows, PowerShell, `go1.26.5`, `GOOS=windows`, `GOARCH=386`.
+
+**Fonte normativa:** manual ABECS 2.12, seção 3.7.3, páginas 136–139, e seção
+3.7.4, páginas 140–141.
+
+| Evidência | Comando/cenário | Código | Resultado |
+| --- | --- | ---: | --- |
+| VAL-FCX-CLI-001 | `go test ./cmd/libpinpadabecsgo ./internal/domain/command ./internal/infrastructure/logging ./internal/application/service -run 'TestReadGOXRequestMatchesSuccessfulPhysicalConfig\|TestReadFCXRequest\|TestRunMenuRejectsFCX\|TestFCXBuilder\|TestTracerRecordsOnlyNonSensitiveGOXConfig\|TestGOXAndFCXRejectInvalidConditionalFields\|TestAdvancedFlows' -count=1 -v` | 0 | Vetor físico GOX, decisões FCX, ARC A2, opcionais, sequência, payloads, vetor publicado, estado e diagnóstico aprovados. |
+| VAL-FCX-CLI-002 | `go test ./... -count=1` | 0 | Todos os 16 pacotes aprovados sem cache. |
+| VAL-FCX-CLI-003 | `go vet ./...` | 0 | Nenhum diagnóstico. |
+| VAL-FCX-CLI-004 | `go test ./... -coverprofile=coverage-abecs212-final -count=1` e `go tool cover -func=coverage-abecs212-final` | 0 | Cobertura total **81,4%**; CLI **68,0%**, command **88,4%**, parser **89,2%** e protocol **90,6%**. |
+| VAL-FCX-CLI-005 | `go build -o .\bin\libpinpadabecsgo.exe .\cmd\libpinpadabecsgo` | 0 | Executável Windows com 4.525.568 bytes; SHA-256 `4F305A0246D773A2637E6370F4B3E0910A69BD7EA77D0864811D7C15CC7A02C1`. |
+| VAL-FCX-CLI-006 | `GOOS=linux GOARCH=amd64 go build ./...` | 0 | Build Linux amd64 aprovado. |
+| VAL-FCX-CLI-007 | `git diff --check` | 0 | Nenhum erro de whitespace; avisos LF/CRLF são informativos. |
+
+O teste `TestReadGOXRequestMatchesSuccessfulPhysicalConfig` fixa byte a byte o
+GOX que funcionou às 17:43: valor `000000010000`, `SPE_MTHDPIN=3`,
+`SPE_KEYIDX=02` e `SPE_ACQREF=04`. Portanto, a montagem atual não divergiu
+dessa execução comprovada.
+
+Os testes exigem os seguintes comandos mínimos:
+
+```text
+aprovação: FCX014 001C 0002 <ARC-A2> 0019 0004 0000
+negação:   FCX014 001C 0002 <ARC-A2> 0019 0004 1000
+falha:     FCX008 0019 0004 2000
+```
+
+`PP_FCXRES` (`8056`) não aparece nos payloads de entrada. Após resposta FCX
+válida, o CLI exibe o campo retornado pelo pinpad. A elegibilidade GOX/FCX só é
+alterada depois da validação dos campos obrigatórios da resposta.
+
+O rastro físico fornecido comprova `GOX000` às 17:43 com adquirente `04`, método
+DUKPT TDES `3` e índice `02`, seguido por `FCX047`. Às 18:07 e 18:09, novas
+execuções devolveram `GOX047` em poucos milissegundos. Como `047` não está na
+tabela da versão 2.12 e os frames sensíveis anteriores estavam redigidos, o novo
+binário passa a registrar antes do GOX:
+
+```text
+GOX_CONFIG ACQ=<N2> PIN_METHOD=<N1> KEY_INDEX=<N2>
+```
+
+Essa linha não contém chave, PIN, PIN block, KSN, PAN, trilhas ou dados EMV e
+permite comparar a próxima execução com a configuração física já comprovada.
+
+**Resultado automatizado:** `VALIDADA`
+
+**Confirmação física do GOX e FCX corrigidos:** `PENDENTE_VALIDACAO_FISICA`

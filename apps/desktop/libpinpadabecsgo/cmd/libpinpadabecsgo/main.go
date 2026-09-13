@@ -181,6 +181,7 @@ func declaresModule(contents []byte, expected string) bool {
 func runMenu(reader *bufio.Reader, svc *service.Service, cfg model.PinpadConfig, logger *slog.Logger, tracer *logging.Tracer) error {
 	var lastGCX *model.GCXResponse
 	var lastGCXAmount string
+	var lastGOX *model.GOXResponse
 	for {
 		printMenu(cfg)
 		choice := readLine(reader, "Escolha uma opcao: ")
@@ -191,11 +192,13 @@ func runMenu(reader *bufio.Reader, svc *service.Service, cfg model.PinpadConfig,
 			if handleErr(logger, "Open", svc.Open(ctx)) {
 				lastGCX = nil
 				lastGCXAmount = ""
+				lastGOX = nil
 			}
 		case "2":
 			if handleErr(logger, "Close", svc.Close(ctx)) {
 				lastGCX = nil
 				lastGCXAmount = ""
+				lastGOX = nil
 			}
 		case "3":
 			fmt.Printf("Estado atual do pinpad: %s\n", stateName(svc.GetState()))
@@ -208,6 +211,7 @@ func runMenu(reader *bufio.Reader, svc *service.Service, cfg model.PinpadConfig,
 			if handleErr(logger, "Reset (CAN)", svc.Reset(ctx)) {
 				lastGCX = nil
 				lastGCXAmount = ""
+				lastGOX = nil
 			}
 		case "6":
 			fmt.Println("[ERRO] Comando indisponivel; use CAN na opcao 5.")
@@ -237,6 +241,7 @@ func runMenu(reader *bufio.Reader, svc *service.Service, cfg model.PinpadConfig,
 		case "11":
 			lastGCX = nil
 			lastGCXAmount = ""
+			lastGOX = nil
 			enableCTLS, hideAmount, err := readGCXOptions(reader)
 			if err != nil {
 				fmt.Printf("[ERRO] Opcoes GCX: %v\n", err)
@@ -317,15 +322,30 @@ func runMenu(reader *bufio.Reader, svc *service.Service, cfg model.PinpadConfig,
 				fmt.Printf("[ERRO] Opcoes GOX: %v\n", err)
 				break
 			}
+			if err := tracer.RecordGOXConfig(request.AcquirerReference, request.PinMethod, request.KeyIndex); err != nil {
+				cancel()
+				return fmt.Errorf("registrar configuracao GOX: %w", err)
+			}
 			cancel()
 			ctx, cancel = context.WithTimeout(context.Background(), menuTimeout)
 			response, err := svc.ContinueEMV(ctx, request)
 			if handleErr(logger, "ContinueEMV (GOX)", err) {
+				lastGOX = response
 				fmt.Printf("Resultado EMV: %s\n", response.Result)
 			}
 		case "21":
-			_, err := svc.FinalizeEMV(ctx, command.FCXRequest{Options: "0000", Authorization: "00"})
-			handleErr(logger, "FinalizeEMV (FCX)", err)
+			request, err := readFCXRequest(reader, lastGOX)
+			if err != nil {
+				fmt.Printf("[ERRO] Opcoes FCX: %v\n", err)
+				break
+			}
+			cancel()
+			ctx, cancel = context.WithTimeout(context.Background(), menuTimeout)
+			response, err := svc.FinalizeEMV(ctx, request)
+			if handleErr(logger, "FinalizeEMV (FCX)", err) {
+				lastGOX = nil
+				fmt.Printf("Resultado final EMV: %s\n", response.Result)
+			}
 		case "22":
 			keyIndex := readInt(reader, "Indice da chave: ")
 			keyHex := readLine(reader, "WKENC TDES (32 digitos hexadecimais): ")
@@ -580,6 +600,91 @@ func readGOXRequest(reader *bufio.Reader, gcx *model.GCXResponse, amount string)
 		return command.GOXRequest{}, err
 	}
 	return request, nil
+}
+
+func readFCXRequest(reader *bufio.Reader, gox *model.GOXResponse) (command.FCXRequest, error) {
+	if gox == nil || !validGOXResult(gox.Result) {
+		return command.FCXRequest{}, fmt.Errorf("execute antes um GOX válido")
+	}
+	fmt.Printf("Resultado do GOX conservado: %s\n", gox.Result)
+	fmt.Println("Resultado da comunicação com a Rede Credenciadora:")
+	fmt.Println("1) Transação aprovada pela rede")
+	fmt.Println("2) Transação negada pela rede")
+	fmt.Println("3) Comunicação malsucedida ou sem resposta válida")
+	choice := readLine(reader, "Escolha o resultado: ")
+	request := command.FCXRequest{}
+	switch choice {
+	case "1":
+		request.Options = "0000"
+	case "2":
+		request.Options = "1000"
+	case "3":
+		request.Options = "2000"
+	default:
+		return command.FCXRequest{}, fmt.Errorf("resultado da rede inválido")
+	}
+
+	if choice == "1" || choice == "2" {
+		request.Authorization = readLine(reader, "ARC devolvido pela rede (2 caracteres ASCII): ")
+		if !validASCII(request.Authorization, 2) {
+			return command.FCXRequest{}, fmt.Errorf("ARC deve conter exatamente 2 caracteres ASCII")
+		}
+	}
+
+	var err error
+	request.EMVData, err = readOptionalHex(reader, "Dados EMV da rede em hexadecimal (Enter = nenhum): ")
+	if err != nil {
+		return command.FCXRequest{}, fmt.Errorf("dados EMV inválidos: %w", err)
+	}
+	request.TagList, err = readOptionalHex(reader, "Tags EMV solicitadas em hexadecimal (Enter = nenhuma): ")
+	if err != nil {
+		return command.FCXRequest{}, fmt.Errorf("lista de tags inválida: %w", err)
+	}
+	timeoutText := readLine(reader, "Timeout para reapresentação CTLS em segundos (Enter = padrão): ")
+	if timeoutText != "" {
+		timeout, parseErr := strconv.Atoi(timeoutText)
+		if parseErr != nil || timeout < 1 || timeout > 255 {
+			return command.FCXRequest{}, fmt.Errorf("timeout FCX deve estar entre 1 e 255 segundos")
+		}
+		value := byte(timeout)
+		request.Timeout = &value
+	}
+	if _, err := command.BuildFCXCommand(request); err != nil {
+		return command.FCXRequest{}, err
+	}
+	return request, nil
+}
+
+func validGOXResult(result []byte) bool {
+	return len(result) == 6 &&
+		(result[0] == '0' || result[0] == '1' || result[0] == '2') &&
+		(result[1] == '0' || result[1] == '1') &&
+		(result[2] == '0' || result[2] == '1' || result[2] == '2') &&
+		(result[3] == '0' || result[3] == '1') && string(result[4:]) == "00"
+}
+
+func validASCII(value string, size int) bool {
+	if len(value) != size {
+		return false
+	}
+	for index := range len(value) {
+		if value[index] < 0x20 || value[index] > 0x7E {
+			return false
+		}
+	}
+	return true
+}
+
+func readOptionalHex(reader *bufio.Reader, prompt string) ([]byte, error) {
+	value := readLine(reader, prompt)
+	if value == "" {
+		return nil, nil
+	}
+	decoded, err := hex.DecodeString(value)
+	if err != nil {
+		return nil, fmt.Errorf("use quantidade par de dígitos hexadecimais: %w", err)
+	}
+	return decoded, nil
 }
 
 func goxAcquirerReferences(aidTableInfo string) ([]string, error) {

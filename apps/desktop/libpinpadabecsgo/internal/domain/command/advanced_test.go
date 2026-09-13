@@ -448,6 +448,8 @@ func TestGOXAndFCXRejectInvalidConditionalFields(t *testing.T) {
 	for _, request := range []FCXRequest{
 		{Options: "0001", Authorization: "00"},
 		{Options: "0000"},
+		{Options: "0000", Authorization: "é"},
+		{Options: "2000", Authorization: "00"},
 		{Options: "2000", EMVData: make([]byte, 513)},
 		{Options: "2000", TagList: make([]byte, 129)},
 	} {

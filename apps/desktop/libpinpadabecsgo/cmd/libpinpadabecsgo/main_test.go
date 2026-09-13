@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
@@ -328,6 +329,36 @@ func TestReadGOXRequestUsesGCXContextAndBuildsExactPayload(t *testing.T) {
 	}
 }
 
+func TestReadGOXRequestMatchesSuccessfulPhysicalConfig(t *testing.T) {
+	gcx := &model.GCXResponse{CardType: command.GCXCardICC, AidTableInfo: "040501"}
+	var request command.GOXRequest
+	var err error
+	captureOutput(t, func() {
+		request, err = readGOXRequest(
+			bufio.NewReader(strings.NewReader("04\n3\n02\n")),
+			gcx,
+			"000000010000",
+		)
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	payload, err := command.BuildGOXCommand(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []byte{
+		'G', 'O', 'X', '0', '3', '3',
+		0x00, 0x13, 0x00, 0x0C, '0', '0', '0', '0', '0', '0', '0', '1', '0', '0', '0', '0',
+		0x00, 0x02, 0x00, 0x01, '3',
+		0x00, 0x09, 0x00, 0x02, '0', '2',
+		0x00, 0x10, 0x00, 0x02, '0', '4',
+	}
+	if !bytes.Equal(payload, want) {
+		t.Fatalf("GOX físico = %X, want %X", payload, want)
+	}
+}
+
 func TestReadGOXRequestValidatesAcquirerPINMethodAndWorkingKey(t *testing.T) {
 	gcx := &model.GCXResponse{CardType: command.GCXCardContactlessEMV, AidTableInfo: "080301020503080402"}
 	request, err := readGOXRequest(
@@ -375,6 +406,122 @@ func TestGOXAcquirerReferences(t *testing.T) {
 		if _, err := goxAcquirerReferences(invalid); err == nil {
 			t.Fatalf("PP_AIDTABINFO inválido aceito: %q", invalid)
 		}
+	}
+}
+
+func TestReadFCXRequestMapsNetworkResultAndBuildsExactPayload(t *testing.T) {
+	gox := &model.GOXResponse{Result: []byte("201000")}
+	tests := []struct {
+		name     string
+		input    string
+		options  string
+		arc      string
+		wantHex  string
+		validate func(*testing.T, command.FCXRequest)
+	}{
+		{
+			name:    "aprovada com campos opcionais",
+			input:   "1\nY3\n9108A102DB6D41C67963\n959F26\n30\n",
+			options: "0000",
+			arc:     "Y3",
+			wantHex: "4643583034300005000A9108A102DB6D41C6796300040003959F26001C000259330019000430303030000C00011E",
+			validate: func(t *testing.T, request command.FCXRequest) {
+				t.Helper()
+				if request.Timeout == nil || *request.Timeout != 30 {
+					t.Fatalf("timeout FCX = %v", request.Timeout)
+				}
+			},
+		},
+		{
+			name:    "negada",
+			input:   "2\n05\n\n\n\n",
+			options: "1000",
+			arc:     "05",
+			wantHex: "464358303134001C000230350019000431303030",
+		},
+		{
+			name:    "falha de comunicação sem ARC",
+			input:   "3\n\n\n\n",
+			options: "2000",
+			wantHex: "4643583030380019000432303030",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var request command.FCXRequest
+			var err error
+			output := captureOutput(t, func() {
+				request, err = readFCXRequest(bufio.NewReader(strings.NewReader(test.input)), gox)
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if request.Options != test.options || request.Authorization != test.arc {
+				t.Fatalf("FCX request = %#v", request)
+			}
+			payload, err := command.BuildFCXCommand(request)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if strings.ToUpper(fmt.Sprintf("%X", payload)) != test.wantHex {
+				t.Fatalf("FCX payload = %X, want %s", payload, test.wantHex)
+			}
+			if bytes.Contains(payload, []byte{0x80, 0x56}) {
+				t.Fatalf("PP_FCXRES foi serializado como entrada: %X", payload)
+			}
+			if !strings.Contains(output, "Resultado do GOX conservado: 201000") {
+				t.Fatalf("contexto GOX não exibido: %q", output)
+			}
+			if test.validate != nil {
+				test.validate(t, request)
+			}
+		})
+	}
+}
+
+func TestReadFCXRequestRejectsInvalidContextAndInputs(t *testing.T) {
+	validGOX := &model.GOXResponse{Result: []byte("201000")}
+	tests := []struct {
+		name  string
+		gox   *model.GOXResponse
+		input string
+	}{
+		{name: "sem GOX"},
+		{name: "PP_GOXRES inválido", gox: &model.GOXResponse{Result: []byte("300000")}},
+		{name: "escolha inválida", gox: validGOX, input: "4\n"},
+		{name: "ARC curto", gox: validGOX, input: "1\n0\n"},
+		{name: "ARC fora de A2", gox: validGOX, input: "1\né\n"},
+		{name: "dados EMV hex inválidos", gox: validGOX, input: "3\n0\n"},
+		{name: "tag list hex inválida", gox: validGOX, input: "3\n\n0\n"},
+		{name: "timeout zero", gox: validGOX, input: "3\n\n\n0\n"},
+		{name: "timeout acima de B1", gox: validGOX, input: "3\n\n\n256\n"},
+		{name: "timeout não numérico", gox: validGOX, input: "3\n\n\nabc\n"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			captureOutput(t, func() {
+				if _, err := readFCXRequest(bufio.NewReader(strings.NewReader(test.input)), test.gox); err == nil {
+					t.Fatal("entrada FCX inválida foi aceita")
+				}
+			})
+		})
+	}
+}
+
+func TestRunMenuRejectsFCXWithoutSuccessfulGOXBeforeService(t *testing.T) {
+	svc := service.New(model.DefaultConfig(), nil)
+	defer svc.Shutdown()
+	output := captureOutput(t, func() {
+		input := bytes.NewBufferString("21\n0\n")
+		if err := runMenu(bufio.NewReader(input), svc, model.DefaultConfig(), slog.New(slog.NewTextHandler(io.Discard, nil)), logging.NewTracer()); err != nil {
+			t.Fatal(err)
+		}
+	})
+	if !strings.Contains(output, "[ERRO] Opcoes FCX: execute antes um GOX válido") {
+		t.Fatalf("ausência de GOX não foi informada: %q", output)
+	}
+	if strings.Contains(output, "FinalizeEMV") {
+		t.Fatalf("FCX chegou ao serviço sem GOX válido: %q", output)
 	}
 }
 

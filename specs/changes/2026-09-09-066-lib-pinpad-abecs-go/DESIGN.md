@@ -69,6 +69,11 @@ A Change integra a comunicação com pinpad ABECS v2.12 em uma biblioteca Go hea
 21. A opção 20 deriva as redes disponíveis das entradas N6 de
     `GCXResponse.AidTableInfo`, conserva o valor N12 do GCX e coleta método,
     índice e WKENC condicional antes de criar o contexto de 60 segundos do GOX.
+22. A opção 21 conserva a resposta GOX válida e cria `FCXRequest` a partir do
+    resultado real da comunicação com a rede. Aprovação e negação exigem ARC
+    A2; falha de comunicação omite ARC. Dados EMV, lista de tags e timeout são
+    entradas opcionais validadas antes de iniciar o contexto de 60 segundos.
+    `PP_FCXRES` permanece exclusivamente no modelo de resposta.
 
 ## Arquitetura e componentes
 

@@ -197,6 +197,19 @@ automatizada a uma alegação de hardware.
 - [x] Criar testes unitários do prompt, das escolhas e das entradas inválidas.
 - [x] Executar revisão e validação automatizada da correção.
 
+## Correção da opção 21 FCX e diagnóstico GOX — 2026-09-13
+
+- [x] Diagnosticar o envio fixo de aprovação/ARC após GOX online e confrontar a
+  seção 3.7.4 do manual ABECS 2.12.
+- [x] Especificar escolha explícita do resultado da comunicação com a rede e
+  obrigatoriedade condicional de `SPE_ARC`.
+- [x] Conservar `PP_GOXRES`, coletar os campos FCX e remover aprovação fixa.
+- [x] Exibir `PP_FCXRES` somente como resultado do pinpad.
+- [x] Registrar os parâmetros não sensíveis do GOX para diagnosticar o retorno
+  físico `047` sem expor PIN, chaves, trilhas ou EMV.
+- [x] Criar testes unitários byte a byte e casos inválidos.
+- [x] Executar revisão e validação automatizada da correção.
+
 ## Decodificação das trilhas GTK em claro — 2026-09-13
 
 - [x] Confirmar a codificação de PAN/trilhas 2 e 3 na seção 5.4.2.2 do manual.

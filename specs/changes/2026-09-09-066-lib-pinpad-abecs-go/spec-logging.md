@@ -310,6 +310,14 @@ classificação sensível de `CommandGTK`, não libera os bytes `PP`, não inclu
 nem material de chave e não é emitida para métodos criptografados. A API da
 biblioteca permanece sem logging automático desses valores.
 
+#### RF-L006.2 — Diagnóstico não sensível do GOX
+
+Antes de executar a opção 20, o utilitário local deve registrar uma linha
+`GOX_CONFIG` contendo somente `SPE_ACQREF`, `SPE_MTHDPIN` e `SPE_KEYIDX` já
+validados. A linha não pode receber nem registrar `SPE_WKENC`, PIN, PIN block,
+KSN, PAN, trilhas, dados EMV ou qualquer material criptográfico. O frame `SPE`
+do GOX permanece integralmente redigido.
+
 ### RF-L007 — Erros de sistema
 
 Falhas de abertura, escrita, leitura e fechamento da porta deverão ser registradas no rastro de comunicação com o erro Go retornado (`err.Error()`), sem depender de `errno`/`strerror` (específicos de C), preservando o encadeamento de erro (`%w`) já usado no restante do módulo.
@@ -421,6 +429,9 @@ preservadas de forma distinguível.
 - [ ] **CA-L017:** falhas simuladas de escrita, flush e fechamento do destino
   são observáveis e não permitem que o CLI de validação continue ou finalize
   com código zero como se o rastro estivesse íntegro.
+- [ ] **CA-L018:** a opção 20 grava `GOX_CONFIG ACQ=<N2> PIN_METHOD=<N1>
+  KEY_INDEX=<N2>` antes do comando e o teste confirma a ausência dos campos
+  sensíveis listados em RF-L006.2.
 
 ## Validação
 

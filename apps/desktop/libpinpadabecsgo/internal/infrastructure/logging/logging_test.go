@@ -156,6 +156,36 @@ func TestTracerRecordsSessionAndAppends(t *testing.T) {
 	}
 }
 
+func TestTracerRecordsOnlyNonSensitiveGOXConfig(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "trace.log")
+	tracer := NewTracer()
+	if active, err := tracer.SetLogDestination(path); err != nil || !active {
+		t.Fatalf("SetLogDestination active=%t err=%v", active, err)
+	}
+	if err := tracer.RecordOpen("COM7", 19200); err != nil {
+		t.Fatal(err)
+	}
+	if err := tracer.RecordGOXConfig("04", "3", 2); err != nil {
+		t.Fatal(err)
+	}
+	if err := tracer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(content)
+	if !strings.Contains(text, "GOX_CONFIG ACQ=04 PIN_METHOD=3 KEY_INDEX=02") {
+		t.Fatalf("configuração GOX ausente: %q", text)
+	}
+	for _, forbidden := range []string{"WKENC", "PINBLK", "TRACK", "EMVDATA"} {
+		if strings.Contains(text, forbidden) {
+			t.Fatalf("campo sensível %s presente: %q", forbidden, text)
+		}
+	}
+}
+
 func TestTracerCreatesNonEmptyFileWhenEnabled(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "trace.log")
 	tracer := NewTracer()

@@ -588,11 +588,15 @@ func (s *Service) ContinueEMV(ctx context.Context, request command.GOXRequest) (
 	if err != nil {
 		return nil, err
 	}
+	result, err := parser.ValidateGOXResponse(response, request)
+	if err != nil {
+		return nil, err
+	}
 	s.mu.Lock()
 	s.goxEligible = false
 	s.fcxEligible = true
 	s.mu.Unlock()
-	return parser.ValidateGOXResponse(response, request)
+	return result, nil
 }
 
 // FinalizeEMV envia FCX depois de GOX e mantém Issuer Script Results no
@@ -612,10 +616,14 @@ func (s *Service) FinalizeEMV(ctx context.Context, request command.FCXRequest) (
 	if err != nil {
 		return nil, err
 	}
+	result, err := parser.ValidateFCXResponse(response, request)
+	if err != nil {
+		return nil, err
+	}
 	s.mu.Lock()
 	s.fcxEligible = false
 	s.mu.Unlock()
-	return parser.ValidateFCXResponse(response, request)
+	return result, nil
 }
 
 // DisplayDEX exibe uma mensagem estendida de até 160 bytes.

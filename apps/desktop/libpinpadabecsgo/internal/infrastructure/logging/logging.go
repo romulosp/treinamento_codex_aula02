@@ -240,6 +240,28 @@ func (t *Tracer) RecordResponse(kind command.Type, status string) error {
 	return t.writeLineLocked("service.exchangeCommand", "[%s] RSP CMD=%s STATUS=%s", t.sessionIDLocked(""), safeText(string(kind)), safeText(status))
 }
 
+// RecordGOXConfig registra somente os identificadores não sensíveis usados na
+// configuração do GOX. Chaves, PIN, trilhas, PAN e dados EMV não são recebidos
+// por este método e continuam integralmente redigidos no frame SPE.
+func (t *Tracer) RecordGOXConfig(acquirer, pinMethod string, keyIndex int) error {
+	if t == nil {
+		return nil
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.destination == nil {
+		return nil
+	}
+	return t.writeLineLocked(
+		"cmd.libpinpadabecsgo.ContinueEMV",
+		"[%s] GOX_CONFIG ACQ=%s PIN_METHOD=%s KEY_INDEX=%02d",
+		t.sessionIDLocked(""),
+		safeText(acquirer),
+		safeText(pinMethod),
+		keyIndex,
+	)
+}
+
 // RecordGTKClearTracks registra as três trilhas já interpretadas de uma
 // resposta GTK em claro. O chamador deve usar esta exceção somente quando o
 // operador selecionar explicitamente o modo em claro no utilitário local.

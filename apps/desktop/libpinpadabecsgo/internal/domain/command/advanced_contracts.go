@@ -217,6 +217,9 @@ func BuildFCXCommand(request FCXRequest) ([]byte, error) {
 	if (request.Options[0] == '0' || request.Options[0] == '1') && len(request.Authorization) != 2 {
 		return nil, fmt.Errorf("FCX authorization response code is required")
 	}
+	if request.Authorization != "" && !asciiText(request.Authorization) {
+		return nil, fmt.Errorf("FCX authorization response code must use A2")
+	}
 	if request.Options[0] == '2' && request.Authorization != "" {
 		return nil, fmt.Errorf("FCX authorization response code is not allowed for abort")
 	}
@@ -251,6 +254,15 @@ func appendOptionalString(parameters []Parameter, id SPEParameter, value string)
 func decimalDigits(value string) bool {
 	for _, current := range []byte(value) {
 		if current < '0' || current > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+func asciiText(value string) bool {
+	for _, current := range []byte(value) {
+		if current < 0x20 || current > 0x7E {
 			return false
 		}
 	}

@@ -102,3 +102,19 @@ Autor: Rômulo Penha
 - A validação com hardware físico não está disponível automaticamente; o fake comprovará somente componentes puros e a validação física deverá ser registrada separadamente. Sem essa evidência, o comando permanece não validado.
 - Nenhuma dependência concreta de geração de QR Code será adicionada nesta Change; `DisplayQRCode` depende de `QRCodeGenerator` injetado pelo consumidor.
 - `TransactionGCX` com parâmetros completos permanece como stub `ErrNotImplemented` até uma Change futura especificar a tabela de tags GCX completa.
+
+## Complemento de implementação FCX — 2026-09-13
+
+- Conservar a resposta GOX válida no CLI e recusar a opção 21 quando ela não
+  existir.
+- Perguntar aprovação, negação ou falha da comunicação com a rede e coletar
+  ARC somente nas duas primeiras decisões.
+- Decodificar dados EMV e lista de tags em hexadecimal, validar timeout B1 e
+  montar o comando com `BuildFCXCommand` antes de acessar a serial.
+- Criar o contexto blocante depois das entradas e exibir `PP_FCXRES` retornado.
+- Testar as três decisões, ARC condicional, campos opcionais, entradas
+  inválidas, ausência de GOX e payload exato sem `PP_FCXRES` como entrada.
+- Acrescentar ao diagnóstico GOX os parâmetros não sensíveis selecionados e
+  preservar o `047` como retorno não catalogado, pois o rastro físico mais
+  recente mostrou uma resposta imediata `GOX047` após dois fluxos anteriormente
+  válidos.
