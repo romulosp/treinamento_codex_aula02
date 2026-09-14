@@ -35,7 +35,7 @@ EMV, PAN, trilhas, scripts e respostas criptográficas devem ser classificados p
   TLV, lista de tags e timeout.
 - [ ] Parser cobre resultado aprovado, negado, EMV solicitado vazio e Issuer
   Script Results somente quando aplicável.
-- [ ] FCX real é executado em cartão de laboratório compatível.
+- [x] FCX real é executado em cartão de laboratório compatível.
 - [ ] Issuer Script Results aparecem somente no modelo próprio de FCX.
 - [ ] GCXResponse permanece sem campos de FCX.
 - [ ] Timeout, cancelamento e status são registrados sem vazamento.

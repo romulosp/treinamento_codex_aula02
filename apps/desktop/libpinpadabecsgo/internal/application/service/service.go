@@ -718,7 +718,7 @@ func (s *Service) SendMultimediaFile(ctx context.Context, name string, data []by
 		if _, err = s.sendPayload(ctx, command.CommandMLR, block); err != nil {
 			return fmt.Errorf("MLR: %w", err)
 		}
-		if progress != nil {
+		if progress != nil && end < len(data) {
 			if err = progress(ctx, int64(end), int64(len(data))); err != nil {
 				return err
 			}
@@ -726,6 +726,9 @@ func (s *Service) SendMultimediaFile(ctx context.Context, name string, data []by
 	}
 	if _, err := s.sendPayload(ctx, command.CommandMLE, command.BuildMLECommand()); err != nil {
 		return fmt.Errorf("MLE: %w", err)
+	}
+	if progress != nil {
+		return progress(ctx, int64(len(data)), int64(len(data)))
 	}
 	return nil
 }

@@ -151,3 +151,9 @@ CAN/EOT. OPN clássico e seguro são caminhos alternativos; CLO e CLX são
 cifrados durante KSEC, embora suas respostas sejam claras. Builders deixam de
 usar formatos posicionais inventados para comandos ABECS parametrizados. RST é
 removido.
+
+## Prazo da carga multim?dia local
+
+Isolar coleta de caminho/nome e execu??o da op??o 16 em fun??o test?vel com
+callback de carga; criar contexto somente ap?s as perguntas. Manter o timeout
+do consumidor na biblioteca. Reservar progresso total ? confirma??o MLE.

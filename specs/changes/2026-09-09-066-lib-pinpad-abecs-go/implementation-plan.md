@@ -118,3 +118,9 @@ Autor: Rômulo Penha
   preservar o `047` como retorno não catalogado, pois o rastro físico mais
   recente mostrou uma resposta imediata `GOX047` após dois fluxos anteriormente
   válidos.
+
+## Corre??o multim?dia da op??o 16
+
+Reproduzir digita??o lenta com rel?gio virtual; renovar o contexto somente no
+CLI depois das entradas. Exercitar fake serial com falhas em cada etapa,
+particionamento 995 e vetores publicados. Executar su?te, vet e build Windows.

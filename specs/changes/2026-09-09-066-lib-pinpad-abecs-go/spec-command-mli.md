@@ -33,3 +33,14 @@ Iniciar o carregamento de um arquivo multimídia para o armazenamento do pinpad.
 
 MLI exige nome alfanumérico A8 e `SPE_MFINFO(B10)`: tamanho X4 big-endian,
 CRC16 B2, tipo B1 (1 PNG, 2 JPG, 3 GIF) e três bytes RUF zerados.
+
+## Corre??o do prazo da op??o 16
+
+O CLI coleta caminho e nome antes de criar o contexto de 60 segundos da carga.
+O nome deve ter oito caracteres alfanum?ricos (exemplo: QRCODE01); QRCODE
+? rejeitado antes da serial. A biblioteca respeita contextos cancelados ou
+expirados, sem renov?-los. O teste deve simular mais de 60 segundos de digita??o.
+A biblioteca identifica PNG/JPG/GIF pela assinatura para preencher MFINFO, sem
+condicionar a carga ?s capacidades GIX. A avalia??o de exibi??o cabe ao DSI.
+A toler?ncia MFINFO >= 7 da se??o 6.6.1 ? requisito do receptor; o emissor
+continua enviando B10 completo, incluindo os tr?s bytes RUF.

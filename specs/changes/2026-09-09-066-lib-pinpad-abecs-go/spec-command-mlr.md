@@ -33,3 +33,10 @@ Transmitir blocos de um arquivo multimídia iniciado por `MLI`.
 ## Correção normativa de 2026-09-13
 
 Cada parâmetro `SPE_DATAIN` transporta no máximo 995 bytes.
+
+## Regress?o da carga local
+
+Testar arquivos menores, iguais e maiores que 995 bytes. Concatenar os dados
+dos MLR enviados deve recuperar exatamente o arquivo original. Erros de MLI
+ou MLR interrompem a sequ?ncia; cancelamento do callback impede os pr?ximos
+comandos. Comparar cabe?alhos, TLV e framing com vetores normativos.

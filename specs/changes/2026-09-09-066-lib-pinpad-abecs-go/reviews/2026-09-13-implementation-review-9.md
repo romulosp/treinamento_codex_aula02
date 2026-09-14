@@ -42,6 +42,7 @@ parâmetros do protocolo.
 
 `IMPLEMENTACAO_APROVADA`
 
-A causa específica do `GOX047` depende da nova linha física `GOX_CONFIG`, pois
-o manual 2.12 não define esse status. A interoperabilidade física do novo FCX
-continua pendente de repetição no equipamento.
+A repetição física posterior registrou `GOX_CONFIG ACQ=04 PIN_METHOD=3
+KEY_INDEX=02`, seguida de `GOX000` e `FCX000`. A correção foi confirmada no
+equipamento; o significado do retorno anterior `047` permanece fora do catálogo
+normativo da versão 2.12.

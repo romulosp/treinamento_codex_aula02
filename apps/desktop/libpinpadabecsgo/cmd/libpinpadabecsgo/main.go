@@ -283,9 +283,8 @@ func runMenu(reader *bufio.Reader, svc *service.Service, cfg model.PinpadConfig,
 			_, err := svc.CloseVisual(ctx, command.CLXRequest{Message: message, MediaName: mediaName})
 			handleErr(logger, "CloseVisual (CLX)", err)
 		case "16":
-			path := readLine(reader, "Caminho do arquivo local: ")
-			name := readLine(reader, "Nome da midia no pinpad: ")
-			handleErr(logger, "LoadMultimediaPath (MLI/MLR/MLE)", svc.LoadMultimediaPath(ctx, path, name, printProgress))
+			cancel()
+			handleErr(logger, "LoadMultimediaPath (MLI/MLR/MLE)", loadMultimediaInput(reader, svc.LoadMultimediaPath))
 		case "17":
 			name := readLine(reader, "Nome da midia carregada: ")
 			_, err := svc.DisplayImage(ctx, name)
@@ -477,6 +476,18 @@ func readLine(reader *bufio.Reader, prompt string) string {
 	fmt.Print(prompt)
 	text, _ := reader.ReadString('\n')
 	return strings.TrimSpace(text)
+}
+
+// loadMultimediaInput separa o tempo de digitação do prazo de transferência.
+func loadMultimediaInput(reader *bufio.Reader, load func(context.Context, string, string, service.ProgressFunc) error) error {
+	path := readLine(reader, "Caminho do arquivo local: ")
+	name := readLine(reader, "Nome da midia no pinpad (8 alfanumericos, ex.: QRCODE01): ")
+	if _, err := command.BuildDSICommand(name); err != nil {
+		return err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), menuTimeout)
+	defer cancel()
+	return load(ctx, path, name, printProgress)
 }
 
 func readInt(reader *bufio.Reader, prompt string) int {

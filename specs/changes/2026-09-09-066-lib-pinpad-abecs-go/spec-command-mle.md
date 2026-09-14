@@ -31,3 +31,10 @@ Finalizar o carregamento multimídia iniciado por `MLI` e transmitido por `MLR`.
 ## Correção normativa de 2026-09-13
 
 MLE é o payload literal `MLE`, sem nome, tamanho ou CRC.
+
+## Confirma??o da carga
+
+O callback de progresso somente comunica current=total depois de MLE000.
+MLE102 (tamanho/CRC divergente) e MLE040 devem propagar erro sem comunicar
+conclus?o. Uma nova carga reinicia pelo MLI; limpeza de tempor?rios ? fun??o
+do pinpad conforme se??o 6.6.3. MLE n?o transporta nome/tamanho/CRC.

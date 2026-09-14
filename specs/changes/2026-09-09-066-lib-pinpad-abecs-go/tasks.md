@@ -209,6 +209,7 @@ automatizada a uma alegação de hardware.
   físico `047` sem expor PIN, chaves, trilhas ou EMV.
 - [x] Criar testes unitários byte a byte e casos inválidos.
 - [x] Executar revisão e validação automatizada da correção.
+- [x] Confirmar fisicamente `GCX000 → GTK000 → GOX000 → FCX000` na COM7.
 
 ## Decodificação das trilhas GTK em claro — 2026-09-13
 
@@ -234,3 +235,10 @@ automatizada a uma alegação de hardware.
 - [x] Preservar redaction dos frames GTK e do modo criptografado.
 - [x] Testar conteúdo, escaping, campos vazios e ausência no modo criptografado.
 - [x] Executar revisão e validação automatizada da correção.
+
+## Corre??o multim?dia da op??o 16
+
+- [ ] Iniciar prazo depois das perguntas e explicar nome A8.
+- [ ] Comunicar progresso total somente ap?s MLE000.
+- [ ] Testar digita??o lenta, limites de blocos, erros e pacotes normativos.
+- [ ] Registrar testes e build; valida??o f?sica permanece pendente.

@@ -384,13 +384,10 @@ chave, e que a escolha 2 produz os TLVs `SPE_MTHDDAT=50`,
 
 **Resultado automatizado da correção:** `VALIDADA`
 
-**Validação física da correção:** `PENDENTE_VALIDACAO_FISICA`
+**Validação física da correção:** `VALIDADA`
 
-Para a confirmação física, uma nova inicialização GCX elegível deve preceder a
-opção 19, seguida da escolha 1. O resultado esperado é o envio `GTK000`, sem o
-status `042` associado à ausência de chave. O frame serial permanece redigido;
-o complemento posterior desta Change autoriza a linha textual `GTK_CLEAR` no
-arquivo do utilitário local.
+O fluxo físico de 20:43 registrou `GCX000`, `GTK000` em modo claro e a linha
+`GTK_CLEAR`, sem o antigo status `042`. O frame serial permaneceu redigido.
 
 ## Registro das trilhas GTK em claro — 2026-09-13
 
@@ -418,7 +415,7 @@ Os frames `SPE` e `PP` de GTK permanecem com `**REDACTED(<n> bytes)**`. A linha
 
 **Resultado automatizado da correção:** `VALIDADA`
 
-**Validação física do conteúdo das trilhas:** `PENDENTE_VALIDACAO_FISICA`
+**Validação física do conteúdo das trilhas:** `VALIDADA`
 
 ## Decodificação BCD/nibble do GTK em claro — 2026-09-13
 
@@ -453,7 +450,7 @@ foi validado:
 
 **Resultado automatizado:** `VALIDADA`
 
-**Confirmação no arquivo físico:** `PENDENTE_VALIDACAO_FISICA`
+**Confirmação no arquivo físico:** `VALIDADA`
 
 ## Correção da opção 20 GOX — 2026-09-13
 
@@ -488,7 +485,7 @@ escolhido.
 
 **Resultado automatizado:** `VALIDADA`
 
-**Confirmação física do GOX:** `PENDENTE_VALIDACAO_FISICA`
+**Confirmação física do GOX:** `VALIDADA`
 
 ## Correção da opção 21 FCX e diagnóstico do GOX047 — 2026-09-13
 
@@ -541,4 +538,24 @@ permite comparar a próxima execução com a configuração física já comprova
 
 **Resultado automatizado:** `VALIDADA`
 
-**Confirmação física do GOX e FCX corrigidos:** `PENDENTE_VALIDACAO_FISICA`
+### Evidência física da correção
+
+O teste confirmado pelo operador na COM7 gerou, no arquivo ativo, a sequência:
+
+```text
+2026-09-13T20:43:39.6199468-03:00 RSP CMD=GCX STATUS=000
+2026-09-13T20:43:48.9051234-03:00 RSP CMD=GTK STATUS=000
+2026-09-13T20:44:01.7505529-03:00 GOX_CONFIG ACQ=04 PIN_METHOD=3 KEY_INDEX=02
+2026-09-13T20:44:06.2239606-03:00 RSP CMD=GOX STATUS=000
+2026-09-13T20:44:28.6915428-03:00 RSP CMD=FCX STATUS=000
+```
+
+Os frames GOX e FCX permaneceram integralmente redigidos. A configuração GOX
+coincide com o vetor físico unitário e ambos os comandos terminaram com status
+`000`. O operador confirmou o funcionamento apresentado pelo CLI, o que também
+comprova que o parser aceitou o `PP_FCXRES` obrigatório.
+
+**Confirmação física do GOX e FCX corrigidos:** `VALIDADA`
+
+A matriz física integral dos demais comandos da Change permanece pendente e
+não é alterada por esta confirmação específica.
