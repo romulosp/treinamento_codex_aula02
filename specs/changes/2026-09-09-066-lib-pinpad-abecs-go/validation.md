@@ -627,3 +627,11 @@ A validaÃ§Ã£o fÃ­sica da reconexÃ£o automÃ¡tica na COM7, do transporte
 A opção 16 deixou de solicitar caminho de arquivo. Ela coleta texto, nome opcional e tamanho opcional; consulta GIX, escolhe a menor dimensão entre largura/altura quando o tamanho não é informado, exige display gráfico com PNG e retorna `ErrUnsupportedMedia` antes de MLI quando o pinpad é incompatível. O PNG é gerado pelo aplicativo e enviado por MLI/MLR/MLE.
 
 `go test ./...` foi executado após a alteração, com código 0. A validação física da compatibilidade GIX e da renderização DSI permanece pendente na COM7.
+
+## Correção de escopo — serviço RESTful na Change 066
+
+A especificação de transporte foi alterada de WebSocket para API RESTful e permanece diretamente em `spec.md`, `DESIGN.md`, `proposal.md` e `tasks.md` da Change `2026-09-09-066-lib-pinpad-abecs-go`. Não existe Change separada para esse requisito.
+
+### Revisão documental REST — 2026-09-15
+
+O aditivo RESTful foi revisado em `reviews/2026-09-15-spec-review-rest.md` e recebeu `SPEC_APROVADA`. Esta evidência aprova o contrato, não a implementação: servidor, handlers, OpenAPI, testes `httptest` e validação por `curl` permanecem pendentes.

@@ -4,7 +4,7 @@ Biblioteca Go para comunicação serial com dispositivos compatíveis com ABECS 
 
 ## Escopo
 
-Este módulo não possui REST, WebSocket, UI ou servidor. O executável em `cmd/libpinpadabecsgo` apenas valida a configuração local e serve como ponto de composição para testes manuais futuros.
+Este módulo contém a biblioteca serial ABECS e passa a prever um adaptador RESTful separado em `internal/api`, servido por `cmd/libpinpadabecsgo-api`. O executável `cmd/libpinpadabecsgo` permanece como ferramenta local de diagnóstico; WebSocket e UI não fazem parte do contrato.
 
 ## Configuração
 

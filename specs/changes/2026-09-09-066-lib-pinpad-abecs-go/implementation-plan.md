@@ -5,7 +5,7 @@ Autor: Rômulo Penha
 ## Fatos observados
 
 - O módulo Go já existe em `apps/desktop/libpinpadabecsgo/`, mas a integração completa ainda não foi concluída.
-- A Change define uma biblioteca desktop/headless, sem servidor externo, HTTP, WebSocket ou UI. A fachada interna (`PinpadService`) faz parte do escopo como componente de biblioteca.
+- A Change define uma biblioteca headless e um adaptador RESTful HTTP/JSON. A fachada interna (`PinpadService`) permanece independente da API; WebSocket e UI ficam fora do escopo.
 - O módulo será criado em `apps/desktop/libpinpadabecsgo/` com `go.mod` `br.com.romulopenha/lib-pinpad-abecs-go`.
 - O ambiente disponível informa Go `1.26.5` em Windows 386.
 - A dependência serial aprovada é `go.bug.st/serial` e deve permanecer isolada no adaptador de infraestrutura.
@@ -23,7 +23,7 @@ Autor: Rômulo Penha
 - Fila `CommandQueue` com `Enqueue` não bloqueante, `Submit` bloqueante e `SessionManager` com relógio injectável.
 - Executável de validação em `cmd/libpinpadabecsgo`.
 - README operacional do módulo.
-- Nenhuma API HTTP, persistência, frontend, listener de rede ou alteração em aplicações existentes.
+- Nenhuma persistência, frontend, WebSocket ou alteração no protocolo serial. A API HTTP será adicionada como adaptador de entrada isolado.
 - `TransactionGCX` com parâmetros completos existirá apenas como stub `ErrNotImplemented` nesta Change.
 
 ## Estratégia de implementação

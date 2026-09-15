@@ -22,9 +22,9 @@ Autor: Rômulo Penha
 
 ## Problema e objetivo
 
-Criar a biblioteca Go reutilizável `lib-pinpad-abecs-go`, responsável exclusivamente pela integração de comunicação com dispositivos compatíveis com o protocolo ABECS v2.12, através de comunicação serial Windows/Linux.
+Criar a biblioteca Go reutilizável `lib-pinpad-abecs-go`, responsável pela integração com dispositivos ABECS v2.12 por comunicação serial Windows/Linux, e expô-la por uma API RESTful local com contratos JSON tipados.
 
-A biblioteca será a base para futuras Changes de bridge HTTP, WebSocket, UI e integrações. Esta Change não criará servidor, API ou interface de usuário.
+A biblioteca continuará independente do transporte HTTP. A API será um adaptador de entrada separado, sem WebSocket e sem menu interativo no executável servidor.
 
 ## Escopo
 
@@ -43,12 +43,13 @@ A biblioteca será a base para futuras Changes de bridge HTTP, WebSocket, UI e i
 - Implementação Go dos comandos listados em `spec-conformidade-abecs-v212.md`; RST fica excluído por não existir no ABECS 2.12.
 - Fachada de biblioteca equivalente ao `PinpadService`, com configuração, ciclo de vida, estados, comandos de display, imagem, tabelas EMV, transações GCX, leitura de teclas, reset e captura de PIN.
 - Executável de validação em `cmd/libpinpadabecsgo`.
+- Executável servidor REST em `cmd/libpinpadabecsgo-api`, com porta HTTP configurável e padrão `8080`.
 - Script `start_aplication.bat` para teste local sem privilégios administrativos, com configuração temporária da porta serial e binário gerado no diretório do módulo.
 - Testes unitários, testes com transporte serial determinístico para componentes puros, cobertura mínima de 80% e validação de integração com pinpad físico real para os critérios de comunicação.
 
 ## Fora de escopo
 
-REST, HTTP, WebSocket, DNS, Windows Service, Linux daemon, instalador, Docker, UI, SDK cliente, CORS, TLS, upload/download, multipart, autenticação, rate limit e API de comando hexadecimal bruto.
+WebSocket, gRPC, DNS, Windows Service, Linux daemon, instalador, Docker, UI, SDK cliente, upload multipart e API de comando hexadecimal bruto. TLS, autenticação, autorização e rate limit ficam fora desta entrega inicial; por isso o listener deverá usar loopback por padrão.
 
 ## Impactos e riscos
 
@@ -72,7 +73,7 @@ Nenhum comando poderá ser considerado convertido apenas porque seu nome existe 
 - [ ] Contrato desta proposta refletido em `spec.md`, `DESIGN.md` e `tasks.md`.
 - [ ] Módulo, diretório, dependência serial e escopo confirmados.
 - [ ] Interfaces, modelos, erros, comandos e critérios de aceite definidos.
-- [ ] Nenhum componente de servidor ou transporte HTTP incluído.
+- [ ] Adaptador RESTful incluído sem acoplar HTTP ao domínio ou à aplicação.
 - [ ] Revisão da SPEC aprovada formalmente.
 
 ## Aditivo multimídia de 2026-09-14
@@ -124,3 +125,7 @@ Nenhum arquivo legado `.h`, `.hpp`, `.c`, `.cpp`, `.cc` ou `.cxx` fará parte de
 A implementação deve seguir `spec-conformidade-abecs-v212.md`. O comando RST
 foi excluído porque não existe no manual ABECS 2.12; cancelamento e limpeza de
 comunicação usam CAN/EOT.
+
+## Aditivo RESTful
+
+O servidor REST será implementado dentro desta mesma Change 066, reutilizando as fachadas Go existentes. O contrato usa recursos HTTP versionados, DTOs específicos por operação e `ErrorBody` classificado. O executável servidor não apresenta menu interativo e nenhuma nova Change será criada.

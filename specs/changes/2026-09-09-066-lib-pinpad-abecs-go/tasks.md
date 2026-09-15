@@ -26,7 +26,7 @@ Todas as SPECs individuais permanecem sujeitas a revisÃ£o formal. A existÃªn
 
 - [x] Receber definiÃ§Ã£o funcional da Change 066.
 - [x] Definir `groupId`, `artifactId`, mÃ³dulo, diretÃ³rio e executÃ¡vel.
-- [x] Remover REST, WebSocket, UI e servidores do escopo.
+- [x] Preservar a biblioteca serial independente da API e excluir WebSocket, UI e servidores não HTTP do escopo.
 - [x] Aprovar `go.bug.st/serial` como adaptador serial.
 - [x] Revisar e aprovar formalmente a SPEC apÃ³s resoluÃ§Ã£o dos achados REV-001 a REV-006.
 
@@ -89,7 +89,7 @@ Todas as SPECs individuais permanecem sujeitas a revisÃ£o formal. A existÃªn
 - [x] Testar concorrÃªncia, cancelamento, shutdown e redaction na fachada.
 - [x] Revisar e completar o contrato da fila FIFO, cancelamento e shutdown.
 - [x] Revisar e completar o contrato do `SessionManager` e expiraÃ§Ã£o de 300 segundos.
-- [x] Confirmar que a bridge HTTP nÃ£o serÃ¡ convertida nem adicionada ao mÃ³dulo Go.
+- [ ] Implementar a API RESTful como adaptador novo, sem copiar a bridge legada nem expor comando bruto.
 - [x] Criar `start_aplication.bat` para execuÃ§Ã£o local sem privilÃ©gios administrativos, com `COM7` temporÃ¡rio.
 - [x] Confirmar que `.gocache`, `.gomodcache`, `.bin` e executÃ¡veis locais nÃ£o serÃ£o versionados.
 - [x] Implementar logging `slog` com redaction e tracer SPE/PP/RSP conforme
@@ -281,3 +281,16 @@ VAL-MM-013 e pelo aditivo abaixo.
 Resultado deste aditivo de SPEC: `SPEC_APROVADA`; implementaÃ§Ã£o e validaÃ§Ã£o
 permanecem pendentes.`r`n
 - [x] Alterar a opção 16 para gerar PNG de QR Code a partir de texto, validar capacidades via GIX e rejeitar pinpad incompatível antes de MLI.
+
+## Serviço RESTful integrado
+
+- [ ] Revisar e aprovar o aditivo RESTful na Change 066.
+- [ ] Implementar servidor HTTP em `cmd/libpinpadabecsgo-api` sem menu interativo.
+- [ ] Criar Input/Output DTOs por endpoint e `ErrorBody` padronizado.
+- [ ] Implementar router e handlers de conexão, GIX, display, mídia, tabelas, cartão e PIN.
+- [ ] Criar OpenAPI 3 com rotas, DTOs, códigos HTTP e erros.
+- [ ] Criar testes `httptest` de roteamento, validação, erros, timeout e correlação.
+- [ ] Executar validação automatizada e registrar evidências.
+
+- [x] Definir DTO de entrada e saída para cada `spec-command-xxx.md`.
+- [x] Criar pacote `internal/api/dto` com as 25 duplas de DTO e `ErrorBody`.

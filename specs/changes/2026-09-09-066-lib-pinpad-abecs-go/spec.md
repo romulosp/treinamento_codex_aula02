@@ -51,7 +51,7 @@ As validações unitárias podem usar adaptadores determinísticos para framing,
 
 ### RF-001 — Biblioteca e arquitetura
 
-A entrega deverá ser uma biblioteca Go reutilizável, consumida por outro processo através de import de pacote Go, nunca por rede. "Sem service" nesta SPEC significa exclusivamente a ausência de processo servidor externo, listener de rede, REST, WebSocket, gRPC, UI ou daemon. A fachada interna equivalente a `PinpadService`, descrita em RF-013, é a única camada de aplicação permitida e deverá viver em `internal/application/service`; ela não expõe rede, não abre porta TCP/HTTP e não é instanciada como processo independente. Deverá usar Clean Architecture, DDD e Ports and Adapters. Nenhum pacote deverá depender de Gin, Echo, Fiber, WebSocket, gRPC, frontend ou desktop framework. Todo acesso externo deverá ocorrer por interfaces.
+A entrega deverá conter uma biblioteca Go reutilizável e um adaptador RESTful HTTP/JSON. A fachada `PinpadService`, descrita em RF-013, permanece em `internal/application/service` e não conhece HTTP. A camada `internal/api` valida DTOs, chama a fachada e converte resultados em respostas HTTP. Deverá usar Clean Architecture, DDD e Ports and Adapters. O domínio e a aplicação não dependerão de router HTTP, WebSocket, gRPC, frontend ou framework de desktop.
 
 A estrutura deverá ser:
 
@@ -283,7 +283,7 @@ RST não existe no manual ABECS 2.12 e não integra a biblioteca. O reset da ope
 
 #### 11. Artefatos que não serão gerados
 
-Não serão gerados: REST, HTTP, WebSocket, servidor, Windows Service, Linux daemon, UI, instalador, API de comando hexadecimal bruto, armazenamento de PAN/PIN, logs de dados sensíveis ou tradução literal de `HANDLE`, `DWORD`, `CRITICAL_SECTION` e `CreateFileA`.
+Não serão gerados: WebSocket, gRPC, Windows Service, Linux daemon, UI, instalador, API de comando hexadecimal bruto, armazenamento de PAN/PIN, logs de dados sensíveis ou tradução literal de `HANDLE`, `DWORD`, `CRITICAL_SECTION` e `CreateFileA`.
 
 #### Matriz de especificação dos arquivos fornecidos
 
@@ -422,16 +422,16 @@ Todos os métodos da fachada deverão retornar erros Go estruturados, preservand
 
 #### Fila de comandos
 
-A fila de comandos é definida integralmente em RF-009 (`Command`, `Enqueue`, `Submit`, `Size`, `Clear`, `Stop`). Esta seção apenas reforça propriedades adicionais exigidas para a fila operar sem HTTP ou WebSocket:
+A fila de comandos é definida integralmente em RF-009 (`Command`, `Enqueue`, `Submit`, `Size`, `Clear`, `Stop`). Esta seção reforça que a fila permanece independente do adaptador HTTP:
 
-- nenhuma operação da fila depende de conexão de rede, callback de rede ou sessão WebSocket;
+- nenhuma operação da fila depende de conexão HTTP, callback de rede ou tipos do servidor;
 - `IsEmpty` é exposto como conveniência thread-safe equivalente a `Size() == 0`;
 - `Clear` e `Stop` seguem exatamente o comportamento definido em RF-009, sem exceção adicional;
 - resultados e callbacks internos não poderão capturar mutexes durante I/O.
 
 #### Gerenciamento de sessão
 
-A implementação Go deverá gerar `SessionManager` para posse lógica do pinpad, sem vínculo com conexão WebSocket:
+A implementação Go deverá manter `SessionManager` para posse lógica do pinpad, sem usar conexão HTTP ou header como identidade:
 
 - `SessionID` será um identificador textual opaco;
 - `Claim` adquire a posse quando não há owner ou quando a sessão anterior expirou;
@@ -453,17 +453,13 @@ A implementação Go deverá gerar `SessionManager` para posse lógica do pinpad
 | `claim`, `renew`, `release`, `forceRelease` | gerenciamento de posse e expiração |
 | `isOwner`, `hasOwner`, `getCurrentOwner`, `isSessionExpired` | consultas thread-safe com relógio injetável |
 
-### RF-015 — Exclusão explícita da bridge HTTP
+### RF-015 — Adaptador RESTful
 
-O arquivo funcional equivalente a `bridge_server.cpp` não será convertido para Go nesta Change. Não serão gerados:
+O executável `cmd/libpinpadabecsgo-api` deverá iniciar um servidor HTTP usando `net/http`, sem menu interativo. O listener padrão será `127.0.0.1:8080`, configurável por ambiente. A API será versionada em `/api/v1`, usará `application/json`, limitará o corpo da requisição e configurará timeouts de leitura, escrita e cabeçalhos.
 
-- `RunServer`, `HandleClient`, `HandleRequest` ou listener TCP;
-- HTTP, JSON de transporte, CORS, endpoints, WebSocket, Winsock ou `ws2_32`;
-- handlers `handleOpen`, `handleClose`, `handleStatus`, `handleReset`, `handleGetInfo`, `handleDSP`, `handleDEX`, `handleMNU`, `handleGCX`, `handleGKY`, `handleRST`, `handleGPN` ou similares;
-- estado global de pinpad, sessão ou fila para atender múltiplos clientes;
-- conversão `hexToAscii`, `BuildHttpResponse`, `successResponse`, `errorResponse` e decodificação Base64 como camada HTTP.
+Os handlers não manterão estado serial próprio e não acessarão a porta diretamente. Uma instância de `PinpadService` será injetada no router e sua fila interna continuará serializando o acesso ao dispositivo. Não haverá endpoint de comando hexadecimal bruto.
 
-As funcionalidades de pinpad, fila e sessão serão disponibilizadas somente como componentes Go reutilizáveis e testáveis, sem servidor embutido.
+Cada endpoint receberá um Input DTO e devolverá um Output DTO específico. Erros usarão `ErrorBody` com `code`, `module`, `message`, `details` redigido e `correlationId`. JSON inválido ou campos desconhecidos retornarão `400`; recurso/rota inexistente, `404`; conflito de estado, `409`; timeout do pinpad, `504`; indisponibilidade do pinpad, `503`; status ABECS rejeitado, `422`; falha inesperada, `500`.
 
 ### RF-015.1 — Matriz obrigatória de SPECs por comando
 
@@ -579,7 +575,7 @@ no pinpad, sem fechar a porta física.
 - [ ] **CA-016c:** `LoadCompleteEMVTable` reconhece `StatusTableVersionDifferent` como resultado válido de TLI e interrompe corretamente em falha de TLR/TLE.
 - [ ] **CA-017:** concorrência, cancelamento, shutdown e proteção de dados sensíveis são testados na fachada.
 - [ ] **CA-018:** `Enqueue` nunca bloqueia o produtor e retorna `ErrQueueFull` na capacidade máxima; `Submit` bloqueia até resultado ou cancelamento de contexto; `Clear` e `Stop` cancelam comandos pendentes sem executar após o encerramento; `SessionManager` cobre posse, conflito, renovação, liberação e expiração de 300 segundos com relógio injectável.
-- [ ] **CA-019:** nenhum artefato de bridge HTTP, WebSocket, listener TCP ou estado global de servidor é gerado.
+- [ ] **CA-019:** a API REST não expõe WebSocket, comando hexadecimal bruto, estado serial global mutável fora do `PinpadService` nem dados sensíveis em respostas ou logs.
 - [ ] **CA-020:** carregamento usa `COM7` somente quando `PORTA_PINPAD` estiver ausente; valor não vazio definido no ambiente do processo tem precedência. `start_aplication.bat` preserva essa variável quando já existente, executa como usuário comum, não persiste configuração, compila o binário em diretório do módulo e informa claramente bloqueios de política de grupo.
 - [ ] **CA-021:** todo pacote Go entregue possui comentário de pacote, todos os símbolos exportados possuem comentários iniciados pelo identificador e os fluxos internos complexos de protocolo, segurança, concorrência e cancelamento estão documentados conforme RF-017.
 - [ ] **CA-022:** em pinpad físico, um timeout real seguido de três tentativas
@@ -608,3 +604,73 @@ Builders, parsers, transporte, comunicação segura, limites e testes seguem
 `spec-conformidade-abecs-v212.md`, que prevalece sobre texto anterior
 incompatível. RST fica excluído do catálogo e da fachada por não existir no
 manual adotado.
+
+## Serviço RESTful integrado à Change
+
+A aplicação disponibilizará um executável HTTP sem menu interativo. Os recursos serão expostos sob `/api/v1`; cada requisição receberá e devolverá DTO próprio em JSON. O router mapeará os recursos para a fachada ABECS, manterá a fila serial existente e não aceitará mensagens WebSocket.
+
+Critérios adicionais: CA-REST-001 o servidor inicia em `127.0.0.1:8080` por padrão; CA-REST-002 rotas válidas usam DTOs específicos; CA-REST-003 respostas usam status HTTP e JSON definidos; CA-REST-004 erros são redigidos e incluem correlação; CA-REST-005 testes com `httptest` cobrem conexão, display, JSON inválido, rota inexistente e timeout; CA-REST-006 o executável servidor não inicia menu; CA-REST-007 métodos diferentes dos permitidos retornam `405` com `Allow`.
+
+## Mapeamento obrigatório de DTOs REST
+
+Cada comando possui DTOs próprios no pacote `internal/api/dto`, com campos tipados e tags JSON. Operações sem corpo usam struct vazia no handler para manter o contrato interno uniforme.
+
+| Comando | Input | Output |
+|---|---|---|
+| CAN | CanInputDTO | CanOutputDTO |
+| CLO | CloInputDTO | CloOutputDTO |
+| CLX | ClxInputDTO (`message`, `mediaName`) | ClxOutputDTO |
+| DEX | DexInputDTO (`data`) | DexOutputDTO |
+| DMF | DmfInputDTO (`names`) | DmfOutputDTO |
+| DSI | DsiInputDTO (`name`) | DsiOutputDTO |
+| DSP | DspInputDTO (`message`) | DspOutputDTO |
+| FCX | FcxInputDTO (`options`, `authorization`, `emvData`, `tagList`, `timeout`) | FcxOutputDTO |
+| GCX | GcxInputDTO (`amount`, `date`, `time`, `options`) | GcxOutputDTO |
+| GIX | GixInputDTO | GixOutputDTO |
+| GKY | GkyInputDTO (`timeoutSeconds`) | GkyOutputDTO |
+| GOX | GoxInputDTO (`acquirerReference`, `pinMethod`, `keyIndex`, `amount`, `workingKey`) | GoxOutputDTO |
+| GPN | GpnInputDTO (`method`, `keyIndex`, `workingKey`, `pan`, `message`) | GpnOutputDTO |
+| GTK | GtkInputDTO (`tracks`, `dataMethod`, `keyIndex`) | GtkOutputDTO |
+| LMF | LmfInputDTO | LmfOutputDTO (`names`) |
+| MLE | MleInputDTO | MleOutputDTO |
+| MLI | MliInputDTO (`name`, `size`, `crc`, `format`) | MliOutputDTO |
+| MLR | MlrInputDTO (`data`) | MlrOutputDTO |
+| MNU | MnuInputDTO (`items`) | MnuOutputDTO |
+| OPN | OpnInputDTO (`secure`) | OpnOutputDTO |
+| QRCODE | QrcodeInputDTO (`name`, `text`, `size`) | QrcodeOutputDTO |
+| RST | RstInputDTO | RstOutputDTO |
+| TLE | TleInputDTO (`version`) | TleOutputDTO |
+| TLI | TliInputDTO (`acquirer`, `version`) | TliOutputDTO |
+| TLR | TlrInputDTO (`records`) | TlrOutputDTO |
+
+Respostas de sucesso serializam diretamente o Output DTO do endpoint. Falhas usam `ErrorBody` com `code`, `module`, `message`, `details` redigido e `correlationId`.
+
+### Rotas REST por comando
+
+| Comando | Método e rota |
+|---|---|
+| OPN | `POST /api/v1/connections` |
+| CLO | `DELETE /api/v1/connections/current` |
+| CAN | `POST /api/v1/connections/current/cancellations` |
+| RST | `POST /api/v1/connections/current/resets` (alias de CAN/EOT; não envia comando RST) |
+| GIX | `GET /api/v1/pinpad` |
+| DSP | `PUT /api/v1/display/message` |
+| DEX | `POST /api/v1/display/exchanges` |
+| MNU | `POST /api/v1/display/menus` |
+| CLX | `POST /api/v1/display/clear` |
+| DSI | `POST /api/v1/display/images` |
+| QRCODE | `POST /api/v1/media/qrcodes` |
+| LMF | `GET /api/v1/media` |
+| DMF | `DELETE /api/v1/media` |
+| MLI | `POST /api/v1/media-loads` |
+| MLR | `POST /api/v1/media-loads/current/blocks` |
+| MLE | `POST /api/v1/media-loads/current/commit` |
+| TLI | `POST /api/v1/table-loads` |
+| TLR | `POST /api/v1/table-loads/current/records` |
+| TLE | `POST /api/v1/table-loads/current/commit` |
+| GCX | `POST /api/v1/card-captures` |
+| GTK | `POST /api/v1/card-tracks` |
+| GOX | `POST /api/v1/emv/continuations` |
+| FCX | `POST /api/v1/emv/finalizations` |
+| GKY | `POST /api/v1/key-captures` |
+| GPN | `POST /api/v1/pin-captures` |

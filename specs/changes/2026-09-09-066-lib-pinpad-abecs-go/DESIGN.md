@@ -4,13 +4,13 @@ Autor: Rômulo Penha
 
 ## Finalidade da Change
 
-Esta Change integra a comunicação com pinpad ABECS v2.12 em uma biblioteca local, headless e sem rede, destinada a ser consumida por outro processo Go. A biblioteca conversa diretamente com um pinpad ABECS físico por porta serial; não existe bridge HTTP, WebSocket, UI ou servidor dentro deste módulo.
+Esta Change integra a comunicação com pinpad ABECS v2.12 em uma biblioteca headless e em uma API RESTful local. A biblioteca conversa com o pinpad pela porta serial e permanece independente de HTTP; o adaptador REST converte DTOs JSON em chamadas da fachada.
 
 O manual ABECS v2.12 fornecido para a Change é a fonte normativa do protocolo. A documentação e o comportamento validado no pinpad são a base de referência, não devem ser copiados nem traduzidos literalmente. Cada comando deve ser rastreado para sua própria SPEC, implementação, teste e evidência de hardware.
 
 ## Contexto
 
-A Change integra a comunicação com pinpad ABECS v2.12 em uma biblioteca Go headless, reutilizável e independente de HTTP, WebSocket, UI e frameworks de desktop.
+A Change integra a comunicação com pinpad ABECS v2.12 em uma biblioteca Go headless, reutilizável e independente de frameworks HTTP. A camada `internal/api` concentra router, handlers, DTOs, validação e mapeamento de erros.
 
 ## Referências
 
@@ -40,7 +40,7 @@ A Change integra a comunicação com pinpad ABECS v2.12 em uma biblioteca Go hea
    diretório de trabalho e do diretório do executável. Se a raiz não puder ser
    determinada, o CLI falhará antes do menu e solicitará um
    `PINPAD_LOG_FILE` explícito.
-10. Comandos avançados terão builders, parsers e fluxos seriais definidos na RF-012, sem acoplar o núcleo a bridges HTTP, WebSocket ou UI.
+10. Comandos avançados terão builders, parsers e fluxos seriais definidos na RF-012, sem acoplar o núcleo ao adaptador REST ou à UI.
 11. O catálogo de comandos será documentado uma SPEC por comando. Uma implementação parcial deverá declarar explicitamente o subconjunto suportado e não poderá simular campos de resposta que pertençam a outro comando.
 12. A validação automatizada de componentes puros não substitui a validação de transporte e comportamento com pinpad físico real.
 13. A comunicação segura ABECS será isolada do framing em claro e seguirá `spec-protocolo-seguro.md`: OPN negocia `KSEC` temporária pelo perfil RSA de 2048 bits comprovado no legado; pacotes protegidos seguem o formato normativo AES-CBC; CLO encerra e limpa a sessão. CLX é visual e não fecha a porta, mas também encerra a sessão segura no pinpad, conforme manual ABECS v2.12, seção 6.4.5.
@@ -189,3 +189,11 @@ MLE.
 assinatura reconhecida, preencherá `SPE_MFINFO.B1` com `00h` (RUF), preservando
 nome, tamanho, CRC e os três bytes RUF finais. Isso mantém o carregamento opaco
 ao formato; a validação de suporte pertence ao firmware no comando DSI.
+
+## Aditivo RESTful
+
+A Change passa a incluir uma API HTTP/JSON para consumo das fachadas ABECS. O menu CLI permanece para diagnóstico local; `cmd/libpinpadabecsgo-api` não o inicia. A implementação será organizada em `internal/api/{dto,handler,router}`. O servidor usa `net/http`, escuta `127.0.0.1:8080` por padrão, aplica limites de corpo e timeouts e encerra de forma controlada.
+
+## DTO REST
+
+O pacote `internal/api/dto` contém uma dupla Input/Output para cada `spec-command-xxx.md`. Os DTOs são contratos HTTP; conversões para modelos de domínio ocorrem nos handlers, mantendo domínio e aplicação independentes do servidor.
