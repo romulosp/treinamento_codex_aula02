@@ -76,3 +76,46 @@ bloqueante possui prazo de 10 segundos. CRC/framing inválido gera NAK e nova
 espera, até três tentativas. Antes da comunicação e ao cancelar comando
 bloqueante, o host envia CAN isolado, aguarda EOT por 2 segundos, ignora outros
 bytes e repete até três vezes.
+
+## Recuperação depois de timeout ou resposta incompatível — 2026-09-14
+
+Os comandos multimídia ABECS são não bloqueantes e continuam usando a espera
+normativa máxima de 10 segundos. Se a espera por ACK esgotar as três tentativas,
+se a resposta final expirar ou se o comando da resposta não corresponder ao
+comando enviado, o serviço deverá enviar CAN e aguardar EOT pelo procedimento
+normativo. Bytes pendentes anteriores ao EOT são ignorados durante o handshake.
+Depois de EOT, a próxima operação pode prosseguir normalmente.
+
+O mesmo procedimento é aplicado quando o limite de três frames de resposta
+corrompidos for atingido após os NAKs normativos. Um NAK recebido para o comando
+continua sendo retransmitido conforme a camada de enlace; ao esgotar as
+tentativas sem ACK, o serviço também tenta recuperar o diálogo por CAN/EOT.
+
+Se as três tentativas de CAN não obtiverem EOT, o serviço marca a conexão como
+fora de sincronia e rejeita comandos comuns enquanto executa uma única
+reconexão serial controlada: fechar a porta física, abri-la novamente, executar
+o CAN/EOT inicial e concluir OPN. `Reset` aplica a mesma escalada quando suas
+tentativas de CAN/EOT falham. Somente o sucesso integral da nova abertura libera
+a fila; falha de fechamento, abertura, CAN/EOT ou OPN mantém um erro explícito e
+um estado que não aceita comandos comuns.
+
+A reconexão não repete o comando interrompido. Em especial, MLE pode ter sido
+processado pelo firmware mesmo sem resposta dentro de 10 segundos; seu resultado
+permanece indeterminado e deve ser consultado depois da recuperação por uma nova
+operação explícita. O erro da operação original é preservado e qualquer falha de
+recuperação é anexada a ele.
+
+### Critérios adicionais
+
+- [ ] Timeout da resposta não bloqueante faz CAN/EOT antes que o worker aceite
+  o próximo comando.
+- [ ] ACK ausente ou resposta cujo `RSP_ID` não corresponde ao comando causa
+  recuperação; uma resposta atrasada nunca é aceita como resposta atual.
+- [ ] Falha de CAN/EOT ativa a proteção de conexão fora de sincronia; `Reset`
+  escala para uma reconexão controlada; somente CAN/EOT inicial e OPN válidos
+  liberam a operação normal.
+- [ ] A reconexão ocorre no máximo uma vez por falha, não reenvia o comando de
+  resultado indeterminado e não permite que comandos já enfileirados atravessem
+  o estado fora de sincronia.
+- [ ] Se a reconexão falhar, o erro informa a etapa malsucedida e a instância
+  continua recusando comandos comuns até nova abertura explícita bem-sucedida.

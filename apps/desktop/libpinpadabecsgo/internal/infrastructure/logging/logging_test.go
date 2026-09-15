@@ -251,6 +251,7 @@ func TestTracerClassifiesEveryTypedCommandAndKeepsControlBytesVisible(t *testing
 		{command.CommandCLX, false}, {command.CommandGIX, false}, {command.CommandDSP, false},
 		{command.CommandDEX, false}, {command.CommandMNU, false}, {command.CommandDSI, false},
 		{command.CommandMLI, false}, {command.CommandMLR, true}, {command.CommandMLE, false},
+		{command.CommandLMF, false}, {command.CommandDMF, false},
 		{command.CommandTLI, false}, {command.CommandTLR, true}, {command.CommandTLE, false},
 		{command.CommandGKY, false}, {command.CommandGCX, true}, {command.CommandGTK, true},
 		{command.CommandGOX, true}, {command.CommandFCX, true}, {command.CommandGPN, true},

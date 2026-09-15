@@ -124,3 +124,66 @@ Autor: Rômulo Penha
 Reproduzir digita??o lenta com rel?gio virtual; renovar o contexto somente no
 CLI depois das entradas. Exercitar fake serial com falhas em cada etapa,
 particionamento 995 e vetores publicados. Executar su?te, vet e build Windows.
+
+## Aditivo de multimídia LMF/DMF e ressincronização — 2026-09-14
+
+### Impactos
+
+- Domínio de comandos: incluir builders literais `LMF` e `DMF` com um ou mais
+  nomes A8 em `SPE_MFNAME`.
+- Modelo/parser: preservar ocorrências repetidas de `RSP_DATID 0x805E` e
+  normalizar os nomes LMF para maiúsculas, mantendo cópias defensivas.
+- Serviço: adicionar listagem/exclusão; após timeout, falha de ACK ou resposta
+  de outro comando, enviar CAN/EOT antes de aceitar outro comando; proteger a
+  instância se a recuperação falhar, liberando-a por Reset ou reabertura.
+- CLI: expor LMF e DMF em opções novas; aceitar vários nomes DMF separados por
+  `;` e imprimir lista vazia sem tratá-la como falha.
+- Logging: acrescentar LMF/DMF à matriz tipada sem registrar mídia binária.
+
+### Estratégia e testes
+
+- Builders byte a byte com os vetores publicados nas páginas 100–101 do manual.
+- Parser com zero/um/vários `PP_MFNAME`, nomes minúsculos, formato inválido e
+  cópia defensiva.
+- Fake serial para timeout e resposta com RSP_ID divergente, CAN/EOT, falha de
+  recuperação, rejeição de comandos fora de sincronia e recuperação por Reset.
+- Testes do serviço para LMF vazio/listado e DMF plural, desconhecidos e status.
+- Testes de menu para opções novas, separador `;`, resultado vazio e erro.
+- Preservar o limite ABECS de 10 segundos; não estender timeout de comandos
+  multimídia não bloqueantes.
+- Executar `gofmt`, `go test ./...`, `go test ./... -coverprofile=coverage.out`,
+  `go tool cover -func=coverage.out`, `go test -race ./...`, `go vet ./...`,
+  `go build ./...` e auditoria `security-audit`; registrar saídas e limitações.
+
+### Risco e limite
+
+Os testes automatizados não demonstram que o firmware apaga mídias, lista a
+capacidade real, responde no prazo ou implementa a centralização/escalonamento
+de imagens. A validação física permanece pendente e não será inferida dos fakes.
+
+## Aditivo MLI com tipo desconhecido — 2026-09-14
+
+`BuildMLICommand` manterá a detecção de PNG/JPG/GIF para preencher `B1`, mas
+usará `00h` (RUF) quando a assinatura não for reconhecida. O builder continuará
+validando nome, arquivo não vazio, tamanho e CRC. Testes compararão o pacote MLI
+byte a byte e executarão MLR/MLE com tipo RUF; a decisão de suporte cabe ao
+firmware durante DSI.
+
+## Aditivo de reconexão e prova visual — 2026-09-14
+
+- Alterar a recuperação pós-timeout e `Reset` para escalar, uma única vez, de
+  três CAN sem EOT para fechamento e nova abertura pelo mesmo ciclo de vida de
+  `Open`, incluindo CAN/EOT inicial e OPN.
+- Preservar o erro e o resultado indeterminado do comando original; não reenviar
+  MLE nem qualquer outro comando automaticamente.
+- Manter a fila bloqueada durante toda a reconexão e revalidar o estado dentro
+  do worker antes de executar itens que já estavam aguardando.
+- Distinguir falha de fechamento, reabertura, CAN/EOT inicial e OPN, garantindo
+  que uma recuperação parcial não publique estado `OPEN`.
+- Ajustar o CLI para informar que `DSI000` representa comando aceito e solicitar
+  confirmação visual durante a validação local, sem transformar essa interação
+  em requisito da biblioteca headless.
+- Testar com adaptador determinístico: reconexão bem-sucedida, falha em cada
+  etapa, limite de uma reconexão, ausência de reenvio e fila concorrente.
+- Repetir em COM7 o timeout real de MLE e registrar a recuperação automática;
+  validar DSI com status e confirmação visual separados.

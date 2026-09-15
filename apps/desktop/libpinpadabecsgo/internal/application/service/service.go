@@ -55,7 +55,10 @@ type PinpadService interface {
 	FinalizeEMV(context.Context, command.FCXRequest) (*model.FCXResponse, error)
 	GetState() model.PinpadState
 	SendMultimediaFile(context.Context, string, []byte, ProgressFunc) error
+	LoadQRCodeMultimedia(context.Context, string, string, int, ProgressFunc) error
 	DisplayImage(context.Context, string) (*model.Response, error)
+	ListMultimediaFiles(context.Context) ([]string, error)
+	DeleteMultimediaFiles(context.Context, []string) (*model.Response, error)
 	LoadCompleteEMVTable(context.Context, string, string, []string, ProgressFunc) error
 	PurchaseGCX(context.Context, string, string, string, bool, bool) (*model.GCXResponse, error)
 	DisplayQRCode(context.Context, string, int, int, int, int) (QRCodeResult, error)
@@ -93,24 +96,25 @@ type TransactionGCXRequest struct {
 
 // Service serializa operações de hardware e mantém seu ciclo de vida.
 type Service struct {
-	mu              sync.RWMutex
-	config          model.PinpadConfig
-	port            SerialPort
-	state           model.PinpadState
-	queue           *worker.Queue
-	stream          *byteStream
-	stopping        bool
-	opening         bool
-	closing         bool
-	inFlight        int
-	logger          *slog.Logger
-	tracer          *logging.Tracer
-	qrCodeGenerator QRCodeGenerator
-	tracksEligible  bool
-	goxEligible     bool
-	fcxEligible     bool
-	secureSession   *protocol.SecureSession
-	traceSensitive  map[command.Type]bool
+	mu                     sync.RWMutex
+	config                 model.PinpadConfig
+	port                   SerialPort
+	state                  model.PinpadState
+	queue                  *worker.Queue
+	stream                 *byteStream
+	stopping               bool
+	protocolDesynchronized bool
+	opening                bool
+	closing                bool
+	inFlight               int
+	logger                 *slog.Logger
+	tracer                 *logging.Tracer
+	qrCodeGenerator        QRCodeGenerator
+	tracksEligible         bool
+	goxEligible            bool
+	fcxEligible            bool
+	secureSession          *protocol.SecureSession
+	traceSensitive         map[command.Type]bool
 }
 
 // SetQRCodeGenerator instala o gerador usado por DisplayQRCode.
@@ -146,6 +150,33 @@ func (s *Service) DisplayQRCode(ctx context.Context, data string, size, margin, 
 		result.PositionWarning = "xPos and yPos are not supported by ABECS"
 	}
 	return result, nil
+}
+
+// LoadQRCodeMultimedia consulta o display, escolhe uma dimensão compatível,
+// gera PNG e executa MLI/MLR/MLE sem solicitar caminho de arquivo ao operador.
+func (s *Service) LoadQRCodeMultimedia(ctx context.Context, name, data string, requestedSize int, progress ProgressFunc) error {
+	capabilities, err := s.GetDisplayCapabilities(ctx)
+	if err != nil {
+		return fmt.Errorf("consultar capacidades do display: %w", err)
+	}
+	if !capabilities.HasGraphic || !capabilities.SupportsPNG {
+		return domainerror.ErrUnsupportedMedia
+	}
+	size := requestedSize
+	if size == 0 {
+		size = capabilities.GraphicWidth
+		if capabilities.GraphicHeight > 0 && capabilities.GraphicHeight < size {
+			size = capabilities.GraphicHeight
+		}
+	}
+	if size < 50 || size > 320 {
+		return fmt.Errorf("resolucao do display incompatível com QR Code: %dx%d", capabilities.GraphicWidth, capabilities.GraphicHeight)
+	}
+	result, err := s.DisplayQRCode(ctx, data, size, 0, 0, 0)
+	if err != nil {
+		return err
+	}
+	return s.SendMultimediaFile(ctx, name, result.PNG, progress)
 }
 
 // TransactionGCX reserva a transação completa, ainda não implementada nesta Change.
@@ -228,6 +259,10 @@ func (s *Service) Open(ctx context.Context) error {
 	}
 	s.mu.Lock()
 	if s.state != model.StateClosed {
+		if s.protocolDesynchronized {
+			s.mu.Unlock()
+			return domainerror.ErrPinpadDesynchronized
+		}
 		s.mu.Unlock()
 		return nil
 	}
@@ -250,7 +285,7 @@ func (s *Service) Open(ctx context.Context) error {
 		if err := s.cancelHandshake(operationContext); err != nil {
 			return nil, fmt.Errorf("initial CAN: %w", err)
 		}
-		return s.exchangePayload(operationContext, command.CommandOPN, []byte("OPN"))
+		return s.exchangePayloadWithoutRecovery(operationContext, command.CommandOPN, []byte("OPN"), false)
 	}})
 	if err != nil {
 		closeErr := s.port.Close()
@@ -267,6 +302,7 @@ func (s *Service) Open(ctx context.Context) error {
 	s.mu.Lock()
 	s.opening = false
 	s.state = model.StateOpen
+	s.protocolDesynchronized = false
 	s.mu.Unlock()
 	return nil
 }
@@ -304,7 +340,7 @@ func (s *Service) OpenSecure(ctx context.Context, privateKey *rsa.PrivateKey) er
 		if err := s.cancelHandshake(operationContext); err != nil {
 			return nil, fmt.Errorf("initial CAN: %w", err)
 		}
-		return s.exchangePayloadWithTracePolicy(operationContext, command.CommandOPN, payload, true)
+		return s.exchangePayloadWithoutRecovery(operationContext, command.CommandOPN, payload, true)
 	}})
 	if err != nil {
 		_ = s.port.Close()
@@ -350,13 +386,17 @@ func (s *Service) Close(ctx context.Context) error {
 		s.mu.Unlock()
 		return domainerror.ErrPinpadBusy
 	}
+	desynchronized := s.protocolDesynchronized
 	s.closing = true
 	s.state = model.StateBusy
 	s.mu.Unlock()
 
-	_, protocolErr := s.submit(ctx, command.Command{Type: command.CommandCLO, Execute: func(operationContext context.Context) (*model.Response, error) {
-		return s.exchangePayload(operationContext, command.CommandCLO, command.BuildPacketPayload(command.CommandCLO, fmt.Sprintf("%-32s", "")))
-	}})
+	var protocolErr error
+	if !desynchronized {
+		_, protocolErr = s.submit(ctx, command.Command{Type: command.CommandCLO, Execute: func(operationContext context.Context) (*model.Response, error) {
+			return s.exchangePayload(operationContext, command.CommandCLO, command.BuildPacketPayload(command.CommandCLO, fmt.Sprintf("%-32s", "")))
+		}})
+	}
 	s.mu.Lock()
 	closeErr := error(nil)
 	if s.port != nil {
@@ -364,6 +404,7 @@ func (s *Service) Close(ctx context.Context) error {
 	}
 	s.state = model.StateClosed
 	s.closing = false
+	s.protocolDesynchronized = false
 	s.stream = newByteStream(s.port)
 	if s.secureSession != nil {
 		s.secureSession.Close()
@@ -400,6 +441,7 @@ func (s *Service) Shutdown() {
 	s.state = model.StateClosed
 	s.opening = false
 	s.closing = false
+	s.protocolDesynchronized = false
 	s.stream = newByteStream(s.port)
 	if s.secureSession != nil {
 		s.secureSession.Close()
@@ -412,14 +454,23 @@ func (s *Service) Shutdown() {
 func (s *Service) GetState() model.PinpadState {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+	if s.protocolDesynchronized {
+		return model.StateDesynchronized
+	}
 	return s.state
 }
 
-// Reset cancela a operação corrente por meio do handshake CAN/EOT.
+// Reset cancela a operação corrente por CAN/EOT e reconecta a porta quando o
+// firmware não encerra o diálogo depois das três tentativas normativas.
 func (s *Service) Reset(ctx context.Context) error {
 	_, err := s.SendCommand(ctx, command.Command{Type: command.CommandCAN, Execute: func(operationContext context.Context) (*model.Response, error) {
-		if err := s.cancelHandshake(operationContext); err != nil {
-			return nil, err
+		if handshakeErr := s.cancelHandshake(operationContext); handshakeErr != nil {
+			if reconnectErr := s.reconnectProtocol(operationContext); reconnectErr != nil {
+				return nil, errors.Join(
+					fmt.Errorf("reset CAN/EOT: %w", handshakeErr),
+					reconnectErr,
+				)
+			}
 		}
 		return &model.Response{AckType: "EOT"}, nil
 	}})
@@ -469,17 +520,9 @@ func (s *Service) sendPayloadWithTracePolicy(ctx context.Context, kind command.T
 // sendBlockingPayload envia um comando blocante preservando o prazo definido
 // pelo consumidor, sem reduzi-lo ao timeout genérico da configuração.
 func (s *Service) sendBlockingPayload(ctx context.Context, kind command.Type, payload []byte) (*model.Response, error) {
-	response, err := s.sendCommand(ctx, command.Command{Type: kind, Execute: func(op context.Context) (*model.Response, error) {
+	return s.sendCommand(ctx, command.Command{Type: kind, Execute: func(op context.Context) (*model.Response, error) {
 		return s.exchangePayloadWithTracePolicy(op, kind, payload, false)
 	}}, false)
-	if err != nil && ctx != nil && ctx.Err() != nil {
-		cleanupContext, cancel := context.WithTimeout(context.Background(), protocol.AcknowledgementTimeout*protocol.MaxAttempts)
-		defer cancel()
-		if cleanupErr := s.cancelHandshake(cleanupContext); cleanupErr != nil {
-			return response, errors.Join(err, fmt.Errorf("cancel handshake: %w", cleanupErr))
-		}
-	}
-	return response, err
 }
 
 func (s *Service) exchangePayload(ctx context.Context, kind command.Type, payload []byte) (*model.Response, error) {
@@ -487,6 +530,14 @@ func (s *Service) exchangePayload(ctx context.Context, kind command.Type, payloa
 }
 
 func (s *Service) exchangePayloadWithTracePolicy(ctx context.Context, kind command.Type, payload []byte, redact bool) (*model.Response, error) {
+	return s.exchangePayloadWithRecovery(ctx, kind, payload, redact, true)
+}
+
+func (s *Service) exchangePayloadWithoutRecovery(ctx context.Context, kind command.Type, payload []byte, redact bool) (*model.Response, error) {
+	return s.exchangePayloadWithRecovery(ctx, kind, payload, redact, false)
+}
+
+func (s *Service) exchangePayloadWithRecovery(ctx context.Context, kind command.Type, payload []byte, redact, recoverOnFailure bool) (*model.Response, error) {
 	s.mu.RLock()
 	session := s.secureSession
 	s.mu.RUnlock()
@@ -499,15 +550,23 @@ func (s *Service) exchangePayloadWithTracePolicy(ctx context.Context, kind comma
 		if err != nil {
 			return nil, err
 		}
-		response, err := s.exchangeCommandWithTracePolicy(ctx, kind, frame, true)
-		return validateResponseCommand(kind, response, err)
+		response, err := s.exchangeCommandWithRecovery(ctx, kind, frame, true, recoverOnFailure)
+		return s.validateAndRecoverResponse(ctx, kind, response, err, recoverOnFailure)
 	}
 	frame, err := protocol.BuildPacketChecked(payload)
 	if err != nil {
 		return nil, err
 	}
-	response, err := s.exchangeCommandWithTracePolicy(ctx, kind, frame, redact)
-	return validateResponseCommand(kind, response, err)
+	response, err := s.exchangeCommandWithRecovery(ctx, kind, frame, redact, recoverOnFailure)
+	return s.validateAndRecoverResponse(ctx, kind, response, err, recoverOnFailure)
+}
+
+func (s *Service) validateAndRecoverResponse(ctx context.Context, kind command.Type, response *model.Response, err error, recoverOnFailure bool) (*model.Response, error) {
+	validated, validationErr := validateResponseCommand(kind, response, err)
+	if recoverOnFailure && (errors.Is(validationErr, domainerror.ErrInvalidResponse) || errors.Is(validationErr, domainerror.ErrChecksumInvalid)) {
+		return validated, s.recoverProtocol(ctx, validationErr)
+	}
+	return validated, validationErr
 }
 
 func validateResponseCommand(kind command.Type, response *model.Response, err error) (*model.Response, error) {
@@ -752,6 +811,28 @@ func (s *Service) DisplayDSI(ctx context.Context, name string) (*model.Response,
 	return s.DisplayImage(ctx, name)
 }
 
+// ListMultimediaFiles devolve nomes das mídias carregadas em maiúsculas.
+func (s *Service) ListMultimediaFiles(ctx context.Context) ([]string, error) {
+	response, err := s.sendPayload(ctx, command.CommandLMF, command.BuildLMFCommand())
+	if err != nil {
+		return nil, err
+	}
+	names, err := parser.MultimediaFileNames(response)
+	if errors.Is(err, domainerror.ErrInvalidResponse) {
+		return nil, s.recoverProtocol(ctx, err)
+	}
+	return names, err
+}
+
+// DeleteMultimediaFiles solicita a exclusão de uma ou mais mídias pelo nome.
+func (s *Service) DeleteMultimediaFiles(ctx context.Context, names []string) (*model.Response, error) {
+	payload, err := command.BuildDMFCommand(names)
+	if err != nil {
+		return nil, err
+	}
+	return s.sendPayload(ctx, command.CommandDMF, payload)
+}
+
 // TableLoadInitiate inicia a carga EMV para o adquirente e a versão informados.
 func (s *Service) TableLoadInitiate(ctx context.Context, acquirer, version string) (*model.Response, error) {
 	p, err := command.BuildTLICommand(acquirer, version)
@@ -889,7 +970,7 @@ func (s *Service) LoadMultimediaPath(ctx context.Context, path, name string, pro
 	if err != nil {
 		return fmt.Errorf("read multimedia file: %w", err)
 	}
-	return s.SendMultimediaFile(ctx, name, bytes.Clone(data), progress)
+	return s.SendMultimediaFile(ctx, name, data, progress)
 }
 
 // SendGPNCommandMK captura PIN com chave de trabalho MK/WK e devolve PIN block e KSN.
@@ -927,13 +1008,33 @@ func (s *Service) sendCommand(ctx context.Context, cmd command.Command, useConfi
 	startedAt := time.Now()
 	s.mu.Lock()
 	state := s.state
-	if s.stopping || state == model.StateClosed {
+	if s.stopping {
+		s.mu.Unlock()
+		return nil, domainerror.ErrPinpadClosed
+	}
+	if s.protocolDesynchronized && cmd.Type != command.CommandCAN {
+		s.mu.Unlock()
+		return nil, domainerror.ErrPinpadDesynchronized
+	}
+	if state == model.StateClosed {
 		s.mu.Unlock()
 		return nil, domainerror.ErrPinpadClosed
 	}
 	if s.opening || s.closing {
 		s.mu.Unlock()
 		return nil, domainerror.ErrPinpadBusy
+	}
+	// Revalida dentro do worker para que comandos já enfileirados não alcancem a
+	// porta serial se uma operação anterior perder a sincronização.
+	execute := cmd.Execute
+	cmd.Execute = func(operationContext context.Context) (*model.Response, error) {
+		s.mu.RLock()
+		desynchronized := s.protocolDesynchronized
+		s.mu.RUnlock()
+		if desynchronized && cmd.Type != command.CommandCAN {
+			return nil, domainerror.ErrPinpadDesynchronized
+		}
+		return execute(operationContext)
 	}
 	s.state = model.StateBusy
 	s.inFlight++
@@ -955,6 +1056,11 @@ func (s *Service) sendCommand(ctx context.Context, cmd command.Command, useConfi
 			ctx = context.Background()
 		}
 		response, err = s.queue.Submit(ctx, cmd)
+	}
+	if cmd.Type == command.CommandCAN && err == nil && response != nil && response.AckType == "EOT" {
+		s.mu.Lock()
+		s.protocolDesynchronized = false
+		s.mu.Unlock()
 	}
 	s.mu.RLock()
 	logger := s.logger
@@ -1042,7 +1148,139 @@ func (s *Service) exchangeCommand(ctx context.Context, kind command.Type, data [
 	return s.exchangeCommandWithTracePolicy(ctx, kind, data, false)
 }
 
+func (s *Service) recoverExchangeFailure(ctx context.Context, cause error, recoverOnFailure bool) error {
+	if !recoverOnFailure {
+		return cause
+	}
+	return s.recoverProtocol(ctx, cause)
+}
+
+func (s *Service) recoverProtocol(ctx context.Context, cause error) error {
+	s.mu.Lock()
+	s.protocolDesynchronized = true
+	s.mu.Unlock()
+	cleanupContext, cancel := context.WithTimeout(
+		contextWithoutCancellation(ctx),
+		protocol.AcknowledgementTimeout*protocol.MaxAttempts,
+	)
+	defer cancel()
+	if cleanupErr := s.cancelHandshake(cleanupContext); cleanupErr != nil {
+		s.mu.Lock()
+		s.protocolDesynchronized = true
+		s.mu.Unlock()
+		if reconnectErr := s.reconnectProtocol(ctx); reconnectErr != nil {
+			return errors.Join(
+				cause,
+				fmt.Errorf("recover protocol with CAN/EOT: %w", cleanupErr),
+				reconnectErr,
+			)
+		}
+		return cause
+	}
+	s.mu.Lock()
+	s.protocolDesynchronized = false
+	s.mu.Unlock()
+	return cause
+}
+
+func contextWithoutCancellation(ctx context.Context) context.Context {
+	if ctx == nil {
+		return context.Background()
+	}
+	return context.WithoutCancel(ctx)
+}
+
+func (s *Service) reconnectProtocol(parent context.Context) error {
+	s.mu.RLock()
+	timeout := s.config.Timeout
+	s.mu.RUnlock()
+	minimumTimeout := 2*protocol.AcknowledgementTimeout*protocol.MaxAttempts + protocol.ResponseTimeout
+	if timeout < minimumTimeout {
+		timeout = minimumTimeout
+	}
+	reconnectContext, cancel := context.WithTimeout(contextWithoutCancellation(parent), timeout)
+	defer cancel()
+
+	s.mu.Lock()
+	port := s.port
+	s.protocolDesynchronized = true
+	s.opening = true
+	s.state = model.StateBusy
+	s.tracksEligible = false
+	s.goxEligible = false
+	s.fcxEligible = false
+	if s.secureSession != nil {
+		s.secureSession.Close()
+		s.secureSession = nil
+	}
+	s.mu.Unlock()
+	if port == nil {
+		return s.failProtocolReconnect(domainerror.ErrPortUnavailable, false)
+	}
+
+	if err := port.Close(); err != nil {
+		return s.failProtocolReconnect(fmt.Errorf("controlled reconnect close pinpad: %w", err), false)
+	}
+	s.replaceByteStream()
+	if err := reconnectContext.Err(); err != nil {
+		return s.failProtocolReconnect(fmt.Errorf("controlled reconnect before open: %w", err), false)
+	}
+	if err := port.Open(); err != nil {
+		return s.failProtocolReconnect(fmt.Errorf("controlled reconnect open pinpad: %w", err), false)
+	}
+	s.replaceByteStream()
+	if err := s.cancelHandshake(reconnectContext); err != nil {
+		return s.failProtocolReconnect(fmt.Errorf("controlled reconnect initial CAN/EOT: %w", err), true)
+	}
+	if _, err := s.exchangePayloadWithoutRecovery(reconnectContext, command.CommandOPN, []byte("OPN"), false); err != nil {
+		return s.failProtocolReconnect(fmt.Errorf("controlled reconnect OPN: %w", err), true)
+	}
+
+	s.mu.Lock()
+	s.opening = false
+	s.protocolDesynchronized = false
+	s.state = model.StateBusy
+	s.mu.Unlock()
+	return nil
+}
+
+func (s *Service) replaceByteStream() {
+	s.mu.Lock()
+	s.stream = newByteStream(s.port)
+	s.mu.Unlock()
+}
+
+func (s *Service) failProtocolReconnect(cause error, closePort bool) error {
+	var closeErr error
+	if closePort && s.port != nil {
+		closeErr = s.port.Close()
+	}
+	portOpen := s.port != nil && s.port.IsOpen()
+	s.mu.Lock()
+	s.opening = false
+	s.protocolDesynchronized = true
+	s.stream = newByteStream(s.port)
+	if portOpen {
+		s.state = model.StateOpen
+	} else {
+		s.state = model.StateClosed
+	}
+	s.mu.Unlock()
+	if closeErr != nil {
+		return errors.Join(cause, fmt.Errorf("controlled reconnect cleanup close: %w", closeErr))
+	}
+	return cause
+}
+
+func isExchangeTimeout(err error) bool {
+	return errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) || errors.Is(err, domainerror.ErrTimeout)
+}
+
 func (s *Service) exchangeCommandWithTracePolicy(ctx context.Context, kind command.Type, data []byte, forceRedaction bool) (*model.Response, error) {
+	return s.exchangeCommandWithRecovery(ctx, kind, data, forceRedaction, true)
+}
+
+func (s *Service) exchangeCommandWithRecovery(ctx context.Context, kind command.Type, data []byte, forceRedaction, recoverOnFailure bool) (*model.Response, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -1055,6 +1293,10 @@ func (s *Service) exchangeCommandWithTracePolicy(ctx context.Context, kind comma
 	var acknowledgementErr error
 	acknowledged := false
 	for attempt := 0; attempt < protocol.MaxAttempts; attempt++ {
+		if err := ctx.Err(); err != nil {
+			acknowledgementErr = err
+			break
+		}
 		if err := s.port.Write(data); err != nil {
 			return nil, fmt.Errorf("write command: %w", err)
 		}
@@ -1073,14 +1315,14 @@ func (s *Service) exchangeCommandWithTracePolicy(ctx context.Context, kind comma
 		case protocol.PP_EOT:
 			return &model.Response{AckType: "EOT"}, nil
 		default:
-			return nil, domainerror.ErrInvalidResponse
+			return nil, s.recoverExchangeFailure(ctx, domainerror.ErrInvalidResponse, recoverOnFailure)
 		}
 		if acknowledged {
 			break
 		}
 	}
 	if !acknowledged {
-		return &model.Response{AckType: "NAK"}, acknowledgementErr
+		return &model.Response{AckType: "NAK"}, s.recoverExchangeFailure(ctx, acknowledgementErr, recoverOnFailure)
 	}
 
 	responseContext := ctx
@@ -1097,13 +1339,16 @@ func (s *Service) exchangeCommandWithTracePolicy(ctx context.Context, kind comma
 			if errors.Is(err, domainerror.ErrChecksumInvalid) || errors.Is(err, domainerror.ErrInvalidResponse) {
 				invalidFrames++
 				if invalidFrames >= protocol.MaxAttempts {
-					return nil, err
+					return nil, s.recoverExchangeFailure(ctx, err, recoverOnFailure)
 				}
 				s.setTraceCommand("", false)
 				if writeErr := s.port.Write([]byte{protocol.PP_NAK}); writeErr != nil {
 					return nil, errors.Join(err, fmt.Errorf("write response NAK: %w", writeErr))
 				}
 				continue
+			}
+			if isExchangeTimeout(err) {
+				return nil, s.recoverExchangeFailure(ctx, err, recoverOnFailure)
 			}
 			return nil, err
 		}
@@ -1122,7 +1367,7 @@ func (s *Service) exchangeCommandWithTracePolicy(ctx context.Context, kind comma
 		}
 		if bytes.HasPrefix(payload, []byte("NTM")) {
 			if _, err := parser.ParseNotification(payload); err != nil {
-				return nil, err
+				return nil, s.recoverExchangeFailure(ctx, err, recoverOnFailure)
 			}
 			continue
 		}

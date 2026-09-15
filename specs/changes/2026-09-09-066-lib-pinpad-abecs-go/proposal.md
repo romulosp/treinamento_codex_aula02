@@ -75,9 +75,46 @@ Nenhum comando poderá ser considerado convertido apenas porque seu nome existe 
 - [ ] Nenhum componente de servidor ou transporte HTTP incluído.
 - [ ] Revisão da SPEC aprovada formalmente.
 
-## Revisão de escopo solicitada
+## Aditivo multimídia de 2026-09-14
 
-Os requisitos detalhados fornecidos pelo usuário ampliam a Change além dos contratos anteriormente previstos. A nova SPEC deverá ser revisada e aprovada novamente antes da implementação desses fluxos. A autorização final para arquivamento continuará dependendo da validação manual do usuário.
+Este aditivo inclui os comandos ABECS `LMF` e `DMF` na fachada e no menu local,
+e recuperação da comunicação após timeout para impedir que respostas atrasadas
+sejam atribuídas ao comando seguinte. Os limites normativos de ACK (2 segundos,
+três tentativas) e resposta não bloqueante (10 segundos) permanecem inalterados.
+Os comandos adicionais e a recuperação só poderão ser implementados após a
+revisão formal deste aditivo.
+
+Os requisitos adicionais de LMF, DMF e recuperação foram revisados em
+`reviews/2026-09-14-spec-review.md`; o padding A8 de LMF em
+`reviews/2026-09-14-spec-review-2.md`; e a compatibilidade de tipo desconhecido
+em MLI em `reviews/2026-09-14-spec-review-3.md`. Os contratos estão
+`SPEC_APROVADA`. O encerramento e arquivamento continuam condicionados à
+validação física e aprovação formal da Change.
+
+### Correção do tipo desconhecido em MLI
+
+Em conformidade com a seção 6.6.1 do manual, o host deverá permitir o envio de
+um arquivo cujo tipo não seja reconhecido, preenchendo `SPE_MFINFO.B1` com um
+valor reservado (`RUF`, `00h`). A compatibilidade do conteúdo só é avaliada pelo
+pinpad no uso via DSI. Nome, tamanho e CRC continuam sujeitos à validação local.
+
+### Recuperação escalonada e evidência visual — revisão de 2026-09-14
+
+O teste físico mostrou que, depois de um timeout real de MLE, as três tentativas
+automáticas de CAN e as três tentativas posteriores de Reset podem terminar sem
+EOT. Fechar e abrir a porta restabeleceu o diálogo: a nova abertura recebeu EOT
+no CAN inicial e concluiu OPN com status `000`. Para evitar que o consumidor
+precise reiniciar manualmente a conexão, a recuperação deverá escalar de CAN/EOT
+para uma reconexão serial controlada quando o handshake falhar.
+
+A operação que sofreu timeout não será reenviada automaticamente, pois seu
+resultado no firmware é indeterminado. A reconexão somente restabelece o canal
+para uma consulta explícita posterior, como LMF ou DSI.
+
+Uma resposta `DSI000` comprova a aceitação do comando pelo firmware, mas não
+comprova isoladamente que os pixels esperados apareceram. A validação física de
+DSI exige também confirmação visual do operador; o CLI deverá distinguir
+"comando aceito" de "imagem visualmente confirmada" em sua orientação.
 
 Nenhum arquivo legado `.h`, `.hpp`, `.c`, `.cpp`, `.cc` ou `.cxx` fará parte desta Change. A fonte de verdade será exclusivamente a documentação da Change, especialmente `spec.md`, `DESIGN.md` e `tasks.md`. Os diretórios locais `.gocache`, `.gomodcache` e `.bin` são artefatos de execução e não deverão ser versionados.
 

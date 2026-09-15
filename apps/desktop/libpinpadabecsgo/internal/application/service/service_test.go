@@ -17,6 +17,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -24,15 +25,22 @@ import (
 
 type fakePort struct {
 	open             bool
+	openCount        int
+	closeCount       int
 	writes           [][]byte
 	reads            [][]byte
 	readErr          error
 	readErrs         []error
+	openErrs         []error
+	closeErrs        []error
 	writeErr         error
 	traceCmd         command.Type
 	traceRedact      bool
 	lastReadDeadline time.Time
 	disableAutoEOT   bool
+	autoEOTAfterOpen int
+	autoOPNAfterOpen int
+	cancelAfterRead  context.CancelFunc
 }
 
 func TestServiceTracerPropagatesTypedCommandAndRecordsRSP(t *testing.T) {
@@ -83,17 +91,48 @@ func TestServicePropagatesConsumerTraceRedactionPolicy(t *testing.T) {
 	}
 }
 
-func (p *fakePort) Open() error  { p.open = true; return nil }
-func (p *fakePort) Close() error { p.open = false; return nil }
+func (p *fakePort) Open() error {
+	p.openCount++
+	if len(p.openErrs) > 0 {
+		err := p.openErrs[0]
+		p.openErrs = p.openErrs[1:]
+		if err != nil {
+			return err
+		}
+	}
+	p.open = true
+	return nil
+}
+
+func (p *fakePort) Close() error {
+	p.closeCount++
+	if len(p.closeErrs) > 0 {
+		err := p.closeErrs[0]
+		p.closeErrs = p.closeErrs[1:]
+		if err != nil {
+			return err
+		}
+	}
+	p.open = false
+	return nil
+}
+
 func (p *fakePort) IsOpen() bool { return p.open }
 func (p *fakePort) Write(b []byte) error {
 	if p.writeErr != nil {
 		return p.writeErr
 	}
 	p.writes = append(p.writes, append([]byte(nil), b...))
-	if !p.disableAutoEOT && len(b) == 1 && b[0] == protocol.PP_CAN &&
+	autoEOT := !p.disableAutoEOT || (p.autoEOTAfterOpen > 0 && p.openCount >= p.autoEOTAfterOpen)
+	if autoEOT && len(b) == 1 && b[0] == protocol.PP_CAN &&
 		(len(p.reads) == 0 || len(p.reads[0]) != 1 || p.reads[0][0] != protocol.PP_EOT) {
 		p.reads = append([][]byte{{protocol.PP_EOT}}, p.reads...)
+	}
+	if p.autoOPNAfterOpen > 0 && p.openCount >= p.autoOPNAfterOpen {
+		payload, err := protocol.ValidatePacket(b)
+		if err == nil && string(payload) == "OPN" {
+			p.reads = append(p.reads, response("OPN000"))
+		}
 	}
 	return nil
 }
@@ -130,6 +169,11 @@ func (p *fakePort) Read(ctx context.Context) ([]byte, error) {
 	}
 	x := p.reads[0]
 	p.reads = p.reads[1:]
+	if p.cancelAfterRead != nil {
+		cancel := p.cancelAfterRead
+		p.cancelAfterRead = nil
+		cancel()
+	}
 	return x, nil
 }
 
@@ -141,6 +185,315 @@ func (p *fakePort) SetTracePolicy(kind command.Type, redact bool) {
 
 func response(payload string) []byte {
 	return append([]byte{protocol.PP_ACK}, protocol.BuildPacket([]byte(payload))...)
+}
+
+func multimediaListResponse(names ...string) []byte {
+	data := make([]byte, 0, len(names)*12)
+	for _, name := range names {
+		data = append(data, 0x80, 0x5e, 0x00, 0x08)
+		data = append(data, name...)
+	}
+	payload := append([]byte("LMF000"), []byte(fmt.Sprintf("%03d", len(data)))...)
+	payload = append(payload, data...)
+	return response(string(payload))
+}
+
+func TestMultimediaManagementListsAndDeletesFiles(t *testing.T) {
+	port := &fakePort{reads: [][]byte{
+		response("OPN000"),
+		multimediaListResponse("SIGNALS ", "PRESTO  ", "QRCODE01"),
+		multimediaListResponse(),
+		response("DMF000"),
+	}}
+	svc := New(model.DefaultConfig(), port)
+	defer svc.Shutdown()
+	if err := svc.Open(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	names, err := svc.ListMultimediaFiles(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"SIGNALS", "PRESTO", "QRCODE01"}; !reflect.DeepEqual(names, want) {
+		t.Fatalf("LMF names = %#v, want %#v", names, want)
+	}
+	if names, err = svc.ListMultimediaFiles(context.Background()); err != nil || len(names) != 0 {
+		t.Fatalf("empty LMF names = %#v, err=%v", names, err)
+	}
+	deleted, err := svc.DeleteMultimediaFiles(context.Background(), []string{"QRCODE01", "MISSING1"})
+	if err != nil || deleted.StatusCode != "000" {
+		t.Fatalf("DMF response = %#v, err=%v", deleted, err)
+	}
+}
+
+func TestTimedOutExchangeRecoversBeforeNextCommand(t *testing.T) {
+	port := &fakePort{reads: [][]byte{response("OPN000")}}
+	svc := New(model.DefaultConfig(), port)
+	defer svc.Shutdown()
+	if err := svc.Open(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	port.reads = [][]byte{{protocol.PP_ACK}}
+	port.cancelAfterRead = cancel
+	if _, err := svc.GetInfoRaw(ctx); !errors.Is(err, context.Canceled) {
+		t.Fatalf("cancelled GIX error = %v", err)
+	}
+	if svc.GetState() != model.StateOpen {
+		t.Fatalf("state after confirmed EOT recovery = %s", svc.GetState())
+	}
+	if last := port.writes[len(port.writes)-1]; !bytes.Equal(last, []byte{protocol.PP_CAN}) {
+		t.Fatalf("last write after timeout = % X, want CAN", last)
+	}
+
+	port.reads = [][]byte{response("GIX000")}
+	if _, err := svc.GetInfoRaw(context.Background()); err != nil {
+		t.Fatalf("GIX after EOT recovery = %v", err)
+	}
+}
+
+func TestFailedTimeoutReconnectBlocksCommandsUntilExplicitOpen(t *testing.T) {
+	port := &fakePort{reads: [][]byte{response("OPN000")}}
+	svc := New(model.DefaultConfig(), port)
+	defer svc.Shutdown()
+	if err := svc.Open(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	port.disableAutoEOT = true
+	port.readErrs = []error{nil, domainerror.ErrTimeout}
+	port.reads = [][]byte{{protocol.PP_ACK}}
+	if _, err := svc.GetInfoRaw(context.Background()); !errors.Is(err, domainerror.ErrTimeout) {
+		t.Fatalf("timed out GIX error = %v", err)
+	}
+	if svc.GetState() != model.StateDesynchronized {
+		t.Fatalf("state after failed EOT recovery = %s", svc.GetState())
+	}
+	writesBeforeRejectedCommand := len(port.writes)
+	if _, err := svc.GetInfoRaw(context.Background()); !errors.Is(err, domainerror.ErrPinpadDesynchronized) {
+		t.Fatalf("GIX without synchronization = %v", err)
+	}
+	if len(port.writes) != writesBeforeRejectedCommand {
+		t.Fatal("desynchronized command reached serial")
+	}
+
+	port.disableAutoEOT = false
+	port.reads = [][]byte{response("OPN000")}
+	if err := svc.Open(context.Background()); err != nil {
+		t.Fatalf("Open after failed reconnect = %v", err)
+	}
+	if svc.GetState() != model.StateOpen {
+		t.Fatalf("state after explicit Open = %s", svc.GetState())
+	}
+}
+
+func TestTimeoutRecoveryReconnectsWithoutRetryingOriginalCommand(t *testing.T) {
+	port := &fakePort{reads: [][]byte{response("OPN000")}}
+	svc := New(model.DefaultConfig(), port)
+	defer svc.Shutdown()
+	if err := svc.Open(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	port.disableAutoEOT = true
+	port.autoEOTAfterOpen = 2
+	port.autoOPNAfterOpen = 2
+	port.readErrs = []error{nil, domainerror.ErrTimeout}
+	port.reads = [][]byte{{protocol.PP_ACK}}
+	if _, err := svc.GetInfoRaw(context.Background()); !errors.Is(err, domainerror.ErrTimeout) {
+		t.Fatalf("timed out GIX = %v", err)
+	}
+	if svc.GetState() != model.StateOpen || port.openCount != 2 || port.closeCount != 1 {
+		t.Fatalf("reconnect state=%s open=%d close=%d", svc.GetState(), port.openCount, port.closeCount)
+	}
+	if got := countCommandWrites(port.writes, command.CommandGIX); got != 1 {
+		t.Fatalf("GIX writes=%d, want no retry", got)
+	}
+	if got := countCommandWrites(port.writes, command.CommandOPN); got != 2 {
+		t.Fatalf("OPN writes=%d, want initial open and reconnect", got)
+	}
+
+	port.readErrs = nil
+	port.reads = [][]byte{response("GIX000")}
+	if _, err := svc.GetInfoRaw(context.Background()); err != nil {
+		t.Fatalf("GIX after controlled reconnect = %v", err)
+	}
+}
+
+func TestMLETimeoutReconnectsWithoutRetryingOrReportingCompletion(t *testing.T) {
+	port := &fakePort{reads: [][]byte{response("OPN000")}}
+	svc := New(model.DefaultConfig(), port)
+	defer svc.Shutdown()
+	if err := svc.Open(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	port.disableAutoEOT = true
+	port.autoEOTAfterOpen = 2
+	port.autoOPNAfterOpen = 2
+	port.readErrs = []error{nil, nil, nil, domainerror.ErrTimeout}
+	port.reads = [][]byte{
+		response("MLI000"),
+		response("MLR000"),
+		{protocol.PP_ACK},
+	}
+	progressCalls := 0
+	err := svc.SendMultimediaFile(context.Background(), "QRCODE02", []byte{0x01, 0x02, 0x03}, func(context.Context, int64, int64) error {
+		progressCalls++
+		return nil
+	})
+	if !errors.Is(err, domainerror.ErrTimeout) {
+		t.Fatalf("MLE timeout error=%v", err)
+	}
+	if got := countCommandWrites(port.writes, command.CommandMLE); got != 1 {
+		t.Fatalf("MLE writes=%d, want no retry", got)
+	}
+	if progressCalls != 0 {
+		t.Fatalf("completion progress calls=%d, want zero", progressCalls)
+	}
+	if svc.GetState() != model.StateOpen {
+		t.Fatalf("state after MLE reconnect=%s", svc.GetState())
+	}
+}
+
+func TestResetReconnectsAfterThreeCANWithoutEOT(t *testing.T) {
+	port := &fakePort{reads: [][]byte{response("OPN000")}}
+	svc := New(model.DefaultConfig(), port)
+	defer svc.Shutdown()
+	if err := svc.Open(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	port.disableAutoEOT = true
+	port.autoEOTAfterOpen = 2
+	port.autoOPNAfterOpen = 2
+	if err := svc.Reset(context.Background()); err != nil {
+		t.Fatalf("Reset with controlled reconnect = %v", err)
+	}
+	if svc.GetState() != model.StateOpen || port.openCount != 2 || port.closeCount != 1 {
+		t.Fatalf("Reset reconnect state=%s open=%d close=%d", svc.GetState(), port.openCount, port.closeCount)
+	}
+}
+
+func TestResetReconnectFailureIdentifiesStageAndStopsAfterOneAttempt(t *testing.T) {
+	tests := []struct {
+		name          string
+		configure     func(*fakePort)
+		wantError     string
+		wantOpenCount int
+	}{
+		{
+			name: "close",
+			configure: func(port *fakePort) {
+				port.closeErrs = []error{errors.New("close failure")}
+			},
+			wantError:     "controlled reconnect close pinpad",
+			wantOpenCount: 1,
+		},
+		{
+			name: "open",
+			configure: func(port *fakePort) {
+				port.openErrs = []error{errors.New("open failure")}
+			},
+			wantError:     "controlled reconnect open pinpad",
+			wantOpenCount: 2,
+		},
+		{
+			name:          "initial CAN",
+			configure:     func(*fakePort) {},
+			wantError:     "controlled reconnect initial CAN/EOT",
+			wantOpenCount: 2,
+		},
+		{
+			name: "OPN",
+			configure: func(port *fakePort) {
+				port.autoEOTAfterOpen = 2
+			},
+			wantError:     "controlled reconnect OPN",
+			wantOpenCount: 2,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			port := &fakePort{reads: [][]byte{response("OPN000")}}
+			svc := New(model.DefaultConfig(), port)
+			defer svc.Shutdown()
+			if err := svc.Open(context.Background()); err != nil {
+				t.Fatal(err)
+			}
+			port.disableAutoEOT = true
+			test.configure(port)
+
+			err := svc.Reset(context.Background())
+			if err == nil || !strings.Contains(err.Error(), test.wantError) {
+				t.Fatalf("Reset error=%v, want stage %q", err, test.wantError)
+			}
+			if port.openCount != test.wantOpenCount {
+				t.Fatalf("open attempts=%d, want %d", port.openCount, test.wantOpenCount)
+			}
+			if svc.GetState() != model.StateDesynchronized {
+				t.Fatalf("state after failed reconnect=%s", svc.GetState())
+			}
+		})
+	}
+}
+
+func countCommandWrites(writes [][]byte, kind command.Type) int {
+	count := 0
+	for _, write := range writes {
+		payload, err := protocol.ValidatePacket(write)
+		if err == nil && len(payload) >= 3 && string(payload[:3]) == string(kind) {
+			count++
+		}
+	}
+	return count
+}
+
+func TestCloseReleasesDesynchronizedPortWithoutSendingCLO(t *testing.T) {
+	port := &fakePort{reads: [][]byte{response("OPN000")}}
+	svc := New(model.DefaultConfig(), port)
+	defer svc.Shutdown()
+	if err := svc.Open(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	svc.mu.Lock()
+	svc.protocolDesynchronized = true
+	svc.mu.Unlock()
+	writesBeforeClose := len(port.writes)
+
+	if err := svc.Close(context.Background()); err != nil {
+		t.Fatalf("Close desynchronized connection = %v", err)
+	}
+	if len(port.writes) != writesBeforeClose {
+		t.Fatalf("Close sent %d additional serial writes; want physical close without CLO", len(port.writes)-writesBeforeClose)
+	}
+	if port.IsOpen() || svc.GetState() != model.StateClosed {
+		t.Fatalf("port open=%t, state=%s after Close", port.IsOpen(), svc.GetState())
+	}
+}
+
+func TestMismatchedResponseIsDiscardedBeforeNextCommand(t *testing.T) {
+	port := &fakePort{reads: [][]byte{response("OPN000")}}
+	svc := New(model.DefaultConfig(), port)
+	defer svc.Shutdown()
+	if err := svc.Open(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	port.reads = [][]byte{response("MLE000")}
+	if _, err := svc.GetInfoRaw(context.Background()); !errors.Is(err, domainerror.ErrInvalidResponse) {
+		t.Fatalf("mismatched GIX response = %v", err)
+	}
+	if last := port.writes[len(port.writes)-1]; !bytes.Equal(last, []byte{protocol.PP_CAN}) {
+		t.Fatalf("last write after mismatched response = % X, want CAN", last)
+	}
+	port.reads = [][]byte{response("GIX000")}
+	if _, err := svc.GetInfoRaw(context.Background()); err != nil {
+		t.Fatalf("GIX after stale response cleanup = %v", err)
+	}
 }
 
 func validICCResponsePayload() []byte {
@@ -436,6 +789,90 @@ func TestDisplayMultimediaAndTableFlows(t *testing.T) {
 	}
 }
 
+func TestMultimediaProgressReachesTotalOnlyAfterMLE000(t *testing.T) {
+	for _, testCase := range []struct {
+		name      string
+		endStatus string
+		want      []int64
+		wantError bool
+	}{
+		{name: "MLE success", endStatus: "MLE000", want: []int64{995, 1000}},
+		{name: "MLE storage error", endStatus: "MLE102", want: []int64{995}, wantError: true},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			port := &fakePort{reads: [][]byte{
+				response("OPN000"),
+				response("MLI000"),
+				response("MLR000"),
+				response("MLR000"),
+				response(testCase.endStatus),
+			}}
+			svc := New(model.DefaultConfig(), port)
+			defer svc.Shutdown()
+			if err := svc.Open(context.Background()); err != nil {
+				t.Fatal(err)
+			}
+
+			progressValues := make([]int64, 0, 2)
+			image := append([]byte("\x89PNG\r\n\x1a\n"), make([]byte, 1000-8)...)
+			err := svc.SendMultimediaFile(context.Background(), "QRCODE01", image, func(_ context.Context, current, total int64) error {
+				if total != 1000 {
+					t.Fatalf("progress total = %d, want 1000", total)
+				}
+				progressValues = append(progressValues, current)
+				if current == total {
+					payload, err := protocol.ValidatePacket(port.writes[len(port.writes)-1])
+					if err != nil || string(payload[:3]) != "MLE" {
+						t.Fatalf("100%% progress occurred before successful MLE: payload=%q err=%v", payload, err)
+					}
+				}
+				return nil
+			})
+			if (err != nil) != testCase.wantError {
+				t.Fatalf("SendMultimediaFile error = %v, wantError=%t", err, testCase.wantError)
+			}
+			if !reflect.DeepEqual(progressValues, testCase.want) {
+				t.Fatalf("progress = %v, want %v", progressValues, testCase.want)
+			}
+		})
+	}
+}
+
+func TestMultimediaUploadAcceptsUnknownTypeAsRUF(t *testing.T) {
+	port := &fakePort{reads: [][]byte{
+		response("OPN000"),
+		response("MLI000"),
+		response("MLR000"),
+		response("MLE000"),
+	}}
+	svc := New(model.DefaultConfig(), port)
+	defer svc.Shutdown()
+	if err := svc.Open(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if err := svc.SendMultimediaFile(context.Background(), "UNKNOWN1", []byte("BMP"), nil); err != nil {
+		t.Fatalf("unknown media type upload = %v", err)
+	}
+	if len(port.writes) != 5 {
+		t.Fatalf("writes = %d, want OPN and MLI/MLR/MLE", len(port.writes))
+	}
+	mli, err := protocol.ValidatePacket(port.writes[2])
+	if err != nil || string(mli[:3]) != "MLI" {
+		t.Fatalf("MLI payload = %q, %v", mli, err)
+	}
+	info := mli[len(mli)-10:]
+	if info[6] != 0 {
+		t.Fatalf("SPE_MFINFO.B1 = %02X, want RUF=00", info[6])
+	}
+	mlr, err := protocol.ValidatePacket(port.writes[3])
+	if err != nil || string(mlr[:3]) != "MLR" {
+		t.Fatalf("MLR payload = %q, %v", mlr, err)
+	}
+	if string(port.writes[4]) != string(protocol.BuildPacket([]byte("MLE"))) {
+		t.Fatalf("MLE packet = % X", port.writes[4])
+	}
+}
+
 func TestAdvancedFlowsRespectSequenceAndKeepModelsSeparate(t *testing.T) {
 	gcxData := validICCResponsePayload()
 	gtkData := append([]byte("GTK000019"), []byte{0x80, 0x44, 0x00, 0x01, 0x01}...)
@@ -701,8 +1138,16 @@ func TestExchangeStopsAfterThreeNAKs(t *testing.T) {
 	if _, err := svc.exchangeCommand(context.Background(), command.CommandGIX, protocol.BuildPacket([]byte("GIX000"))); !errors.Is(err, domainerror.ErrNakReceived) {
 		t.Fatalf("erro = %v", err)
 	}
-	if len(port.writes) != protocol.MaxAttempts {
-		t.Fatalf("tentativas = %d, want %d", len(port.writes), protocol.MaxAttempts)
+	if len(port.writes) != protocol.MaxAttempts+1 {
+		t.Fatalf("escritas = %d, want %d tentativas e CAN de recuperação", len(port.writes), protocol.MaxAttempts)
+	}
+	for i := 0; i < protocol.MaxAttempts; i++ {
+		if !bytes.Equal(port.writes[i], protocol.BuildPacket([]byte("GIX000"))) {
+			t.Fatalf("tentativa %d = % X, want retransmissão do GIX", i+1, port.writes[i])
+		}
+	}
+	if !bytes.Equal(port.writes[protocol.MaxAttempts], []byte{protocol.PP_CAN}) {
+		t.Fatalf("última escrita = % X, want CAN de recuperação", port.writes[protocol.MaxAttempts])
 	}
 }
 
@@ -714,8 +1159,16 @@ func TestExchangeStopsAfterThreeMissingAcknowledgements(t *testing.T) {
 	if _, err := svc.exchangeCommand(context.Background(), command.CommandGIX, protocol.BuildPacket([]byte("GIX000"))); !errors.Is(err, domainerror.ErrTimeout) {
 		t.Fatalf("erro = %v, want timeout", err)
 	}
-	if len(port.writes) != protocol.MaxAttempts {
-		t.Fatalf("tentativas = %d, want %d", len(port.writes), protocol.MaxAttempts)
+	if len(port.writes) != protocol.MaxAttempts+1 {
+		t.Fatalf("escritas = %d, want %d tentativas e CAN de recuperação", len(port.writes), protocol.MaxAttempts)
+	}
+	for i := 0; i < protocol.MaxAttempts; i++ {
+		if !bytes.Equal(port.writes[i], protocol.BuildPacket([]byte("GIX000"))) {
+			t.Fatalf("tentativa %d = % X, want retransmissão do GIX", i+1, port.writes[i])
+		}
+	}
+	if !bytes.Equal(port.writes[protocol.MaxAttempts], []byte{protocol.PP_CAN}) {
+		t.Fatalf("última escrita = % X, want CAN de recuperação", port.writes[protocol.MaxAttempts])
 	}
 }
 

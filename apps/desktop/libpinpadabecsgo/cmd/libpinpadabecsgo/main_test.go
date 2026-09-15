@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"log/slog"
@@ -10,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/application/service"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/command"
@@ -538,9 +540,27 @@ func TestCLIPrintsMenuDeviceInfoAndResults(t *testing.T) {
 		"Menu de teste local", "numeroSerie:: serial", "modelo:: model", "[OK] GIX", "[ERRO] GIX",
 		"Abrir sessao segura (OPN RSA/AES)", "(MLI/MLR/MLE)", "(TLI/TLR/TLE)", "(GTK)",
 		"(GOX)", "(FCX)", "(GPN, redigido)", "QR Code", "GCX completa",
+		"26) Listar midias carregadas (LMF)", "27) Excluir midias (DMF)",
 	} {
 		if !strings.Contains(output, expected) {
 			t.Fatalf("output does not contain %q: %s", expected, output)
+		}
+	}
+}
+
+func TestPrintDSIAcceptanceDistinguishesProtocolStatusFromVisualConfirmation(t *testing.T) {
+	output := captureOutput(t, func() {
+		printDSIAcceptance("QRCODE02", &model.Response{StatusCode: "000"})
+		printDSIAcceptance("QRCODE01", nil)
+	})
+	for _, expected := range []string{
+		"DSI status 000: comando aceito para QRCODE02",
+		"Confirme visualmente a imagem no display",
+		"DSI status desconhecido: comando aceito para QRCODE01",
+		"o protocolo nao confirma a renderizacao",
+	} {
+		if !strings.Contains(output, expected) {
+			t.Fatalf("DSI guidance does not contain %q: %s", expected, output)
 		}
 	}
 }
@@ -571,6 +591,46 @@ func TestRunMenuHandlesInvalidChoiceAndProgress(t *testing.T) {
 	})
 	if !strings.Contains(output, "Opcao invalida.") || !strings.Contains(output, "Progresso: 2/4") {
 		t.Fatalf("unexpected CLI output: %q", output)
+	}
+}
+
+type delayedInputReader struct {
+	reader *bytes.Reader
+	delay  time.Duration
+}
+
+func (r *delayedInputReader) Read(data []byte) (int, error) {
+	time.Sleep(r.delay)
+	return r.reader.Read(data)
+}
+
+func TestLoadMultimediaInputStartsDeadlineAfterPromptsAndExplainsA8(t *testing.T) {
+	input := bufio.NewReader(&delayedInputReader{
+		reader: bytes.NewReader([]byte("D:\\imagens\\qrcode.png\nQRCODE01\n")),
+		delay:  20 * time.Millisecond,
+	})
+	var remaining time.Duration
+	output := captureOutput(t, func() {
+		err := loadMultimediaInput(input, func(ctx context.Context, path, name string, progress service.ProgressFunc) error {
+			if path != "D:\\imagens\\qrcode.png" || name != "QRCODE01" || progress == nil {
+				t.Fatalf("load args = %q, %q, progress=%t", path, name, progress != nil)
+			}
+			deadline, ok := ctx.Deadline()
+			if !ok {
+				t.Fatal("multimedia transfer context has no deadline")
+			}
+			remaining = time.Until(deadline)
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+	if remaining < menuTimeout-5*time.Second {
+		t.Fatalf("transfer deadline started before prompts; remaining=%s", remaining)
+	}
+	if !strings.Contains(output, "Nome A8 da midia") {
+		t.Fatalf("A8 name format was not explained: %q", output)
 	}
 }
 

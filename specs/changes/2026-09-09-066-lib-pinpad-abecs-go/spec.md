@@ -38,7 +38,8 @@ As validações unitárias podem usar adaptadores determinísticos para framing,
   `spec-command-clo.md`, `spec-command-clx.md`, `spec-command-gix.md`,
   `spec-command-dsp.md`, `spec-command-dex.md`, `spec-command-mnu.md`,
   `spec-command-dsi.md`, `spec-command-qrcode.md`, `spec-command-mli.md`,
-  `spec-command-mlr.md`, `spec-command-mle.md`, `spec-command-tli.md`,
+  `spec-command-mlr.md`, `spec-command-mle.md`, `spec-command-lmf.md`,
+  `spec-command-dmf.md`, `spec-command-tli.md`,
   `spec-command-tlr.md`, `spec-command-tle.md`, `spec-command-gky.md`,
   `spec-command-gcx.md`, `spec-command-gtk.md`, `spec-command-gox.md`,
   `spec-command-fcx.md`, `spec-command-gpn.md` e `spec-command-rst.md`.
@@ -88,7 +89,12 @@ precedência sem persistir alteração no sistema.
 
 ### RF-003 — Modelos e estados
 
-Implementar `PinpadState` com `CLOSED`, `OPEN` e `BUSY`; `DeviceInfo` com número de série, part number, modelo, fabricante, versão do SO, versão ABECS e versão do kernel; `DisplayCapabilities` com capacidades textuais, gráficas, mídia, contactless, ICC, tarja, modelo e fabricante.
+Implementar `PinpadState` com `CLOSED`, `OPEN`, `BUSY` e `DESYNCHRONIZED`;
+`DeviceInfo` com número de série, part number, modelo, fabricante, versão do SO,
+versão ABECS e versão do kernel; `DisplayCapabilities` com capacidades textuais,
+gráficas, mídia, contactless, ICC, tarja, modelo e fabricante. O estado
+`DESYNCHRONIZED` protege a fila contra respostas atrasadas enquanto a recuperação
+CAN/EOT e a reconexão controlada não restabelecerem o canal.
 
 Implementar `Response` com `AckType`, `StatusCode`, `RawData` e `Tags`, além de `GCXResponse` completo conforme os fluxos definidos nesta SPEC.
 
@@ -210,9 +216,21 @@ A implementação Go deverá gerar os artefatos abaixo. Os nomes são contratos 
 
 #### 4. Builders e fluxo de multimídia
 
-- `BuildMLICommand`, `BuildMLRCommand`, `BuildMLECommand` e `BuildDSICommand`;
-- cálculo de CRC do arquivo, validação de tipo PNG/JPG/GIF/RUF, limite de bloco `MLR_MAX_BLOCK_SIZE` e callback de progresso;
-- `SendMultimediaFile` e `DisplayImage`, com sequência MLI → MLR* → MLE → DSI, ACK, resposta de status, timeout e cancelamento;
+- `BuildMLICommand`, `BuildMLRCommand`, `BuildMLECommand`, `BuildLMFCommand`,
+  `BuildDMFCommand` e `BuildDSICommand`;
+- cálculo de CRC do arquivo, preenchimento do tipo B1 como PNG/JPG/GIF ou RUF
+  para tipo desconhecido sem rejeição durante MLI, limite de bloco
+  `MLR_MAX_BLOCK_SIZE` e callback de progresso;
+- listagem de nomes repetidos em `PP_MFNAME`, normalizados para maiúsculas, e exclusão de uma ou mais mídias por `SPE_MFNAME`;
+- `SendMultimediaFile`, com sequência MLI → MLR* → MLE, e `DisplayImage`, como
+  operação DSI independente sobre uma mídia persistida, com ACK, resposta de
+  status, timeout e cancelamento;
+- `ListMultimediaFiles` e `DeleteMultimediaFiles`, com lista vazia válida, validação de nomes A8 e status ABECS preservados;
+- após timeout de ACK/resposta ou resposta de outro comando, enviar CAN e
+  confirmar EOT; se as três tentativas falharem, rejeitar comandos comuns
+  durante uma reconexão serial controlada, composta por fechamento físico,
+  abertura, CAN/EOT inicial e OPN; nunca repetir automaticamente o comando cujo
+  resultado ficou indeterminado;
 - nenhum log poderá registrar conteúdo de arquivo indiscriminadamente; somente metadados não sensíveis e resumo controlado.
 
 #### 5. Builders e fluxo de tabelas EMV
@@ -298,7 +316,10 @@ A biblioteca deverá gerar uma fachada Go equivalente ao contrato funcional de `
 #### Configuração e ciclo de vida
 
 - `SetConfig` e `GetConfig`, com cópia segura da configuração e validação dos campos;
-- `Open`, `Close` e `Reset` por CAN/EOT, com transições `CLOSED → OPEN → BUSY → OPEN`;
+- `Open`, `Close` e `Reset` por CAN/EOT, com transições normais
+  `CLOSED → OPEN → BUSY → OPEN` e transição excepcional para
+  `DESYNCHRONIZED`; quando CAN/EOT não recuperar o diálogo, `Reset` e a
+  recuperação pós-timeout deverão tentar uma única reconexão serial controlada;
 - `Close` executa o encerramento seguro por `CLO` quando houver sessão segura,
   limpa material temporário e só então fecha a porta; `CLX` também desativa a
   comunicação segura no pinpad, mas não fecha a porta física;
@@ -561,6 +582,13 @@ no pinpad, sem fechar a porta física.
 - [ ] **CA-019:** nenhum artefato de bridge HTTP, WebSocket, listener TCP ou estado global de servidor é gerado.
 - [ ] **CA-020:** carregamento usa `COM7` somente quando `PORTA_PINPAD` estiver ausente; valor não vazio definido no ambiente do processo tem precedência. `start_aplication.bat` preserva essa variável quando já existente, executa como usuário comum, não persiste configuração, compila o binário em diretório do módulo e informa claramente bloqueios de política de grupo.
 - [ ] **CA-021:** todo pacote Go entregue possui comentário de pacote, todos os símbolos exportados possuem comentários iniciados pelo identificador e os fluxos internos complexos de protocolo, segurança, concorrência e cancelamento estão documentados conforme RF-017.
+- [ ] **CA-022:** em pinpad físico, um timeout real seguido de três tentativas
+  CAN sem EOT aciona uma única reconexão controlada; a fila permanece protegida,
+  a nova abertura exige CAN/EOT e OPN válidos, e o comando original não é
+  reenviado automaticamente.
+- [ ] **CA-023:** a validação física de DSI registra separadamente status ABECS,
+  nome solicitado e confirmação visual do operador; `DSI000` sem observação do
+  display não é aceito como prova de que a imagem apareceu.
 - [ ] **CA-022:** exemplos executáveis definidos como parte da documentação passam em `go test`, não expõem dados sensíveis e refletem somente contratos aprovados nas SPECs.
 - [ ] **CA-023:** a revisão da implementação registra a inspeção documental, incluindo pacotes, símbolos exportados, código gerado e divergências encontradas; qualquer lacuna bloqueia a aprovação.
 - [ ] **CA-024:** GTK, GOX, FCX e CLX possuem builders, parsers, modelos e fluxos próprios conforme suas SPECs individuais; nenhum campo de trilha, PIN/KSN ou Issuer Script Results é atribuído a `GCXResponse`.

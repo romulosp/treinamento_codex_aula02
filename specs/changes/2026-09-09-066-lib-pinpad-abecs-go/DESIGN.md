@@ -74,6 +74,15 @@ A Change integra a comunicação com pinpad ABECS v2.12 em uma biblioteca Go hea
     A2; falha de comunicação omite ARC. Dados EMV, lista de tags e timeout são
     entradas opcionais validadas antes de iniciar o contexto de 60 segundos.
     `PP_FCXRES` permanece exclusivamente no modelo de resposta.
+23. LMF/DMF são operações ABECS tipadas na mesma fila; o parser conserva todos
+    os valores repetidos de `PP_MFNAME`, e a apresentação de nomes normaliza
+    ASCII para maiúsculas.
+24. O timeout ou uma resposta de comando incompatível inicia recuperação CAN/EOT
+    antes da próxima operação; falha de EOT marca a conexão fora de sincronia e
+    inicia uma única reconexão serial controlada, sem repetir o comando original.
+25. DSI é independente da carga na sessão atual. O status `000` confirma que o
+    firmware aceitou o comando; a comprovação da renderização é uma evidência
+    física separada fornecida pelo operador.
 
 ## Arquitetura e componentes
 
@@ -134,6 +143,21 @@ de ativação e mostra o caminho absoluto antes de disponibilizar o menu.
 
 Nenhum pacote de domínio importa a biblioteca serial, sistema operacional, logger concreto ou framework externo.
 
+## Recuperação após timeout de comando
+
+O serviço mantém o limite ABECS de 10 segundos para comandos não bloqueantes.
+Ao esgotá-lo, ou detectar resposta de outro comando, o worker envia CAN e espera
+EOT antes de liberar a fila. Se não confirmar EOT em três tentativas, marca a
+sessão como fora de sincronia e executa uma única reconexão: fecha a porta, abre,
+realiza o CAN/EOT inicial e envia OPN. A fila só volta ao estado aberto quando
+todas essas etapas terminam com sucesso. O comando interrompido não é reenviado,
+pois uma resposta ausente não prova que o firmware deixou de processá-lo. Se a
+reconexão falhar, somente uma nova abertura explícita poderá restaurar o canal.
+
+Esse desenho reproduz automaticamente o caminho físico que recuperou a COM7 em
+2026-09-14, preservando a barreira contra respostas atrasadas e evitando exigir
+do operador a sequência manual Close/Open.
+
 ## Alternativas e consequências
 
 - **Biblioteca serial aprovada versus syscall próprio:** `go.bug.st/serial` reduz código específico de SO e mantém ausência de CGO; o adaptador preserva possibilidade de substituição.
@@ -152,8 +176,16 @@ cifrados durante KSEC, embora suas respostas sejam claras. Builders deixam de
 usar formatos posicionais inventados para comandos ABECS parametrizados. RST é
 removido.
 
-## Prazo da carga multim?dia local
+## Prazo da carga multimídia local
 
-Isolar coleta de caminho/nome e execu??o da op??o 16 em fun??o test?vel com
-callback de carga; criar contexto somente ap?s as perguntas. Manter o timeout
-do consumidor na biblioteca. Reservar progresso total ? confirma??o MLE.
+Separar a coleta de caminho/nome da execução da opção 16 em uma função testável
+com callback de carga. Criar o contexto somente depois das perguntas, respeitar
+o prazo do consumidor na biblioteca e reservar 100% de progresso à confirmação
+MLE.
+
+## Tipo desconhecido durante MLI — 2026-09-14
+
+`BuildMLICommand` identifica PNG, JPG e GIF pela assinatura. Para conteúdo sem
+assinatura reconhecida, preencherá `SPE_MFINFO.B1` com `00h` (RUF), preservando
+nome, tamanho, CRC e os três bytes RUF finais. Isso mantém o carregamento opaco
+ao formato; a validação de suporte pertence ao firmware no comando DSI.

@@ -33,3 +33,14 @@ CAN não carrega dados de cartão. Ainda assim, o rastro deve respeitar o format
 
 ## Referências
 `spec.md` RF-004, RF-007, RF-010 e `spec-infra-serial-cancel.md`; manual ABECS v2.12.
+
+## Recuperação após ausência de EOT — revisão de 2026-09-14
+
+Três tentativas de CAN sem EOT esgotam o handshake normativo. A infraestrutura
+de serviço deverá então executar a reconexão controlada definida em
+`spec-infra-serial-cancel.md`; isso não cria uma quarta tentativa dentro do
+mesmo handshake e não altera o frame CAN. A operação original não é repetida.
+
+- [ ] O teste físico registra as três tentativas sem EOT e a nova abertura com
+  CAN/EOT e OPN válidos.
+- [ ] A falha da reconexão permanece distinguível da ausência original de EOT.

@@ -20,6 +20,8 @@ const (
 	CommandMLI Type = "MLI"
 	CommandMLR Type = "MLR"
 	CommandMLE Type = "MLE"
+	CommandLMF Type = "LMF"
+	CommandDMF Type = "DMF"
 	CommandTLI Type = "TLI"
 	CommandTLR Type = "TLR"
 	CommandTLE Type = "TLE"

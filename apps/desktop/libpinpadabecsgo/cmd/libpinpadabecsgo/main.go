@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	qrcode "github.com/skip2/go-qrcode"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -23,6 +24,12 @@ import (
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/infrastructure/logging"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/infrastructure/serial"
 )
+
+type qrCodeGenerator struct{}
+
+func (qrCodeGenerator) Generate(data string, size int) ([]byte, error) {
+	return qrcode.Encode(data, qrcode.Medium, size)
+}
 
 // menuTimeout e usado para operacoes que podem exigir interacao manual no
 // pinpad (ex.: MNU, GKY, GCX aguardando cartao), evitando que o timeout curto
@@ -61,6 +68,7 @@ func run() int {
 	port := serial.New(cfg.Port, cfg.BaudRate, cfg.Timeout)
 	port.SetTracer(tracer)
 	svc := service.New(cfg, port)
+	svc.SetQRCodeGenerator(qrCodeGenerator{})
 	svc.SetTracer(tracer)
 
 	reader := bufio.NewReader(os.Stdin)
@@ -283,12 +291,23 @@ func runMenu(reader *bufio.Reader, svc *service.Service, cfg model.PinpadConfig,
 			_, err := svc.CloseVisual(ctx, command.CLXRequest{Message: message, MediaName: mediaName})
 			handleErr(logger, "CloseVisual (CLX)", err)
 		case "16":
-			cancel()
-			handleErr(logger, "LoadMultimediaPath (MLI/MLR/MLE)", loadMultimediaInput(reader, svc.LoadMultimediaPath))
+			text := readLine(reader, "Texto do QR Code: ")
+			name := readLine(reader, "Nome da midia (Enter = QRCODE01): ")
+			if name == "" {
+				name = "QRCODE01"
+			}
+			sizeText := readLine(reader, "Tamanho em pixels (Enter = resolucao do pinpad): ")
+			size := 0
+			if sizeText != "" {
+				size, _ = strconv.Atoi(sizeText)
+			}
+			handleErr(logger, "LoadQRCodeMultimedia (GIX/MLI/MLR/MLE)", svc.LoadQRCodeMultimedia(ctx, name, text, size, printProgress))
 		case "17":
 			name := readLine(reader, "Nome da midia carregada: ")
-			_, err := svc.DisplayImage(ctx, name)
-			handleErr(logger, "DisplayImage (DSI)", err)
+			response, err := svc.DisplayImage(ctx, name)
+			if handleErr(logger, "DisplayImage (DSI)", err) {
+				printDSIAcceptance(name, response)
+			}
 		case "18":
 			acquirer := readLine(reader, "Indice do adquirente (ex.: 00): ")
 			version := readLine(reader, "Versao da tabela: ")
@@ -371,6 +390,23 @@ func runMenu(reader *bufio.Reader, svc *service.Service, cfg model.PinpadConfig,
 		case "25":
 			_, err := svc.TransactionGCX(ctx, service.TransactionGCXRequest{})
 			handleErr(logger, "TransactionGCX completo (reservado)", err)
+		case "26":
+			names, err := svc.ListMultimediaFiles(ctx)
+			if handleErr(logger, "ListMultimediaFiles (LMF)", err) {
+				if len(names) == 0 {
+					fmt.Println("Nenhuma midia carregada.")
+				} else {
+					for _, name := range names {
+						fmt.Println(name)
+					}
+				}
+			}
+		case "27":
+			names := splitRecords(readLine(reader, "Nomes das midias separados por ';': "))
+			response, err := svc.DeleteMultimediaFiles(ctx, names)
+			if handleErr(logger, "DeleteMultimediaFiles (DMF)", err) {
+				fmt.Printf("Status: %s\n", response.StatusCode)
+			}
 		case "0":
 			cancel()
 			fmt.Println("Encerrando...")
@@ -417,6 +453,8 @@ func printMenu(cfg model.PinpadConfig) {
 	fmt.Println("23) Capturar PIN DUKPT (GPN, redigido)")
 	fmt.Println("24) Exibir QR Code (requer gerador injetado)")
 	fmt.Println("25) Transacao GCX completa (reservada na SPEC)")
+	fmt.Println("26) Listar midias carregadas (LMF)")
+	fmt.Println("27) Excluir midias (DMF)")
 	fmt.Println(" 0) Sair")
 	fmt.Println("==========================================")
 }
@@ -427,6 +465,8 @@ func stateName(state model.PinpadState) string {
 		return "aberto"
 	case model.StateBusy:
 		return "ocupado"
+	case model.StateDesynchronized:
+		return "fora de sincronia; use Reset"
 	default:
 		return "fechado"
 	}
@@ -472,6 +512,14 @@ func handleErr(logger *slog.Logger, operation string, err error) bool {
 	return true
 }
 
+func printDSIAcceptance(name string, response *model.Response) {
+	status := "desconhecido"
+	if response != nil && response.StatusCode != "" {
+		status = response.StatusCode
+	}
+	fmt.Printf("[INFO] DSI status %s: comando aceito para %s. Confirme visualmente a imagem no display; o protocolo nao confirma a renderizacao.\n", status, name)
+}
+
 func readLine(reader *bufio.Reader, prompt string) string {
 	fmt.Print(prompt)
 	text, _ := reader.ReadString('\n')
@@ -481,7 +529,7 @@ func readLine(reader *bufio.Reader, prompt string) string {
 // loadMultimediaInput separa o tempo de digitação do prazo de transferência.
 func loadMultimediaInput(reader *bufio.Reader, load func(context.Context, string, string, service.ProgressFunc) error) error {
 	path := readLine(reader, "Caminho do arquivo local: ")
-	name := readLine(reader, "Nome da midia no pinpad (8 alfanumericos, ex.: QRCODE01): ")
+	name := readLine(reader, "Nome A8 da midia no pinpad (8 caracteres ASCII alfanumericos, ex.: QRCODE01): ")
 	if _, err := command.BuildDSICommand(name); err != nil {
 		return err
 	}

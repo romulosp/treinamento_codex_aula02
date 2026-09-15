@@ -224,6 +224,32 @@ func TestMultimediaBuildersMatchPublishedABECS212Vectors(t *testing.T) {
 	}
 }
 
+func TestMultimediaManagementBuildersMatchPublishedABECS212Vectors(t *testing.T) {
+	if got := BuildLMFCommand(); !bytes.Equal(got, []byte("LMF")) {
+		t.Fatalf("LMF = % X, want literal LMF", got)
+	}
+	dmf, err := BuildDMFCommand([]string{"TESTECHO", "MOVNPICT"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want, err := hex.DecodeString("444D46303234001E0008544553544543484F001E00084D4F564E50494354")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(dmf, want) {
+		t.Fatalf("DMF = % X, want % X", dmf, want)
+	}
+
+	for _, names := range [][]string{nil, {}, {"QRCODE"}, {"BAD/NAME"}} {
+		if _, err := BuildDMFCommand(names); err == nil {
+			t.Fatalf("DMF names %#v should be rejected", names)
+		}
+	}
+	if _, err := BuildDMFCommand([]string{"MISSING1"}); err != nil {
+		t.Fatalf("unknown but valid A8 name should be sent to the pinpad: %v", err)
+	}
+}
+
 func TestDetectMediaTypeAndNamesFollowABECS212(t *testing.T) {
 	for name, test := range map[string]struct {
 		data []byte
@@ -245,8 +271,12 @@ func TestDetectMediaTypeAndNamesFollowABECS212(t *testing.T) {
 	if _, err := BuildDSICommand("INVALID!"); err == nil {
 		t.Fatal("DSI deve exigir nome A8 alfanumérico")
 	}
-	if _, err := BuildMLICommand("IMG00001", []byte("BMP")); err == nil {
-		t.Fatal("MLI deve rejeitar formato sem suporte")
+	unknownTypeMLI, err := BuildMLICommand("IMG00001", []byte("BMP"))
+	if err != nil {
+		t.Fatalf("MLI deve transferir tipo desconhecido como RUF: %v", err)
+	}
+	if got := unknownTypeMLI[len(unknownTypeMLI)-4]; got != 0 {
+		t.Fatalf("SPE_MFINFO.B1 para tipo desconhecido = %02X, want RUF=00", got)
 	}
 	if _, err := BuildMLRCommand(nil); err == nil {
 		t.Fatal("MLR deve rejeitar SPE_DATAIN vazio")

@@ -259,9 +259,9 @@ Quando a escrita não corresponder a um comando tipado (por exemplo, envio isola
 
 A cobertura obrigatória inclui todos os comandos tipados do catálogo desta
 Change: `CAN`, `OPN`, `CLO`, `CLX`, `GIX`, `DSP`, `DEX`, `MNU`, `DSI`, `MLI`,
-`MLR`, `MLE`, `TLI`, `TLR`, `TLE`, `GKY`, `GCX`, `GTK`, `GOX`, `FCX`, `GPN` e
+`MLR`, `MLE`, `LMF`, `DMF`, `TLI`, `TLR`, `TLE`, `GKY`, `GCX`, `GTK`, `GOX`, `FCX` e `GPN`.
 A operação composta gera uma sequência para cada comando realmente enviado.
-enviado. Operações reservadas ou rejeitadas antes da serialização, como
+Operações reservadas ou rejeitadas antes da serialização, como
 `TransactionGCX` enquanto retornar `ErrNotImplemented`, não inventam uma linha
 `SPE`.
 

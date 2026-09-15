@@ -162,6 +162,24 @@ func BuildDSICommand(name string) ([]byte, error) {
 	return BuildABECSPayload(CommandDSI, []Parameter{{ID: SPEMultimediaFileName, Value: []byte(name)}})
 }
 
+// BuildLMFCommand produz o comando clássico que lista nomes de mídia.
+func BuildLMFCommand() []byte { return []byte(CommandLMF) }
+
+// BuildDMFCommand monta um pedido para excluir um ou mais arquivos A8.
+func BuildDMFCommand(names []string) ([]byte, error) {
+	if len(names) == 0 {
+		return nil, fmt.Errorf("DMF requires at least one multimedia name")
+	}
+	parameters := make([]Parameter, 0, len(names))
+	for _, name := range names {
+		if !validMediaName(name) {
+			return nil, fmt.Errorf("DMF multimedia names must be 8 alphanumeric characters")
+		}
+		parameters = append(parameters, Parameter{ID: SPEMultimediaFileName, Value: []byte(name)})
+	}
+	return BuildABECSPayload(CommandDMF, parameters)
+}
+
 // BuildMLICommand monta SPE_MFNAME e SPE_MFINFO conforme a seção 3.4.1.
 func BuildMLICommand(name string, data []byte) ([]byte, error) {
 	if !validMediaName(name) {
@@ -172,7 +190,9 @@ func BuildMLICommand(name string, data []byte) ([]byte, error) {
 	}
 	mediaType, err := DetectMediaType(data)
 	if err != nil {
-		return nil, err
+		// A seção 6.6.1 do ABECS 2.12 posterga a validação de formato até DSI;
+		// assinaturas desconhecidas usam o tipo reservado RUF durante MLI.
+		mediaType = 0
 	}
 	info := make([]byte, 10)
 	binary.BigEndian.PutUint32(info[:4], uint32(len(data)))

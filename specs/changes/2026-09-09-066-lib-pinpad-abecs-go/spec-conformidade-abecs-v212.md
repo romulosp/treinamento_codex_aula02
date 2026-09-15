@@ -82,8 +82,16 @@ A resposta de sucesso é `GPN000036 + PINBLK(H16) + KSN(H20)`, convertida para
   CRC16 `B2`, tipo `B1` (`1` PNG, `2` JPG, `3` GIF) e três bytes RUF zerados.
 - MLR contém um ou mais `SPE_DATAIN`, cada um com até 995 bytes.
 - MLE é o payload literal `MLE`. DSI contém `SPE_MFNAME`.
+- LMF é o payload literal `LMF`; a resposta pode conter zero ou vários campos
+  `PP_MFNAME` (tag `0x805E`). Lista vazia é sucesso; os nomes retornados pelo
+  dispositivo são apresentados em maiúsculas.
+- DMF contém um ou mais campos `SPE_MFNAME` (`0x001E`), cada um com nome A8.
+  Nomes desconhecidos ou inválidos são ignorados pelo dispositivo; ausência de
+  qualquer nome é `ST_MANDAT`.
 - Quando a fachada recebe somente bytes, o tipo é identificado pela assinatura
-  PNG, JPEG ou GIF; conteúdo sem assinatura suportada é rejeitado antes da serial.
+  PNG, JPEG ou GIF; conteúdo sem assinatura suportada usa `B1=00h` (RUF) e é
+  transferido sem crítica de formato em MLI, conforme a seção 6.6.1. Se o pinpad
+  não suportar o tipo, a crítica ocorre ao usar DSI.
 
 ## Tabelas EMV
 
@@ -141,5 +149,13 @@ A resposta de sucesso é `GPN000036 + PINBLK(H16) + KSN(H20)`, convertida para
   corrompida, ausência de ACK para resposta válida e CAN/EOT.
 - [x] Vetores publicados de MNU, GPN e comunicação segura são reproduzidos sem
   alteração no teste unitário.
+- [ ] Vetores publicados de LMF (campos `PP_MFNAME` repetidos) e DMF
+  (múltiplos `SPE_MFNAME`) são reproduzidos byte a byte, incluindo lista vazia.
+- [ ] Timeout não bloqueante e resposta fora de sequência recuperam CAN/EOT;
+  após três CAN sem EOT, a instância protege a fila e executa uma única
+  reconexão controlada com CAN/EOT inicial e OPN, sem reenviar o comando
+  original.
+- [ ] A validação física de DSI distingue status `000` de confirmação visual;
+  ambos são necessários para declarar que a imagem foi exibida.
 - [x] `go test ./...`, cobertura, `go vet ./...` e `go build ./...` terminam com
   código zero; limitações do race detector e hardware são registradas.

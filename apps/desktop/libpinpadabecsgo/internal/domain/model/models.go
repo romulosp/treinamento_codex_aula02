@@ -22,9 +22,10 @@ type PinpadState string
 
 // Estados possíveis do ciclo de vida da conexão com o pinpad.
 const (
-	StateClosed PinpadState = "CLOSED"
-	StateOpen   PinpadState = "OPEN"
-	StateBusy   PinpadState = "BUSY"
+	StateClosed         PinpadState = "CLOSED"
+	StateOpen           PinpadState = "OPEN"
+	StateBusy           PinpadState = "BUSY"
+	StateDesynchronized PinpadState = "DESYNCHRONIZED"
 )
 
 // DeviceInfo agrupa as capacidades e versões retornadas por GIX.
@@ -54,6 +55,8 @@ type Response struct {
 	Data                []byte
 	Tags                map[string]string
 	RawTags             map[uint16][]byte
+	// RawTagValues preserva cada ocorrência de um parâmetro repetido na resposta.
+	RawTagValues map[uint16][][]byte
 }
 
 // GCXResponse contém somente dados resultantes da captura GCX.

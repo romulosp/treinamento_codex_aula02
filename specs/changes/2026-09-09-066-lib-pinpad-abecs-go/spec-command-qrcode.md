@@ -7,7 +7,13 @@ Autor: Rômulo Penha
 
 ## Papel do recurso no projeto
 
-Nesta Change, `DisplayQRCode` é uma fachada de geração/entrega de imagem. A geração do PNG é delegada a `QRCodeGenerator`; isso não comprova, por si só, que o pinpad exibirá o QR Code. A exibição física somente poderá ser declarada validada quando o PNG for carregado pelo fluxo de multimídia ABECS (`MLI`/`MLR`/`MLE`) e exibido pelo comando `DSI`, com SPEC e evidência próprias.
+Nesta Change, `DisplayQRCode` é uma fachada de geração/entrega de imagem. A
+geração do PNG é delegada a `QRCodeGenerator`; isso não comprova, por si só, que
+o pinpad exibirá o QR Code. A exibição física somente poderá ser declarada
+validada quando o PNG for carregado pelo fluxo de multimídia ABECS
+(`MLI`/`MLR`/`MLE`), DSI retornar sucesso e o operador confirmar visualmente o
+conteúdo esperado no display. `DSI000` isolado comprova apenas a aceitação do
+comando pelo firmware.
 
 ## Identificação
 
@@ -58,4 +64,6 @@ Os critérios de geração e validação de retorno podem ser testados sem hardw
 - [ ] **CA-QR-001:** `DisplayQRCode`, executado com gerador configurado e `xPos=0, yPos=0`, devolve `PositionWarning` vazio.
 - [ ] **CA-QR-002:** `DisplayQRCode`, executado com `xPos=10` ou `yPos=10`, devolve `PositionWarning` não vazio, com `PositionSupported=false`.
 - [ ] **CA-QR-003:** tamanho, margem e `ErrQRCodeGeneratorNotConfigured` são validados por teste automatizado do contrato da fachada.
-- [ ] **CA-QR-004:** a exibição do PNG em pinpad físico é validada na SPEC de `MLI`/`MLR`/`MLE`/`DSI`, sem atribuir essa evidência exclusivamente ao método `DisplayQRCode`.
+- [ ] **CA-QR-004:** a exibição do PNG em pinpad físico é validada na SPEC de
+  `MLI`/`MLR`/`MLE`/`DSI`, registrando separadamente `DSI000` e confirmação
+  visual, sem atribuir essa evidência exclusivamente ao método `DisplayQRCode`.

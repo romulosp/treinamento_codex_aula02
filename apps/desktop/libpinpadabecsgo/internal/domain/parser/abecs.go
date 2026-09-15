@@ -4,6 +4,7 @@ import (
 	domainerror "br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/error"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/model"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/protocol"
+	"bytes"
 	"strconv"
 	"strings"
 )
@@ -52,7 +53,13 @@ func ParseNotification(data []byte) (string, error) {
 
 // ParseAbecsResponse interpreta status, blocos N3 e parâmetros TLV de uma resposta ABECS.
 func ParseAbecsResponse(data []byte) (*model.Response, error) {
-	response := &model.Response{AckType: protocol.AckType(data), RawData: append([]byte(nil), data...), Tags: map[string]string{}, RawTags: map[uint16][]byte{}}
+	response := &model.Response{
+		AckType:      protocol.AckType(data),
+		RawData:      append([]byte(nil), data...),
+		Tags:         map[string]string{},
+		RawTags:      map[uint16][]byte{},
+		RawTagValues: map[uint16][][]byte{},
+	}
 	if len(data) == 1 {
 		if data[0] == protocol.PP_NAK {
 			return response, domainerror.ErrNakReceived
@@ -101,7 +108,8 @@ func ParseAbecsResponse(data []byte) (*model.Response, error) {
 				return nil, domainerror.ErrInvalidResponse
 			}
 			value := append([]byte(nil), block[blockPos:blockPos+length]...)
-			response.RawTags[tag] = value
+			response.RawTags[tag] = append([]byte(nil), value...)
+			response.RawTagValues[tag] = append(response.RawTagValues[tag], append([]byte(nil), value...))
 			if name, ok := tagNames[tag]; ok {
 				response.Tags[name] = string(value)
 			}
@@ -109,6 +117,38 @@ func ParseAbecsResponse(data []byte) (*model.Response, error) {
 		}
 	}
 	return response, nil
+}
+
+// MultimediaFileNames devolve os PP_MFNAME de uma resposta LMF em maiúsculas.
+// Campos A8 com espaços finais usam esses bytes como preenchimento do nome.
+func MultimediaFileNames(response *model.Response) ([]string, error) {
+	if response == nil {
+		return nil, domainerror.ErrInvalidResponse
+	}
+	tag := uint16(protocol.TagMultimediaFileName)
+	values := response.RawTagValues[tag]
+	if len(values) == 0 {
+		if value, ok := response.RawTags[tag]; ok {
+			values = [][]byte{value}
+		}
+	}
+	names := make([]string, 0, len(values))
+	for _, value := range values {
+		if len(value) != 8 {
+			return nil, domainerror.ErrInvalidResponse
+		}
+		name := bytes.TrimRight(value, " ")
+		if len(name) == 0 {
+			return nil, domainerror.ErrInvalidResponse
+		}
+		for _, character := range name {
+			if !((character >= 'A' && character <= 'Z') || (character >= 'a' && character <= 'z') || (character >= '0' && character <= '9')) {
+				return nil, domainerror.ErrInvalidResponse
+			}
+		}
+		names = append(names, strings.ToUpper(string(name)))
+	}
+	return names, nil
 }
 
 // DeviceInfoFromResponse converte as tags GIX conhecidas em informações tipadas.
