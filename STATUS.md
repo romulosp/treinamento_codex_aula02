@@ -1,5 +1,7 @@
 # Status das mudanças
 
+Change 998-importar-skill-kotlin: ARQUIVADA em 2026-09-19; skills Kotlin/Compose consolidadas sob android-native-engineering/kotlin, com hashes e validação estrutural aprovados no commit f3c89ed.
+
 Change 011-corrigir-upload-postgresql: ARQUIVADA em 2026-09-06; entrega aprovada no commit e0f5713, especificação vigente consolidada e 14 testes aprovados após restauração.
 
 Change 010-galeria-de-fotos: ARQUIVADA em 2026-09-06; commit de encerramento preparado a partir de f2b8a40.
