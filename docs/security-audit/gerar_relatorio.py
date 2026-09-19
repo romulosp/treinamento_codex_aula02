@@ -97,6 +97,59 @@ def build_correction_pdf():
     return output
 
 
+def build_android_native_engineering_pdf():
+    """Produz a auditoria da Change 067 sem substituir relatórios anteriores."""
+    from reportlab.platypus import SimpleDocTemplate
+
+    output = OUTPUT.with_name("relatorio-067-android-native-engineering.pdf")
+    styles = build_styles()
+    first_page = [
+        ("Auditoria de segurança", "title"),
+        ("067-android-native-engineering - 18/09/2026", "subtitle"),
+        ("Resultado", "h1"),
+        ("Nenhum achado de segurança confirmado permanece em aberto nesta Change.", "body"),
+        ("Escopo", "h1"),
+        ("Skill local, metadados YAML, referências Markdown, validador Python somente leitura e artefatos Spec Driven da Change. Não há aplicativo Android, API, frontend, autenticação, banco de dados, deploy ou integração com segredos.", "body"),
+        ("Superfície e método", "h1"),
+        ("A auditoria inspecionou a entrada de caminho do validador, operações de arquivos, diagnósticos, dependências, metadados, links, padrões de segredo, APIs Python perigosas e artefatos gerados. Também distinguiu categorias não aplicáveis de controles efetivamente verificados.", "body"),
+        ("Conclusões", "h1"),
+        ("Entrada e injeção: conforme no escopo. O caminho é resolvido e usado apenas em operações locais de leitura; não é interpolado em shell, SQL, HTML ou código dinâmico.", "body"),
+        ("Segredos: nenhuma atribuição semelhante a senha, segredo, chave ou token foi encontrada nos artefatos atuais. Os caminhos novos ainda não possuem histórico Git. Correspondências históricas em outros caminhos ficaram fora do escopo e nenhum valor foi exposto no relatório.", "body"),
+        ("Dependências: o validador usa somente a biblioteca padrão Python. Não foram encontradas chamadas a subprocess, execução dinâmica, desserialização insegura, rede ou escrita no projeto analisado.", "body"),
+        ("Autenticação, autorização, tenant, IDOR, XSS, persistência e deploy: não aplicáveis porque essas superfícies não existem nesta Change.", "body"),
+    ]
+    second_page = [
+        ("Controle preventivo Android", "h1"),
+        ("A skill proíbe registrar tokens, credenciais, PAN, localização precisa e dados pessoais. O validador reprova a presença de local.properties, e aplicações consumidoras devem revisar Manifest, Intents, permissões, armazenamento, backup e rede conforme sua superfície real.", "body"),
+        ("Limitações", "h1"),
+        ("A análise é estática e delimitada à Change. Não existe aplicativo consumidor para testar permissões, componentes, rede ou comportamento em dispositivo. Ausência de achados neste escopo não prova a segurança de aplicações futuras.", "body"),
+        ("Recomendações", "h1"),
+        ("P3 - manter o validador somente leitura e sem comandos derivados da entrada. P3 - repetir auditoria contextual em cada aplicação consumidora. P3 - manter artefatos gerados, local.properties e credenciais fora do versionamento.", "body"),
+        ("Evidências", "h1"),
+        ("Busca de segredos atuais: nenhuma correspondência. Busca de APIs Python perigosas: nenhuma correspondência. Reparse points: nenhum. O bytecode .pyc produzido pela validação foi removido antes do commit e pode ser regenerado.", "body"),
+    ]
+    SimpleDocTemplate(
+        str(output),
+        pagesize=A4,
+        leftMargin=2 * cm,
+        rightMargin=2 * cm,
+        topMargin=1.5 * cm,
+        bottomMargin=1.5 * cm,
+        title="Auditoria 067-android-native-engineering",
+        author="Codex",
+    ).build(
+        [Paragraph(text, styles[kind]) for text, kind in first_page]
+        + [PageBreak()]
+        + [Paragraph(text, styles[kind]) for text, kind in second_page]
+    )
+    return output
+
+
 if __name__ == "__main__":
     import sys
-    print(build_correction_pdf() if "--change-011" in sys.argv else build_pdf())
+    if "--change-067" in sys.argv:
+        print(build_android_native_engineering_pdf())
+    elif "--change-011" in sys.argv:
+        print(build_correction_pdf())
+    else:
+        print(build_pdf())
