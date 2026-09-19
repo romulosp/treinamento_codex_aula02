@@ -48,11 +48,20 @@ type PinpadService interface {
 	GetInfo(context.Context) (*model.DeviceInfo, error)
 	GetInfoRaw(context.Context) (*model.Response, error)
 	GetDisplayCapabilities(context.Context) (*model.DisplayCapabilities, error)
+	DisplayDSP(context.Context, string, string) (*model.Response, error)
+	DisplayDEX(context.Context, string) (*model.Response, error)
+	DisplayMNU(context.Context, int, string, []string) (parser.MNUResponse, error)
 	CloseVisual(context.Context, command.CLXRequest) (*model.Response, error)
 	OpenSecure(context.Context, *rsa.PrivateKey) error
 	GetTracks(context.Context, command.GTKRequest) (*model.GTKResponse, error)
 	ContinueEMV(context.Context, command.GOXRequest) (*model.GOXResponse, error)
 	FinalizeEMV(context.Context, command.FCXRequest) (*model.FCXResponse, error)
+	WaitForKeyPress(context.Context, int) (byte, error)
+	SendGPNCommandMK(context.Context, int, []byte, string, string) ([]byte, []byte, error)
+	SendGPNCommandDUKPT(context.Context, int, string, string) ([]byte, []byte, error)
+	TableLoadInitiate(context.Context, string, string) (*model.Response, error)
+	TableLoadRecord(context.Context, []string) (*model.Response, error)
+	TableLoadEnd(context.Context, string) (*model.Response, error)
 	GetState() model.PinpadState
 	SendMultimediaFile(context.Context, string, []byte, ProgressFunc) error
 	LoadQRCodeMultimedia(context.Context, string, string, int, ProgressFunc) error

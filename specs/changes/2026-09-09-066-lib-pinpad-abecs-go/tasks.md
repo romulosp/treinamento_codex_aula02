@@ -18,7 +18,7 @@ Cada comando possui agora uma SPEC prÃ³pria ou uma SPEC complementar prÃ³pri
 - Teclas: `spec-command-gky.md`.
 - TransaÃ§Ã£o/cartÃ£o: `spec-command-gcx.md`, `spec-command-gtk.md`, `spec-command-gox.md`, `spec-command-fcx.md`.
 - PIN: `spec-command-gpn.md`.
-- Transversal: `spec-logging.md`, `spec-infra-serial-cancel.md`, `spec-protocolo-seguro.md`.
+- Transversal: `spec-logging.md`, `spec-infra-serial-cancel.md`, `spec-protocolo-seguro.md`, `spec-api-rest.md`.
 
 Todas as SPECs individuais permanecem sujeitas a revisÃ£o formal. A existÃªncia do arquivo nÃ£o autoriza implementaÃ§Ã£o antes de `SPEC_APROVADA`.
 
@@ -284,13 +284,12 @@ permanecem pendentes.`r`n
 
 ## Serviço RESTful integrado
 
-- [ ] Revisar e aprovar o aditivo RESTful na Change 066.
-- [ ] Implementar servidor HTTP em `cmd/libpinpadabecsgo-api` sem menu interativo.
-- [ ] Criar Input/Output DTOs por endpoint e `ErrorBody` padronizado.
-- [ ] Implementar router e handlers de conexão, GIX, display, mídia, tabelas, cartão e PIN.
-- [ ] Criar OpenAPI 3 com rotas, DTOs, códigos HTTP e erros.
-- [ ] Criar testes `httptest` de roteamento, validação, erros, timeout e correlação.
-- [ ] Executar validação automatizada e registrar evidências.
-
+- [x] Revisar e aprovar o aditivo RESTful na Change 066 (`reviews/2026-09-15-spec-review-rest.md`).
+- [x] Implementar servidor HTTP em `cmd/libpinpadabecsgo-api` sem menu interativo.
+- [x] Criar Input/Output DTOs por endpoint e `ErrorBody` padronizado.
+- [x] Implementar router e handlers de conexão, GIX, display, mídia, tabelas, cartão e PIN.
+- [x] Criar OpenAPI 3 com rotas, DTOs, códigos HTTP e erros (`openapi.yaml`).
+- [x] Criar testes `httptest` de roteamento, validação, erros, timeout e correlação (`internal/api/api_test.go`).
+- [x] Executar validação automatizada e registrar evidências (cobertura total de 82,1% e 0 advertências no `go vet`).
 - [x] Definir DTO de entrada e saída para cada `spec-command-xxx.md`.
 - [x] Criar pacote `internal/api/dto` com as 25 duplas de DTO e `ErrorBody`.

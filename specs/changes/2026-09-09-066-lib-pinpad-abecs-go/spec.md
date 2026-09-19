@@ -44,7 +44,7 @@ As validações unitárias podem usar adaptadores determinísticos para framing,
   `spec-command-gcx.md`, `spec-command-gtk.md`, `spec-command-gox.md`,
   `spec-command-fcx.md`, `spec-command-gpn.md` e `spec-command-rst.md`.
 - SPECs transversais desta Change: `spec-logging.md`,
-  `spec-infra-serial-cancel.md` e `spec-protocolo-seguro.md`.
+  `spec-infra-serial-cancel.md`, `spec-protocolo-seguro.md` e `spec-api-rest.md`.
 - Manual ABECS v2.12 fornecido para esta Change e requisitos comportamentais derivados do legado. Caso uma implementação seja baseada em outra revisão do manual, a versão deverá ser registrada na SPEC individual e validada contra o dispositivo utilizado.
 
 ## Requisitos funcionais

@@ -4,21 +4,22 @@ Biblioteca Go para comunicação serial com dispositivos compatíveis com ABECS 
 
 ## Escopo
 
-Este módulo contém a biblioteca serial ABECS e passa a prever um adaptador RESTful separado em `internal/api`, servido por `cmd/libpinpadabecsgo-api`. O executável `cmd/libpinpadabecsgo` permanece como ferramenta local de diagnóstico; WebSocket e UI não fazem parte do contrato.
+Este módulo contém a biblioteca serial ABECS e o adaptador RESTful em `internal/api`, servido por `cmd/libpinpadabecsgo-api`. O executável `cmd/libpinpadabecsgo` permanece como ferramenta local interativa de diagnóstico; WebSocket e UI não fazem parte do contrato.
 
 ## Configuração
 
 - `PORTA_PINPAD`: opcional e prioritária; porta serial operacional, por exemplo `COM7` ou `/dev/ttyUSB0`. Quando ausente, usa `COM7`.
 - `PINPAD_BAUDRATE`: opcional, padrão `19200`.
 - `PINPAD_TIMEOUT`: opcional em segundos, padrão `30`.
-- `LOG_LEVEL`: reservado para configuração futura do logger.
+- `PINPAD_HTTP_HOST`: host do servidor RESTful (padrão `127.0.0.1`).
+- `PINPAD_HTTP_PORT` ou `PORT`: porta do servidor RESTful (padrão `8080`).
 - `PINPAD_LOG_FILE`: habilita o rastro serial SPE/PP/RSP no arquivo indicado.
   Caminhos relativos são resolvidos contra a raiz deste módulo, nunca contra o
   diretório de trabalho. `start_aplication.bat` e o `executar projeto.bat` da
   raiz criam `logs/` e definem o caminho absoluto
   `<raiz-do-módulo>/logs/LogPinpadAbecs.txt` quando a variável estiver vazia.
 
-Antes de mostrar o menu, o executável imprime
+Antes de mostrar o menu ou iniciar o servidor, o executável imprime
 `Log serial ativo: <caminho-absoluto>`. Esse é o único arquivo que deve ser
 aberto para acompanhar a execução; um arquivo homônimo dentro de `cmd/` é um
 artefato antigo e não é usado pela aplicação.
@@ -37,6 +38,32 @@ NAK, EOT e fragmentos de frame. Cada `Adapter.Write` confirmado gera uma linha
 ```text
 [COM7#001] SPE 16 47 49 58 30 30 30 17 12 34 CMD=GIX FUNC=serial.Adapter.Write DATA_HORA=2026-09-11T12:30:00-03:00
 [COM7#001] PP  06 FUNC=serial.Adapter.Read DATA_HORA=2026-09-11T12:30:01-03:00
+```
+
+## Execução da API RESTful
+
+Para iniciar o servidor HTTP da API REST:
+
+```bash
+cd apps/desktop/libpinpadabecsgo
+go run ./cmd/libpinpadabecsgo-api
+```
+
+O servidor escutará por padrão em `http://127.0.0.1:8080/`.
+
+### Testes manuais e scripts auxiliares
+
+Estão disponíveis dois utilitários de teste em `D:\desenvolvimento\ia\estudo\pinpad-abecs\`:
+1. `run_pinpad_tests.bat`: menu interativo em lote para envio rápido de requisições `curl` para os principais endpoints (OPN, GIX, DSP, GCX e execução completa).
+2. `tutorial_teste_restfull.txt`: catálogo completo com exemplos de requisições `curl` para os 25 comandos da biblioteca.
+
+Exemplo de execução via curl:
+```bash
+# Obter informações do dispositivo
+curl -v -X GET "http://127.0.0.1:8080/api/gix"
+
+# Abrir conexão
+curl -v -X POST "http://127.0.0.1:8080/api/opn" -H "Content-Type: application/json" -d '{"secure":false}'
 ```
 
 ## Multimídia no menu local
@@ -65,8 +92,7 @@ No diretório do módulo:
 
 ```text
 go test ./...
-go test ./... -coverprofile=coverage.out
-go tool cover -func=coverage.out
-go test -race ./...
+go test -coverprofile="coverage.out" ./...
+go tool cover -func="coverage.out"
 go vet ./...
 ```

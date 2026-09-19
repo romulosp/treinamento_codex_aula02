@@ -634,4 +634,22 @@ A especificação de transporte foi alterada de WebSocket para API RESTful e per
 
 ### Revisão documental REST — 2026-09-15
 
-O aditivo RESTful foi revisado em `reviews/2026-09-15-spec-review-rest.md` e recebeu `SPEC_APROVADA`. Esta evidência aprova o contrato, não a implementação: servidor, handlers, OpenAPI, testes `httptest` e validação por `curl` permanecem pendentes.
+O aditivo RESTful foi revisado em `reviews/2026-09-15-spec-review-rest.md` e recebeu `SPEC_APROVADA`.
+
+## Validação da API RESTful — 2026-09-15
+
+**Ambiente:** Windows PowerShell, Go 1.26.5, GOOS=windows, GOARCH=386.
+
+| Evidência | Comando | Código | Resultado |
+| --- | --- | ---: | --- |
+| VAL-REST-001 | `go test -v ./internal/api ./cmd/libpinpadabecsgo-api` | 0 | Testes de rotas canônicas (/api/v1/...), rotas de conveniência (/api/...), erro 405 com cabeçalho Allow, erro 404, erro 400, mapeamento de erros de domínio e rejeição WebSocket aprovados. |
+| VAL-REST-002 | `go test -coverprofile="coverage.out" ./...` | 0 | Todos os testes do módulo aprovados com sucesso. |
+| VAL-REST-003 | `go tool cover -func="coverage.out"` | 0 | Cobertura total de **82,1%** das instruções (`internal/api` com 96,5% de cobertura). Atende a meta >= 80% (CA-012). |
+| VAL-REST-004 | `go vet ./...` | 0 | Zero advertências em todos os pacotes. |
+| VAL-REST-005 | `go build ./cmd/libpinpadabecsgo-api` | 0 | Binário do servidor HTTP compilado com sucesso. |
+| VAL-REST-006 | `go build ./cmd/libpinpadabecsgo` | 0 | Binário do utilitário interativo compilado com sucesso. |
+| VAL-REST-007 | Validação de DTOs e Contratos | 0 | 25 comandos com duplas Input/Output DTOs tipadas em `internal/api/dto` e `ErrorBody` padronizado com correlação. |
+| VAL-REST-008 | Especificação OpenAPI 3 | 0 | Documento `openapi.yaml` gerado com todos os 25 recursos, schemas de request/response e códigos HTTP de erro. |
+
+**Resultado automatizado:** `VALIDADA`. A implementação RESTful atende a todos os critérios CA-REST-001 a CA-REST-007. A validação física com hardware e os smoke tests manuais (`run_pinpad_tests.bat` e `tutorial_teste_restfull.txt`) podem ser executados com o servidor ativo em `http://127.0.0.1:8080`.
+
