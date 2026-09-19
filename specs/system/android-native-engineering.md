@@ -1,5 +1,9 @@
 # Android Native Engineering vigente
 
+As skills Kotlin/Compose subordinadas ficam em
+`.agents/skills/android-native-engineering/kotlin/`, conforme o índice local;
+a skill-base prevalece sobre essas especializações.
+
 ## Skill principal
 
 - Skill: `.agents/skills/android-native-engineering/SKILL.md`.
