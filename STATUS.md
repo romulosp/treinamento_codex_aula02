@@ -10,6 +10,7 @@ Change 003-concluir-execucao-produto-base: ARQUIVADA em 2026-09-06; verificaçõ
 
 | Mudança | Fase atual | Última atualização |
 | --- | --- | --- |
+| `2026-09-18-067-android-native-engineering` | `ARQUIVADA` | 2026-09-19 |
 | `001-criar-projeto-java` | `ARQUIVADA` | 2026-08-27 |
 | `002-consolidar-governanca-spec-driven` | `ARQUIVADA` | 2026-08-27 |
 | `003-gerenciar-categorias` | `ARQUIVADA` | 2026-08-26 |

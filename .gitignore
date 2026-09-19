@@ -16,6 +16,9 @@ apps/backend/gerenciartarefas/start_aplicacao.bat
 apps/backend/gerenciarcategorias/start_aplicacao.bat
 !scripts/
 !scripts/**
+!.agents/skills/android-native-engineering/agents/openai.yaml
+!.agents/skills/android-native-engineering/scripts/validate_android_project.py
+!docs/security-audit/relatorio-067-android-native-engineering.pdf
 .env
 .env.*
 
