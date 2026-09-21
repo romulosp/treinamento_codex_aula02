@@ -2,7 +2,7 @@
 
 ## Status
 
-`PENDENTE_REVISAO_IMPLEMENTACAO`
+`VALIDADA`
 
 | ID | Cenário | Evidência esperada |
 | --- | --- | --- |
@@ -11,6 +11,33 @@
 | VAL-03 | Ações visuais | semântica encontra `ENTER` e ausência de cancelar |
 | VAL-04 | Plugin | build produz APK e host carrega `startup-auth` |
 | VAL-05 | Manual | script instala e abre o emulador em paisagem |
+
+## Validação formal — 2026-09-21
+
+Revisão de implementação aprovada em
+`reviews/2026-09-21-implementation-review.md`.
+
+| ID | Comando/ação | Resultado | Código |
+| --- | --- | --- | --- |
+| VAL-001 | `gradlew.bat :app:assembleDebug :plugin-login:assembleDebug :app:testDebugUnitTest :plugin-login:testDebugUnitTest --no-daemon --console=plain` | Build dos APKs e testes JVM concluídos | `0` |
+| VAL-002 | `gradlew.bat :app:lintDebug :plugin-login:lintDebug --no-daemon --console=plain` | Lint dos módulos aprovado | `0` |
+| VAL-003 | `gradlew.bat :app:connectedDebugAndroidTest :plugin-login:connectedDebugAndroidTest --no-daemon --console=plain` | Testes instrumentados aprovados no `Medium_Tablet(AVD) - 15` | `0` |
+| VAL-004 | `validate_android_project.py`, com `local.properties` temporariamente separado e restaurado | Invariantes estruturais atendidos | `0` |
+| VAL-005 | `scripts/gerar-compilar-executar.ps1` | Host instalado, iniciado em paisagem e plugin entregue separadamente à pasta dinâmica | `0` |
+| VAL-006 | `uiautomator dump` após a ativação dinâmica | Encontrados `IDENTIFICAÇÃO`, `USUÁRIO`, `SENHA`, `ENTER` e `CONFIRMAR`; ausentes indisponibilidade, `SAIR` e `CANCELAR` | `0` |
+| VAL-007 | Auditoria de segurança e geração de PDF | Nenhum achado confirmado; categorias de backend/rede/banco permanecem fora do escopo | `0` |
+
+## Ambiente atual
+
+Windows; JBR do Android Studio em `D:\desenvolvimento\ferramentas_android\Nova pasta\AndroidStudio\jbr`; Gradle `9.6.0`; AGP `9.4.0`; Android SDK em `D:\desenvolvimento\ferramentas_android\Sdk`; API 37; emulador `Medium_Tablet(AVD) - 15`.
+
+## Evidências
+
+- APKs: `app/build/outputs/apk/debug/app-debug.apk` e
+  `plugin-login/build/outputs/apk/debug/plugin-login-debug.apk`.
+- Auditoria: `docs/security-audit/relatorio-10001-plugin-login-autenticacao.pdf`.
+- A validação manual pode ser repetida pelo script oficial; o host permanece
+  aberto no emulador para inspeção no Android Studio.
 
 ## Evidência de implementação e correção de runtime
 
@@ -37,7 +64,3 @@ APK gravável entregue ao `DexClassLoader` (`SecurityException`) e a instanciaç
 reflexiva da `LoginViewModel` privada falhava (`IllegalAccessException`). A
 correção e sua verificação estão registradas em
 `reviews/2026-09-21-runtime-plugin-load-fix.md`.
-
-Esta evidência não substitui revisão independente nem a validação formal. O
-status permanece pendente enquanto o quality gate estrutural estiver bloqueado
-por `local.properties` e a revisão independente não for concluída.

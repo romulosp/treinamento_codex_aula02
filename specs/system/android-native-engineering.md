@@ -35,6 +35,18 @@ Esta especificação vigente foi consolidada após a aprovação formal da Chang
 
 ## Microkernel Android com plugins dinâmicos
 
+O primeiro plugin operacional é `plugin-login`, responsável pela capacidade
+`startup-auth`. Ele contém exclusivamente a UI Compose de identificação, o
+estado, o teclado, a regra inicial `L`, o foco/seleção dos campos e a
+autenticação local demonstrativa. O host hospeda a `View` pelo contrato de
+`shared-api` e recebe somente `SessionStateChangedEvent` com identificador opaco
+e expiração; usuário e senha não atravessam o limite do plugin.
+
+O plugin é compilado como APK separado e consome `shared-api` como
+`compileOnly`. A tela permanece em paisagem e expõe `ENTER`, `CONFIRMAR`,
+`LIMPAR` e `FIXAR`, sem ação `SAIR/CANCELAR`. A implementação e a validação
+foram encerradas na Change `10001-plugin-login-autenticacao`.
+
 O host Android pode observar `<externalFilesDir>/plugins/inbox` como staging não
 confiável. Plugins internos devem ser entregues como APK separado, assinado com
 o mesmo certificado permitido pelo host, copiado para quarentena privada,

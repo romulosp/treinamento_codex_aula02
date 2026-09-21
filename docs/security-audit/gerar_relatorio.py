@@ -184,12 +184,46 @@ def build_change_10002_pdf():
     return output
 
 
+def build_change_10001_pdf():
+    """Produz a auditoria da Change 10001 sem substituir relatórios anteriores."""
+    from reportlab.platypus import SimpleDocTemplate
+
+    output = OUTPUT.with_name("relatorio-10001-plugin-login-autenticacao.pdf")
+    styles = build_styles()
+    paragraphs = [
+        ("Auditoria de segurança", "title"),
+        ("10001-plugin-login-autenticacao - 21/09/2026", "subtitle"),
+        ("Resultado", "h1"),
+        ("Nenhum achado de segurança confirmado permanece em aberto nesta Change.", "body"),
+        ("Escopo e método", "h1"),
+        ("Foram inspecionados o host Android, o módulo shared-api, o APK plugin-login, o manifesto, o carregador DexClassLoader, a tela Compose, os testes e o script de execução. A auditoria combinou análise estática, busca por segredos e APIs perigosas, testes automatizados, lint, build e execução no emulador.", "body"),
+        ("Autenticação e privacidade", "h1"),
+        ("A autenticação é local e demonstrativa. O plugin publica somente SessionStateChangedEvent com identificador opaco e expiração. Usuário e senha permanecem no plugin, não são persistidos, enviados ao host ou registrados.", "body"),
+        ("Isolamento e entrada", "h1"),
+        ("O host não contém regra ou campos de login. O plugin depende da API compartilhada como compileOnly, declara startup-auth e é carregado a partir de APK validado em área privada. A entrada do usuário é limitada e a primeira posição exige L.", "body"),
+        ("Categorias não aplicáveis", "h1"),
+        ("Backend, rede, banco, tenant, IDOR, autorização de servidor, XSS e deploy remoto não existem no escopo. O login local não deve ser usado como controle de acesso de produção.", "body"),
+        ("Limitação", "h1"),
+        ("Não foi realizado teste de penetração nem validação de credenciais reais. A assinatura de distribuição permanece limitada ao ambiente interno de desenvolvimento conforme a SPEC.", "body"),
+        ("Recomendações", "h1"),
+        ("Criar Change própria antes de autenticação remota, armazenamento de credenciais ou distribuição externa. Repetir a auditoria ao adicionar capacidades ao plugin.", "body"),
+    ]
+    SimpleDocTemplate(
+        str(output), pagesize=A4, leftMargin=2 * cm, rightMargin=2 * cm,
+        topMargin=1.5 * cm, bottomMargin=1.5 * cm,
+        title="Auditoria 10001-plugin-login-autenticacao", author="Codex",
+    ).build([Paragraph(text, styles[kind]) for text, kind in paragraphs])
+    return output
+
+
 if __name__ == "__main__":
     import sys
     if "--change-067" in sys.argv:
         print(build_android_native_engineering_pdf())
     elif "--change-10002" in sys.argv:
         print(build_change_10002_pdf())
+    elif "--change-10001" in sys.argv:
+        print(build_change_10001_pdf())
     elif "--change-011" in sys.argv:
         print(build_correction_pdf())
     else:
