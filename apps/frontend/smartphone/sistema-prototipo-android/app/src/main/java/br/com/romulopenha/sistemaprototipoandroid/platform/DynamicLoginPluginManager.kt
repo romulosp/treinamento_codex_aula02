@@ -46,13 +46,33 @@ internal class DynamicLoginPluginManager(
     @Synchronized
     fun start() {
         if (started) return
-        check(!worker.isShutdown) { "PluginManager já foi encerrado" }
-        check(stagingDirectory.mkdirs() || stagingDirectory.isDirectory) {
-            "Não foi possível criar a pasta dinâmica"
+        try {
+            check(!worker.isShutdown) { "PluginManager já foi encerrado" }
+            val directory = stagingDirectory
+            check(directory.mkdirs() || directory.isDirectory) {
+                "Não foi possível criar a pasta dinâmica"
+            }
+            started = true
+            observer = createObserver(directory).also { it.startWatching() }
+            scheduleScan(delayMillis = 0)
+        } catch (error: Exception) {
+            started = false
+            observer?.stopWatching()
+            observer = null
+            audit(
+                PluginTransition(
+                    status = PluginRuntimeStatus.ERROR,
+                    reason = error.javaClass.simpleName,
+                ),
+                error,
+            )
+            publish(
+                PluginHostState(
+                    status = PluginRuntimeStatus.ERROR,
+                    message = "Plugin de autenticação indisponível.",
+                ),
+            )
         }
-        started = true
-        observer = createObserver(stagingDirectory).also { it.startWatching() }
-        scheduleScan(delayMillis = 0)
     }
 
     /** Para o watcher e cancela varredura pendente; a instância ativa permanece estável. */
@@ -175,6 +195,15 @@ internal class DynamicLoginPluginManager(
                     ),
                 )
             }
+        } catch (error: LinkageError) {
+            if (activePlugin == null) {
+                publish(
+                    PluginHostState(
+                        status = PluginRuntimeStatus.REJECTED,
+                        message = "Plugin de autenticação rejeitado.",
+                    ),
+                )
+            }
         }
     }
 
@@ -191,6 +220,14 @@ internal class DynamicLoginPluginManager(
                 ),
             )
         } catch (error: Exception) {
+            activePlugin = null
+            publish(
+                PluginHostState(
+                    status = PluginRuntimeStatus.ERROR,
+                    message = "Plugin de autenticação indisponível.",
+                ),
+            )
+        } catch (error: LinkageError) {
             activePlugin = null
             publish(
                 PluginHostState(

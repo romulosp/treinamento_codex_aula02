@@ -8,5 +8,6 @@
   "entryClass": "br.com.romulopenha.sistemaprototipoandroid.pluginlogin.PluginLoginApp",
   "declaredPackageName": "br.com.romulopenha.sistemaprototipoandroid.pluginlogin",
   "priority": 100,
-  "capabilities": ["startup-auth"]
+  "capabilities": ["startup-auth"],
+  "dependencies": []
 }

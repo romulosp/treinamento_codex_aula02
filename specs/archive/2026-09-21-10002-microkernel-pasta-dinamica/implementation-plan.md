@@ -19,6 +19,7 @@
 - Unitários existentes do login devem permanecer verdes.
 - Lint do host e plugin.
 - Testes Compose instrumentados do plugin.
+- Testes instrumentados do host para rejeição, limpeza e manifesto estruturado.
 - Integração manual/automatizada por `adb`: iniciar host sem APK novo, mover o
   plugin para inbox e confirmar a UI por dump do UIAutomator.
 - Reiniciar o processo e confirmar carga pelo repositório verificado.

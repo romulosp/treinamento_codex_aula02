@@ -19,7 +19,7 @@ DynamicLoginPluginManager               (executor serial)
 LoginPluginLoader.verify
           |
           +--> files/plugins/quarantine (cópia privada)
-          |        caminho/tamanho/digest/assinatura/pacote/manifesto/API
+          |        caminho/tamanho/digest/assinatura/pacote/JSON/manifesto/API
           v
 files/plugins/verified/<sha256>.apk      (somente leitura)
           |
@@ -73,10 +73,10 @@ assim, arquivos recebidos enquanto o app estava parado são descobertos.
 
 ## Fluxo cooperativo de erro
 
-Toda fronteira de callback do plugin é protegida. Uma exceção registra `ERROR`,
-executa `onDetach` de melhor esforço, descarta o registro e a fábrica ativos e
-publica indisponibilidade. `MainActivity` troca o `AndroidView` pelo fallback;
-a Activity e o microkernel permanecem vivos.
+Toda fronteira de callback do plugin é protegida. Uma exceção recuperável ou
+falha de linkage registra `ERROR`, executa `onDetach` de melhor esforço, descarta
+o registro e a fábrica ativos e publica indisponibilidade. `MainActivity` troca
+o `AndroidView` pelo fallback; a Activity e o microkernel permanecem vivos.
 
 ## Segurança
 

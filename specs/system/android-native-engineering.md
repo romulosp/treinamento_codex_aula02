@@ -32,3 +32,22 @@ Cada Change Kotlin deve inventariar arquivos `.kt`, declarações documentadas e
 Não versionar segredos, tokens, credenciais, PAN, localização precisa ou dados pessoais. Revisar componentes exportados, Intents, deep links, WebView, armazenamento, backup, rede e permissões conforme a superfície real. Toda execução registra ambiente, comando, código de saída, resultado e limitações.
 
 Esta especificação vigente foi consolidada após a aprovação formal da Change `2026-09-18-067-android-native-engineering`.
+
+## Microkernel Android com plugins dinâmicos
+
+O host Android pode observar `<externalFilesDir>/plugins/inbox` como staging não
+confiável. Plugins internos devem ser entregues como APK separado, assinado com
+o mesmo certificado permitido pelo host, copiado para quarentena privada,
+validados por digest, pacote, manifesto JSON, API compartilhada e capacidade, e
+promovidos para `files/plugins/verified/<sha256>.apk` somente leitura antes do
+uso de `DexClassLoader`.
+
+O `FileObserver` somente agenda trabalho; o processamento ocorre em executor
+serial com debounce e varredura de boot. Atualizações de uma capacidade ativa
+ficam em `PENDING_RESTART`. Falhas de rejeição e falhas recuperáveis de carga ou
+callback devem ser auditadas sem segredos e convergir para `REJECTED` ou
+`ERROR`, `onDetach` de melhor esforço e fallback do host.
+
+O primeiro fluxo vigente dessa arquitetura é a Change
+`10002-microkernel-pasta-dinamica`, arquivada após validação no AVD e auditoria
+de segurança sem achados confirmados.

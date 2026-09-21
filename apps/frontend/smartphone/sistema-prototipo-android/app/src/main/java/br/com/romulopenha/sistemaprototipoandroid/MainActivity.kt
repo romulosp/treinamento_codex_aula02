@@ -100,6 +100,8 @@ private fun PluginHostContent(
                                 onSessionEstablished(event)
                             } catch (error: Exception) {
                                 onRuntimeFailure(error)
+                            } catch (error: LinkageError) {
+                                onRuntimeFailure(error)
                             }
                         }
                         addView(
@@ -110,6 +112,9 @@ private fun PluginHostContent(
                             ),
                         )
                     } catch (error: Exception) {
+                        onRuntimeFailure(error)
+                        addView(TextView(context).apply { text = "Plugin de autenticação indisponível." })
+                    } catch (error: LinkageError) {
                         onRuntimeFailure(error)
                         addView(TextView(context).apply { text = "Plugin de autenticação indisponível." })
                     }

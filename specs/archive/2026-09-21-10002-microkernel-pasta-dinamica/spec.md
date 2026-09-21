@@ -50,6 +50,18 @@ DEVE ser excluída; a implementação não conservará um repositório de APKs
 contaminados. Após cópia íntegra para quarentena, o arquivo de staging DEVE ser
 removido para concluir semanticamente a movimentação indicada no diagrama.
 
+O manifesto DEVE ser um objeto JSON válido e conter, no mínimo, `schemaVersion`,
+`pluginId`, `displayName`, `pluginVersion` em SemVer, `requiredSharedApiMajor`,
+`requiredSharedApiMinor`, `entryClass`, `declaredPackageName`, `priority`,
+`capabilities` e `dependencies`. Campos obrigatórios ausentes, com tipo inválido
+ou com valor incompatível DEVEM gerar `REJECTED`; a validação não pode depender
+de busca textual parcial.
+
+A fronteira de rejeição abrange também as validações de caminho, extensão,
+tamanho e criação/cópia da quarentena. Quando o candidato puder ser identificado
+com segurança dentro do staging, ele deve ser removido após a rejeição para não
+ser processado repetidamente.
+
 ### RF-04 — Ativação dinâmica inicial
 
 Quando ainda não houver plugin ativo, o primeiro candidato válido DEVE ser
@@ -82,6 +94,10 @@ Se `DexClassLoader`, construção, `onLoad`, `onAttach`, `onActivate`, criação
 View ou callback do plugin lançar exceção, o manager DEVE registrar `ERROR`,
 tentar `onDetach`, limpar a capacidade registrada e fazer o host remover a View
 do plugin e apresentar indisponibilidade. A falha NÃO DEVE derrubar a Activity.
+
+Falhas recuperáveis de carregamento e inicialização de classes, incluindo
+`LinkageError`, DEVEM seguir o mesmo fluxo cooperativo. Erros fatais de processo,
+como exaustão irrecuperável de memória, não são convertidos em estado de UI.
 
 ### RF-07 — Build e entrega de desenvolvimento
 

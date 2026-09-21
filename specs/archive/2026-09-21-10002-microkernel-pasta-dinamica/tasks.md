@@ -16,4 +16,15 @@
 - [x] Criar/atualizar testes aplicáveis e inventário KDoc.
 - [x] Executar build, unitários, lint e teste no emulador.
 - [x] Gerar os componentes e deixar o app aberto para validação manual.
-- [ ] Realizar revisão independente da implementação.
+- [x] Realizar revisão independente da implementação.
+
+## Correções da revisão de implementação
+
+- [x] Corrigir `IMP-REV-001`: rejeição, auditoria e limpeza desde a primeira
+  pré-condição.
+- [x] Corrigir `IMP-REV-002`: parser JSON estruturado e contrato completo do
+  manifesto.
+- [x] Corrigir `IMP-REV-003`: contenção de falhas recuperáveis de linkage e
+  fallback da Activity.
+- [x] Corrigir `IMP-REV-004`: testes instrumentados do loader e do parser.
+- [x] Executar nova revisão independente da implementação.

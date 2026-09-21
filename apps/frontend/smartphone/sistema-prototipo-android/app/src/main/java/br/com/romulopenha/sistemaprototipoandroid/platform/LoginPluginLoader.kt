@@ -3,6 +3,7 @@ package br.com.romulopenha.sistemaprototipoandroid.platform
 import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
+import org.json.JSONObject
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IPluginApp
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IPluginRouter
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IUIRegistry
@@ -41,13 +42,17 @@ internal data class PluginTransition(
 
 /** Metadados extraídos do manifesto interno e validados antes da carga. */
 internal data class PluginDescriptor(
+    val schemaVersion: Int,
     val pluginId: String,
+    val displayName: String,
     val pluginVersion: String,
     val requiredMajor: Int,
     val requiredMinor: Int,
     val entryClass: String,
     val declaredPackageName: String,
+    val priority: Int,
     val capabilities: Set<String>,
+    val dependencies: Set<String>,
 )
 
 /** APK promovido ao repositório privado e apto a chegar ao classloader. */
@@ -73,6 +78,9 @@ internal object LoginPluginLoader {
     private const val PluginId = "br.com.romulopenha.sistemaprototipoandroid.login"
     private const val StartupAuthCapability = "startup-auth"
     private const val MaxPluginBytes = 64L * 1024L * 1024L
+    private const val ManifestSchemaVersion = 1
+    private val SemVerPattern = Regex("\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?")
+    private val DependencyPattern = Regex("[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*")
     private val HostApi = SharedApiVersion(major = 1, minor = 0, patch = 0)
 
     /**
@@ -88,30 +96,36 @@ internal object LoginPluginLoader {
         onTransition: (PluginTransition) -> Unit,
     ): VerifiedLoginPlugin {
         onTransition(PluginTransition(PluginRuntimeStatus.DISCOVERED))
-        val canonicalRoot = stagingRoot.canonicalFile
-        val canonicalCandidate = candidate.canonicalFile
-        require(canonicalCandidate.parentFile == canonicalRoot) { "Candidato fora da pasta observada" }
-        require(canonicalCandidate.extension.equals("apk", ignoreCase = true)) { "Extensão inválida" }
-        require(canonicalCandidate.length() in 1..MaxPluginBytes) { "Tamanho de APK inválido" }
-
-        val quarantineDirectory = File(context.filesDir, "plugins/quarantine").apply { mkdirs() }
-        val quarantined = File.createTempFile("plugin-", ".apk", quarantineDirectory)
+        var safeCandidate: File? = null
+        var quarantined: File? = null
         return try {
+            val canonicalRoot = stagingRoot.canonicalFile
+            val canonicalCandidate = candidate.canonicalFile
+            require(canonicalCandidate.parentFile == canonicalRoot) { "Candidato fora da pasta observada" }
+            safeCandidate = canonicalCandidate
+            require(canonicalCandidate.extension.equals("apk", ignoreCase = true)) { "Extensão inválida" }
+            require(canonicalCandidate.length() in 1..MaxPluginBytes) { "Tamanho de APK inválido" }
+
+            val quarantineDirectory = File(context.filesDir, "plugins/quarantine").apply {
+                check(mkdirs() || isDirectory) { "Não foi possível criar a quarentena" }
+            }
+            quarantined = File.createTempFile("plugin-", ".apk", quarantineDirectory)
             canonicalCandidate.inputStream().use { input ->
-                quarantined.outputStream().use(input::copyTo)
+                quarantined!!.outputStream().use(input::copyTo)
             }
             check(canonicalCandidate.delete()) { "Não foi possível concluir a movimentação do staging" }
             onTransition(PluginTransition(PluginRuntimeStatus.STAGED))
 
-            val digest = sha256(quarantined)
-            val descriptor = readDescriptor(quarantined)
+            val digest = sha256(quarantined!!)
+            val descriptor = readDescriptor(quarantined!!)
             validateDescriptor(descriptor)
-            validateArchive(context, quarantined, descriptor)
-            val verified = promote(context, quarantined, descriptor, digest)
+            validateArchive(context, quarantined!!, descriptor)
+            val verified = promote(context, quarantined!!, descriptor, digest)
             onTransition(verified.transition(PluginRuntimeStatus.VERIFIED))
             verified
         } catch (error: Exception) {
-            quarantined.delete()
+            quarantined?.delete()
+            safeCandidate?.delete()
             onTransition(
                 PluginTransition(
                     status = PluginRuntimeStatus.REJECTED,
@@ -177,15 +191,26 @@ internal object LoginPluginLoader {
             onTransition(verified.transition(PluginRuntimeStatus.ACTIVE))
             loaded
         } catch (error: Exception) {
-            runCatching { app?.onDetach() }
-            onTransition(
-                verified.transition(
-                    status = PluginRuntimeStatus.ERROR,
-                    reason = error.javaClass.simpleName,
-                ),
-            )
-            throw error
+            failLoad(app, verified, onTransition, error)
+        } catch (error: LinkageError) {
+            failLoad(app, verified, onTransition, error)
         }
+    }
+
+    private fun failLoad(
+        app: IPluginApp?,
+        verified: VerifiedLoginPlugin,
+        onTransition: (PluginTransition) -> Unit,
+        error: Throwable,
+    ): Nothing {
+        runCatching { app?.onDetach() }
+        onTransition(
+            verified.transition(
+                status = PluginRuntimeStatus.ERROR,
+                reason = error.javaClass.simpleName,
+            ),
+        )
+        throw error
     }
 
     /** Revalida uma entrada privada no boot e a exclui se qualquer invariante falhar. */
@@ -236,10 +261,15 @@ internal object LoginPluginLoader {
 
     /** Confere identidade, API, entry class e capacidade antes da inspeção do APK. */
     private fun validateDescriptor(descriptor: PluginDescriptor) {
+        require(descriptor.schemaVersion == ManifestSchemaVersion) { "Versão de manifesto incompatível" }
         require(descriptor.pluginId == PluginId) { "Identidade de plugin incompatível" }
+        require(descriptor.displayName.isNotBlank()) { "Nome de exibição ausente" }
+        require(SemVerPattern.matches(descriptor.pluginVersion)) { "Versão de plugin inválida" }
         require(descriptor.requiredMajor == HostApi.major) { "Major da API incompatível" }
         require(descriptor.requiredMinor <= HostApi.minor) { "Minor da API incompatível" }
+        require(descriptor.priority >= 0) { "Prioridade inválida" }
         require(StartupAuthCapability in descriptor.capabilities) { "Capacidade startup-auth ausente" }
+        require(descriptor.dependencies.all(DependencyPattern::matches)) { "Dependência de plugin inválida" }
         require(descriptor.entryClass.startsWith("${descriptor.declaredPackageName}.")) {
             "Entry class fora do pacote declarado"
         }
@@ -272,26 +302,19 @@ internal object LoginPluginLoader {
         return signatures.orEmpty().map { sha256(it.toByteArray()) }.toSet()
     }
 
-    /** Lê somente os campos necessários do manifesto versionado dentro do APK. */
+    /** Lê e estrutura todos os campos obrigatórios do manifesto versionado. */
     private fun readDescriptor(apk: File): PluginDescriptor = ZipFile(apk).use { zip ->
         val entry = requireNotNull(zip.getEntry("assets/plugin-manifest.json")) {
             "Manifesto de plugin ausente"
         }
         val content = zip.getInputStream(entry).bufferedReader().use { it.readText() }
-        PluginDescriptor(
-            pluginId = content.string("pluginId"),
-            pluginVersion = content.string("pluginVersion"),
-            requiredMajor = content.number("requiredSharedApiMajor"),
-            requiredMinor = content.number("requiredSharedApiMinor"),
-            entryClass = content.string("entryClass"),
-            declaredPackageName = content.string("declaredPackageName"),
-            capabilities = content.array("capabilities"),
-        )
+        PluginManifestParser.parse(content)
     }
 
     /** Impede que a instância carregada declare identidade diferente do arquivo validado. */
     private fun validateRuntimeManifest(runtime: PluginManifest, descriptor: PluginDescriptor) {
         require(runtime.pluginId == descriptor.pluginId)
+        require(runtime.displayName == descriptor.displayName)
         require(runtime.pluginVersion == descriptor.pluginVersion)
         require(runtime.requiredSharedApiMajor == descriptor.requiredMajor)
         require(runtime.requiredSharedApiMinor == descriptor.requiredMinor)
@@ -328,21 +351,48 @@ internal object LoginPluginLoader {
 
     private fun ByteArray.toHex(): String = joinToString(separator = "") { byte -> "%02x".format(byte) }
 
-    private fun String.string(name: String): String =
-        Regex("\\\"$name\\\"\\s*:\\s*\\\"([^\\\"]+)\\\"").find(this)?.groupValues?.get(1)
-            ?: error("Manifesto sem $name")
+    /** Parser estruturado do manifesto, sem aceitar texto parcial ou campos ausentes. */
+    internal object PluginManifestParser {
+        fun parse(content: String): PluginDescriptor {
+            val json = JSONObject(content)
+            return PluginDescriptor(
+                schemaVersion = json.requiredInt("schemaVersion"),
+                pluginId = json.requiredString("pluginId"),
+                displayName = json.requiredString("displayName"),
+                pluginVersion = json.requiredString("pluginVersion"),
+                requiredMajor = json.requiredInt("requiredSharedApiMajor"),
+                requiredMinor = json.requiredInt("requiredSharedApiMinor"),
+                entryClass = json.requiredString("entryClass"),
+                declaredPackageName = json.requiredString("declaredPackageName"),
+                priority = json.requiredInt("priority"),
+                capabilities = json.requiredStringSet("capabilities"),
+                dependencies = json.requiredStringSet("dependencies"),
+            )
+        }
 
-    private fun String.number(name: String): Int =
-        Regex("\\\"$name\\\"\\s*:\\s*(\\d+)").find(this)?.groupValues?.get(1)?.toInt()
-            ?: error("Manifesto sem $name")
+    private fun JSONObject.requiredString(name: String): String {
+        val value = get(name)
+        require(value is String && value.isNotBlank()) { "Manifesto sem $name" }
+        return value
+    }
 
-    private fun String.array(name: String): Set<String> =
-        Regex("\\\"$name\\\"\\s*:\\s*\\[([^]]*)]").find(this)?.groupValues?.get(1)
-            ?.split(',')
-            ?.map { it.trim().trim('"') }
-            ?.filter(String::isNotEmpty)
-            ?.toSet()
-            ?: emptySet()
+    private fun JSONObject.requiredInt(name: String): Int {
+        val value = get(name)
+        require(value is Number) { "Manifesto com $name inválido" }
+        return value.toInt()
+    }
+
+        private fun JSONObject.requiredStringSet(name: String): Set<String> {
+            val values = getJSONArray(name)
+            return buildSet {
+                repeat(values.length()) { index ->
+                    val value = values.getString(index)
+                    require(value.isNotBlank()) { "Manifesto com $name inválido" }
+                    add(value)
+                }
+            }
+        }
+    }
 
     private object HostContext : PluginHostContext {
         override fun publish(event: PluginEvent) = Unit
