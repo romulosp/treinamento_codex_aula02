@@ -1,5 +1,8 @@
 # Especificação complementar: teclados virtuais
 
+> **SUPERSEDIDA PARA OPERAÇÃO.** O teclado vinculado à identificação é parte
+> exclusiva de `:plugin-login` desde a Change `10001-plugin-login-autenticacao`.
+
 **Autor:** Rômulo Penha
 
 ## Componentes

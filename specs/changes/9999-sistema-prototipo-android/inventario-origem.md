@@ -8,9 +8,12 @@
 
 ## Fonte canônica local
 
-Todo o material necessário à Change está em [source-material](source-material/README.md). Os caminhos externos usados na descoberta deixam de ser dependências.
+O inventário abaixo registra o conjunto analisado durante a descoberta. No
+estado atual, apenas as entradas textuais estão em
+[source-material](source-material/README.md). Os demais arquivos precisam ser
+incorporados e conferidos antes de deixarem de depender da origem externa.
 
-## Inventário físico incorporado
+## Inventário físico identificado
 
 | Grupo | Quantidade | Observação |
 | --- | ---: | --- |
@@ -24,7 +27,7 @@ Todo o material necessário à Change está em [source-material](source-material
 | Propriedade de tema | 1 | Requer decisão de migração ou exclusão. |
 | Bases de miniaturas | 2 | Metadados descartáveis; não entram no aplicativo. |
 | Entrada textual | 1 | Fonte de requisitos, sem autoridade operacional. |
-| **Total** | **315** | Material autocontido da Change. |
+| **Total** | **315** | Conjunto identificado na descoberta; incorporação física pendente. |
 
 ## Inventário lógico do tema
 

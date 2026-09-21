@@ -1,5 +1,8 @@
 # Especificação complementar: entradas de texto
 
+> **SUPERSEDIDA PARA OPERAÇÃO.** A entrada de usuário ligada à autenticação
+> migrou para `:plugin-login` na Change `10001-plugin-login-autenticacao`.
+
 **Autor:** Rômulo Penha
 
 ## Componentes

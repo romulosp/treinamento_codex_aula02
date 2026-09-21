@@ -1,0 +1,41 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:jxb="http://java.sun.com/xml/ns/jaxb" jxb:version="1.0">
+	<!--
+		Caixa Economica Federal
+		SISPL 
+		Arquivo  : controle.xsd
+		Criacao  : 29/06/2005
+		Implementadora: Clarissa Lorena
+		
+		XML Schema que define a forma de montar os menus
+	-->
+	<!-- Elemento root do xml -->
+	<xs:element name="menuXml">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:sequence>
+					<xs:element name="itemMenuXml" type="itemMenuXml" />
+				</xs:sequence>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:complexType name="itemMenuXml">
+		<xs:sequence>
+			<xs:element name="itemMenuXml" type="itemMenuXml" minOccurs="0" maxOccurs="unbounded" />
+		</xs:sequence>
+		<xs:attribute name="nome" use="required" />
+		<xs:attribute name="tituloPrincipal" use="required" />
+		<xs:attribute name="tituloSecundario" use="optional" />
+		<xs:attribute name="nomeMovimento" use="optional" />
+		<xs:attribute name="codigoMovimento" use="optional" default="0">
+			<xs:simpleType>
+				<xs:restriction base="xs:int" />
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="opcao" use="optional" default="0">
+			<xs:simpleType>
+				<xs:restriction base="xs:int" />
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="atalho" use="optional" />
+	</xs:complexType>
+</xs:schema>

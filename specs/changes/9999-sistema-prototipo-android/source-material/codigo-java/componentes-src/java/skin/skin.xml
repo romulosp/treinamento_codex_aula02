@@ -1,0 +1,2578 @@
+<skin>
+	<!-- painel de fundo da EFL -->
+	<panel name="type1">
+		<state name="default" imagePath="/azul/fundo.jpg" />
+	</panel>
+	<panel name="painel_teste">
+		<state name="default" imagePath="/treinamento/fundo.jpg" />
+	</panel>
+	<panel name="painel_titulo_principal">
+		<state name="default" imagePath="/azul/faixatituloprincipal.png" />
+	</panel>
+	<panel name="painel_titulo_secundario">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+		</state>
+	</panel>
+	<panel name="painel_titulo_dupla_sena">
+		<state name="default" imagePath="/icon/dupla_sena.png" />
+	</panel>
+	<panel name="painel_titulo_dia_de_sorte">
+		<state name="default" imagePath="/icon/dia_de_sorte.png" />
+	</panel>
+	<panel name="painel_titulo_super_sete">
+		<state name="default" imagePath="/icon/super_sete.png" />
+	</panel>
+	<panel name="painel_titulo_milionaria">
+		<state name="default" imagePath="/icon/milionaria.png" />
+	</panel>
+	<panel name="painel_titulo_dupla_sena_especial">
+		<state name="default" imagePath="/icon/dupla_sena_especial.png" />
+	</panel>
+	<panel name="painel_titulo_loteca">
+		<state name="default" imagePath="/icon/loteca.png" />
+	</panel>
+	<panel name="painel_titulo_loteca_especial">
+		<state name="default" imagePath="/icon/loteca_especial.png" />
+	</panel>
+	<panel name="painel_titulo_lotofacil">
+		<state name="default" imagePath="/icon/lotofacil.png" />
+	</panel>
+	<panel name="painel_titulo_lotofacil_especial">
+		<state name="default" imagePath="/icon/lotofacil_especial.png" />
+	</panel>
+	<panel name="painel_titulo_lotogol">
+		<state name="default" imagePath="/icon/lotogol.png" />
+	</panel>
+	<panel name="painel_titulo_lotogol_especial">
+		<state name="default" imagePath="/icon/lotogol_especial.png" />
+	</panel>
+	<panel name="painel_titulo_lotomania">
+		<state name="default" imagePath="/icon/lotomania.png" />
+	</panel>
+	<panel name="painel_titulo_lotomania_especial">
+		<state name="default" imagePath="/icon/lotomania_especial.png" />
+	</panel>
+
+	<panel name="painel_titulo_megasena">
+		<state name="default" imagePath="/icon/megasena.png" />
+	</panel>
+
+	<panel name="painel_titulo_megasena_mkp">
+		<state name="default"
+			imagePath="/icon/header_venderCotas_MegaSena.png" />
+	</panel>
+
+	<panel name="painel_titulo_lotofacil_mkp">
+		<state name="default"
+			imagePath="/icon/header_venderCotas_Lotofacil.png" />
+	</panel>
+
+	<panel name="painel_titulo_quina_mkp">
+		<state name="default"
+			imagePath="/icon/header_venderCotas_Quina.png" />
+	</panel>
+
+	<panel name="painel_titulo_loteca_mkp">
+		<state name="default"
+			imagePath="/icon/header_venderCotas_Loteca.png" />
+	</panel>
+
+	<panel name="painel_titulo_dupla_sena_mkp">
+		<state name="default"
+			imagePath="/icon/header_venderCotas_DuplaSena.png" />
+	</panel>
+
+	<panel name="painel_titulo_dia_de_sorte_mkp">
+		<state name="default"
+			imagePath="/icon/header_venderCotas_DiaSorte.png" />
+	</panel>
+
+	<panel name="painel_titulo_timemania_mkp">
+		<state name="default"
+			imagePath="/icon/header_venderCotas_TimeMania.png" />
+	</panel>
+
+	<panel name="painel_titulo_super_sete_mkp">
+		<state name="default"
+			imagePath="/icon/header_venderCotas_SuperSete.png" />
+	</panel>
+
+	<panel name="painel_titulo_milionaria_mkp">
+		<state name="default"
+			imagePath="/icon/header_venderCotas_Milionaria.png" />
+	</panel>
+
+	<panel name="marketplace">
+		<state name="default"
+			imagePath="/icon/faixa_titulos_boloes_vender.png" />
+	</panel>
+
+	<panel name="painel_titulo_megasena_especial">
+		<state name="default" imagePath="/icon/megasena_especial.png" />
+	</panel>
+	<panel name="painel_titulo_quina">
+		<state name="default" imagePath="/icon/quina.png" />
+	</panel>
+	<panel name="painel_titulo_quina_especial">
+		<state name="default" imagePath="/icon/quina_especial.png" />
+	</panel>
+	<panel name="painel_titulo_timemania">
+		<state name="default" imagePath="/icon/timemania.png" />
+	</panel>
+	<panel name="painel_titulo_timemania_especial">
+		<state name="default" imagePath="/icon/timemania_especial.png" />
+	</panel>
+	<!-- painel de fundo da Tabela de tamanho 610 x 310 -->
+	<panel name="painel_tabela">
+		<state name="default" imagePath="/azul/painel_tabela.png" />
+	</panel>
+	<!-- painel usado para formar linha da tabela -->
+	<panel name="painel_linha_tabela">
+		<state name="default" imagePath="/azul/label_tabela_titulo.png" />
+	</panel>
+	<!-- painel azul transparente com bordas arredondadas de tamanho 510 x 260 -->
+	<panel name="painel_transparente_510_360">
+		<state name="default"
+			imagePath="/azul/painel_transparente_510_360.png" />
+	</panel>
+	<!-- painel de fundo da Tabela de tamanho 610 x 310 -->
+	<panel name="painel_notificacao" transparent="true">
+		<state name="default" imagePath="/azul/painel_notificacao.png" />
+	</panel>
+	<panel name="painel_dialog">
+		<state name="default">
+			<font>
+				<color red="60" green="90" blue="150" alpha="255" />
+			</font>
+			<backgroundColor red="180" green="200" blue="230"
+				alpha="255" />
+		</state>
+	</panel>
+	<panel name="painel_logoff" transparent="true">
+		<state name="default" imagePath="/azul/painel_logoff.png" />
+	</panel>
+	<!-- painel azul (um pouco mais escuro q o report_grande) para confirmação -->
+	<panel name="painel_confirmacao">
+		<state name="default" imagePath="/azul/painel_confirmacao.png" />
+	</panel>
+	<panel name="painel_report_simples" transparent="true">
+		<state name="default"
+			imagePath="/azul/painel_report_simples.png" />
+	</panel>
+	<panel name="painel_report_titulo" transparent="true">
+		<state name="default" imagePath="/azul/painel_report_titulo.png" />
+	</panel>
+	<panel name="painel_report_texto" transparent="true">
+		<state name="default" imagePath="/azul/painel_report_texto.png" />
+	</panel>
+	<panel name="painel_report_grande" transparent="true">
+		<state name="default" imagePath="/azul/painel_report_grande.png" />
+	</panel>
+	<panel name="painel_report_selected" transparent="true">
+		<state name="default"
+			imagePath="/azul/painel_report_selected.png" />
+	</panel>
+
+	<panel name="painel_progess_bar" transparent="true">
+		<state name="default" imagePath="/azul/label_msg.png" />
+	</panel>
+	<!-- painel usado como fundo da calculadora -->
+	<panel name="painel_calculadora" transparent="true">
+		<state name="default" imagePath="/azul/painel_calculadora.png" />
+	</panel>
+
+	<!-- painel usado como fundo do totalizador -->
+	<panel name="painel_totalizacao" transparent="true">
+		<state name="default" imagePath="/azul/painel_totalizacao.png" />
+	</panel>
+
+	<!-- painel com bordas arredondadas transparente -->
+	<dialog name="dialog_notificacao">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="255" />
+		</state>
+	</dialog>
+
+	<!-- caixa de texto -->
+	<passwordField name="type1">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="255" />
+			<font type="/fonts/arial.ttf" size="12" bold="false">
+				<color red="0" green="0" blue="0" />
+			</font>
+		</state>
+		<state name="disabled">
+			<backgroundColor red="230" green="238" blue="255"
+				alpha="255" />
+			<font type="/fonts/arial.ttf" size="12" bold="false">
+				<color red="128" green="128" blue="128" />
+			</font>
+		</state>
+	</passwordField>
+
+	<!-- caixa de texto para entrada de dados -->
+	<textField name="type1">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="255" />
+			<font type="/fonts/arial.ttf" size="12" bold="false">
+				<color red="0" green="0" blue="0" />
+			</font>
+		</state>
+		<state name="disabled">
+			<backgroundColor red="230" green="238" blue="255"
+				alpha="255" />
+			<font type="/fonts/arial.ttf" size="12" bold="false">
+				<color red="128" green="128" blue="128" />
+			</font>
+		</state>
+		<state name="focused">
+			<backgroundColor red="16" green="80" blue="142"
+				alpha="255" />
+			<font type="/fonts/arial.ttf" size="12" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</textField>
+
+	<!-- area para entrada de texto -->
+	<textArea name="type1">
+		<state name="default" imagePath="/azul/painel_tabela.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false">
+				<color red="0" green="0" blue="0" />
+			</font>
+		</state>
+		<state name="focused" imagePath="/azul/painel_tabela.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false">
+				<color red="0" green="0" blue="0" />
+			</font>
+		</state>
+	</textArea>
+
+	<!-- label com imagem atras usado no usuario e senha -->
+	<label name="label_logon">
+		<state name="default" imagePath="/azul/label_logon.png">
+			<font type="/fonts/arial.ttf" size="14" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	<!-- label para cabecalho da EFL onde contem o relogio -->
+	<label name="label_cabecalho">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/arial.ttf" size="10" bold="false">
+				<color red="71" green="71" blue="71" />
+			</font>
+		</state>
+	</label>
+	<!-- label para dialogs da EFL onde ocorre popup -->
+	<label name="label_dialog">
+		<state name="default" imagePath="/icon/icon_notificacao.png">
+			<backgroundColor red="60" green="90" blue="150"
+				alpha="255" />
+			<font type="/fonts/futurbci.ttf" size="20" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	<!-- label utilizado na faixa do titulo principal do menu -->
+	<label name="label_faixa_titulo_principal">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="20" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+
+	<label name="label_faixa_titulo_secundario_megasena">
+		<state name="default" imagePath="/azul/icon_megasena_grande.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="8" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+
+	<!-- BIOMETRIA IMAGEM -->
+	<label name="label_imagem_bio_polegar_direito">
+		<state name="default" imagePath="/polegar_direito.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="8" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+
+	<label name="label_imagem_bio_polegar_esquerdo">
+		<state name="default" imagePath="/polegar_esquerdo.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="8" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+
+	
+	<label name="label_imagem_bio_status_ok">
+		<state name="default" imagePath="/biometria-green.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="8" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	
+	
+	<label name="label_imagem_bio_status_erro">
+		<state name="default" imagePath="/biometria-red.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="8" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	
+	<label name="label_imagem_bio_status_posicionar">
+		<state name="default" imagePath="/biometria-gray.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="8" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	
+	<label name="label_imagem_bio_medio_direito">
+		<state name="default" imagePath="/medio_direito.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="8" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+
+	<label name="label_imagem_bio_medio_esquerdo">
+		<state name="default" imagePath="/medio_esquerdo.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="8" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+
+	<label name="label_imagem_bio_indicador_direito">
+		<state name="default" imagePath="/indicador_direito.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="8" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+
+	<label name="label_imagem_bio_indicador_esquerdo">
+		<state name="default" imagePath="/indicador_esquerdo.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="8" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+
+	<label name="label_imagem_bio_anelar_direito">
+		<state name="default" imagePath="/anelar_direito.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="8" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+
+	<label name="label_imagem_bio_anelar_esquerdo">
+		<state name="default" imagePath="/anelar_esquerdo.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="8" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+
+
+	<label name="label_imagem_bio_minimo_direito">
+		<state name="default" imagePath="/minimo_direito.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="8" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+
+	<label name="label_imagem_bio_minimo_esquerdo">
+		<state name="default" imagePath="/minimo_esquerdo.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="8" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+
+	<label name="label_imagem_biometria_nova">
+		<state name="default" imagePath="/mao_biometria_nova.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="8" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+
+	<label name="label_imagem_biometria_nova_sem_descricao">
+		<state name="default"
+			imagePath="/mao_biometria_nova_sem_descricao.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="8" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	<!-- FIM BIOMETRIA IMAGEM -->
+
+	<label name="label_faixa_titulo_secundario_quina">
+		<state name="default" imagePath="/azul/icon_quina_grande.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="8" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+
+	<label name="label_faixa_titulo_secundario_lotofacil">
+		<state name="default"
+			imagePath="/azul/icon_lotofacil_grande.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="8" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+
+	<label name="label_faixa_titulo_secundario_lotogol">
+		<state name="default" imagePath="/azul/icon_lotogol_grande.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="8" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+
+	<label name="label_faixa_titulo_secundario_lotomania">
+		<state name="default"
+			imagePath="/azul/icon_lotomania_grande.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="8" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	<label name="label_faixa_titulo_secundario_duplasena">
+		<state name="default"
+			imagePath="/azul/icon_dupla_sena_grande.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="8" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	<label name="label_faixa_titulo_secundario_loteca">
+		<state name="default" imagePath="/azul/icon_loteca_grande.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="8" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	<label name="label_faixa_titulo_secundario_federal">
+		<state name="default" imagePath="/azul/icon_federal_grande.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="8" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	<label name="label_faixa_titulo_secundario_timemania">
+		<state name="default"
+			imagePath="/azul/icon_timemania_grande.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="8" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	<label name="label_faixa_titulo_secundario_dia_de_sorte">
+		<state name="default"
+			imagePath="/azul/barra_dia_de_sorte_grande.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="8" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+
+	<label name="label_faixa_titulo_secundario_super_sete">
+		<state name="default"
+			imagePath="/azul/barra_super_sete_grande.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="8" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+
+	<label name="label_faixa_titulo_secundario_milionaria">
+		<state name="default"
+			imagePath="/azul/icon_milionaria_grande.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurbci.ttf" size="8" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+
+
+	<!-- label com somatorio do valor do cliente e de jogos -->
+	<label name="label_totalizacao">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/arial.ttf" size="10" bold="false">
+				<color red="71" green="71" blue="73" />
+			</font>
+		</state>
+	</label>
+	<!-- label titulo das mensagens de confirmacao -->
+	<label name="label_titulo_1">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futura_mh.ttf" size="14" bold="false">
+				<color red="62" green="87" blue="141" />
+			</font>
+		</state>
+	</label>
+	<label name="label_titulo_2">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futura_mh.ttf" size="14" bold="true">
+				<color red="80" green="100" blue="170" />
+			</font>
+		</state>
+	</label>
+
+	<label name="label_titulo_3">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futura_mh.ttf" size="18" bold="true">
+				<color red="80" green="100" blue="170" />
+			</font>
+		</state>
+	</label>
+
+
+	<label name="label_titulo_1_Atd_caixa_tem">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futura_mh.ttf" size="18" bold="false">
+				<color red="62" green="87" blue="141" />
+			</font>
+		</state>
+	</label>
+
+
+	<label name="label_titulo_2_Atd_caixa_tem">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futura_mh.ttf" size="20" bold="true">
+				<color red="62" green="87" blue="141" />
+			</font>
+		</state>
+	</label>
+
+
+	<label name="label_titulo_3_Atd_caixa_tem">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futura_mh.ttf" size="16" bold="true">
+				<color red="62" green="87" blue="141" />
+			</font>
+		</state>
+	</label>
+
+
+
+	<label name="label_titulo_1_PIX">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futura_mh.ttf" size="18" bold="false">
+				<color red="62" green="87" blue="141" />
+			</font>
+		</state>
+	</label>
+
+	<label name="label_titulo_2_PIX">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futura_mh.ttf" size="20" bold="true">
+				<color red="62" green="87" blue="141" />
+			</font>
+		</state>
+	</label>
+
+
+	<label name="label_titulo_3_PIX">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futura_mh.ttf" size="16" bold="true">
+				<color red="62" green="87" blue="141" />
+			</font>
+		</state>
+	</label>
+
+	<!-- label numero dos jogos do lotogol -->
+	<label name="label_lotogol_numero">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futura_mh.ttf" size="24" bold="false">
+				<color red="62" green="87" blue="141" />
+			</font>
+		</state>
+	</label>
+	<!-- label usado para confirmacao -->
+	<label name="label_confirmacao">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futura_mh.ttf" size="18" bold="false">
+				<color red="62" green="87" blue="141" />
+			</font>
+		</state>
+	</label>
+
+	<!-- label usado na EFLProgressBar -->
+	<label name="label_progress_bar">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futura_mh.ttf" size="16" bold="false">
+				<color red="0" green="0" blue="0" />
+			</font>
+		</state>
+	</label>
+
+
+	<!-- label em desuso -->
+	<label name="label_formulario">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futura_mh.ttf" size="14" bold="false">
+				<color red="62" green="87" blue="141" />
+			</font>
+		</state>
+	</label>
+	<!-- label usado no registra aposta na tela de prognosticos -->
+	<label name="label_prognosticos">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futurah.ttf" size="12" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	<!-- label quadrado para entrada de quantidade de numeros do prognosticos -->
+	<label name="label_prognosticos_2">
+		<state name="default" imagePath="/azul/botao_jogo_released.png">
+			<font type="/fonts/futurah.ttf" size="16" bold="false">
+				<color red="64" green="64" blue="128" />
+			</font>
+		</state>
+	</label>
+	<!-- label de mensagem -->
+	<label name="label_msg">
+		<state name="default" imagePath="/azul/label_msg.png">
+			<font type="/fonts/arial.ttf" size="11" bold="false">
+				<color red="0" green="0" blue="0" />
+			</font>
+		</state>
+	</label>
+	<!-- label de notificacao ao usuario -->
+	<label name="label_notificacao">
+		<state name="default" imagePath="/icon/icon_notificacao.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false" />
+		</state>
+	</label>
+	<!-- label que fica em cima do painel tabela -->
+	<label name="label_tabela_cabecalho">
+		<state name="default"
+			imagePath="/azul/label_tabela_cabecalho.png">
+			<font type="/fonts/futura_mh.ttf" size="10" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	<!-- label que fica em cima do painel tabela pequena -->
+	<label name="label_tabela_cabecalho_2">
+		<state name="default"
+			imagePath="/azul/label_tabela_cabecalho_2.png">
+			<font type="/fonts/futura_mh.ttf" size="10" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	<!-- label que fica em baixo do painel tabela -->
+	<label name="label_tabela_rodape">
+		<state name="default" imagePath="/azul/icon_tabela_rodape.png">
+			<font type="/fonts/arial.ttf" size="10" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	<!-- label que fica em baixo do painel tabela pequena -->
+	<label name="label_tabela_rodape_2">
+		<state name="default" imagePath="/azul/icon_tabela_rodape_2.png">
+			<font type="/fonts/arial.ttf" size="10" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	<!-- label para titulo da tabela azul escuro -->
+	<label name="label_tabela_titulo">
+		<state name="default" imagePath="/azul/label_tabela_titulo.png">
+			<font type="/fonts/futura_mh.ttf" size="14" bold="false">
+				<color red="60" green="60" blue="60" />
+			</font>
+		</state>
+	</label>
+	<!-- label para titulo da tabela azul claro -->
+	<label name="label_tabela_titulo_2">
+		<state name="default"
+			imagePath="/azul/label_tabela_titulo_2.png">
+			<font type="/fonts/futura_mh.ttf" size="14" bold="false">
+				<color red="60" green="60" blue="60" />
+			</font>
+		</state>
+	</label>
+	<!-- label para titulo da tabela branco -->
+	<label name="label_tabela_titulo_branco">
+		<state name="default" imagePath="/azul/label_tabela_titulo.png">
+			<font type="/fonts/futura_mh.ttf" size="14" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	<!-- label usado na loteca -->
+	<label name="label_lot_rosa">
+		<state name="default" imagePath="/azul/label_lot_rosa.png">
+			<font type="/fonts/futura_mh.ttf" size="14" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	<!-- label usado no loteca para titulo times -->
+	<label name="label_lot_rosa_titulo">
+		<state name="default"
+			imagePath="/azul/label_lot_rosa_titulo.png">
+			<font type="/fonts/futuram.ttf" size="18" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	<label name="label_lot_verde">
+		<state name="default" imagePath="/azul/label_lot_verde.png">
+			<font type="/fonts/futuram.ttf" size="18" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	<!-- label usado no lotogol e lotecas nos times -->
+	<label name="label_lot_rosa_transparente">
+		<state name="default"
+			imagePath="/azul/label_lot_rosa_transparente.png">
+			<font type="/fonts/futuram.ttf" size="12" bold="false">
+				<color red="85" green="105" blue="174" />
+			</font>
+		</state>
+	</label>
+	<label name="label_lot_rosa_transparente_10">
+		<state name="default"
+			imagePath="/azul/label_lot_rosa_transparente.png">
+			<font type="/fonts/futuram.ttf" size="10" bold="false">
+				<color red="85" green="105" blue="174" />
+			</font>
+		</state>
+	</label>
+	<!-- label usado no lotogol e loteca para mostrar informação da aposta -->
+	<label name="label_lot_azul">
+		<state name="default" imagePath="/azul/label_lot_azul.png">
+			<font type="/fonts/futuram.ttf" size="14" bold="false">
+				<color red="80" green="100" blue="170" />
+			</font>
+		</state>
+	</label>
+	<!-- label usado para textos sem background -->
+	<label name="label_texto_azul">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="80" green="100" blue="170" />
+			</font>
+		</state>
+	</label>
+	<!-- label usado para textos sem background -->
+	<label name="label_texto_cinza_escuro">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="85" green="90" blue="97" />
+			</font>
+		</state>
+	</label>
+	<!-- label usado para textos sem background -->
+	<label name="label_texto_cinza_escuro_negrito">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futura_mh.ttf" size="12" bold="true">
+				<color red="85" green="90" blue="97" />
+			</font>
+		</state>
+	</label>
+	<!-- label usado para a calculadora -->
+	<label name="label_calculadora">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/arial.ttf" size="24" bold="false">
+				<color red="80" green="100" blue="170" />
+			</font>
+		</state>
+	</label>
+	<!-- label usado no titulo do painel_barra_1 -->
+	<label name="label_report_titulo">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futura_mh.ttf" size="14" bold="false">
+				<color red="60" green="60" blue="60" />
+			</font>
+		</state>
+	</label>
+	<!-- label usado para DEIXAR TEXTO EM NEGRITO CPF ou CNPJ NO PNL DE CONFIRMAÇÃO -->
+	<label name="label_texto_negrito_2">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futura_mh.ttf" size="18" bold="true">
+				<color red="20" green="40" blue="130" />
+			</font>
+		</state>
+	</label>
+	<!-- label usado para DEIXAR TEXTO EM NEGRITO NO PNL DE CONFIRMAÇÃO -->
+	<label name="label_texto_negrito">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futura_mh.ttf" size="18" bold="true"
+				italic="true">
+				<color red="20" green="40" blue="130" />
+			</font>
+		</state>
+	</label>
+	<!-- label usado para DEIXAR TEXTO EM NEGRITO NO PNL DE CONSULT -->
+	<label name="label_texto_negrito_1">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futura_mh.ttf" size="12" bold="true">
+				<color red="20" green="40" blue="130" />
+			</font>
+		</state>
+	</label>
+	<!-- label usado no painel_barra_1 -->
+	<label name="label_report">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="60" green="60" blue="60" />
+			</font>
+		</state>
+	</label>
+	<!-- label usado no painel de relatorios, fonte fixa -->
+	<label name="label_report_fixed">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/veramobd.ttf" size="14" bold="true">
+				<color red="60" green="60" blue="60" />
+			</font>
+		</state>
+	</label>
+	<!-- labels usados para fazer o Reloginho para fechamento de modalidades -->
+	<label name="label_hora_fechamento_duplasena">
+		<state name="default" imagePath="/hora_fechamento_duplasena.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/arial.ttf" size="10" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	<label name="label_hora_fechamento_federal">
+		<state name="default"
+			imagePath="/hora_fechamento_encalhe_federal.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/arial.ttf" size="10" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	<label name="label_hora_fechamento_loteca">
+		<state name="default" imagePath="/hora_fechamento_loteca.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/arial.ttf" size="10" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	<label name="label_hora_fechamento_lotogol">
+		<state name="default" imagePath="/hora_fechamento_lotogol.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/arial.ttf" size="10" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	<label name="label_hora_fechamento_lotomania">
+		<state name="default" imagePath="/hora_fechamento_lotomania.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/arial.ttf" size="10" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	<label name="label_hora_fechamento_lotofacil">
+		<state name="default" imagePath="/hora_fechamento_lotofacil.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/arial.ttf" size="10" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	<label name="label_hora_fechamento_megasena">
+		<state name="default" imagePath="/hora_fechamento_megasena.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/arial.ttf" size="10" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	<label name="label_hora_fechamento_quina">
+		<state name="default" imagePath="/hora_fechamento_quina.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/arial.ttf" size="10" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	<!-- label cinza pequeno para mostrar tempo de encerramento -->
+	<label name="label_encerramento_10_cinza_bold">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/arial.ttf" size="10" bold="false">
+				<color red="128" green="128" blue="128" />
+			</font>
+		</state>
+	</label>
+	<label name="label_encerramento_10_vermelho_bold">
+		<state name="default">
+			<backgroundColor red="255" green="0" blue="0"
+				alpha="0" />
+			<font type="/fonts/arial.ttf" size="10" bold="false">
+				<color red="255" green="0" blue="0" />
+			</font>
+		</state>
+	</label>
+	<label name="label_hora_fechamento_timemania">
+		<state name="default" imagePath="/hora_fechamento_timemania.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/arial.ttf" size="10" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+
+	<label name="label_hora_fechamento_dia_de_sorte">
+		<state name="default"
+			imagePath="/hora_fechamento_dia_de_sorte.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/arial.ttf" size="10" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+
+
+	<label name="label_hora_fechamento_super_sete">
+		<state name="default"
+			imagePath="/hora_fechamento_super_sete.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/arial.ttf" size="10" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+
+	<label name="label_hora_fechamento_milionaria">
+		<state name="default"
+			imagePath="/hora_fechamento_milionaria.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/arial.ttf" size="10" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+
+	<label name="label_hora_fechamento_marketplace">
+		<state name="default"
+			imagePath="/hora_fechamento_marketplace.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/arial.ttf" size="10" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+	
+	<!-- label usado na barra superior da calculadora -->
+	<label name="label_barra_calculadora">
+		<state name="default"
+			imagePath="/azul/label_barra_calculadora.png">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/arial.ttf" size="10" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</label>
+
+	<label name="label_pergunta_desafio">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futura_mh.ttf" size="16" bold="false">
+				<color red="62" green="87" blue="141" />
+			</font>
+		</state>
+	</label>
+
+	<label name="label_info_seguridade">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futura_mh.ttf" size="16" bold="true">
+				<color red="62" green="87" blue="141" />
+			</font>
+		</state>
+	</label>
+	<label name="label_atendimento_alerta">
+		<state name="default">
+			<backgroundColor red="255" green="255" blue="255"
+				alpha="0" />
+			<font type="/fonts/futura_mh.ttf" size="14" bold="false">
+				<color red="255" green="0" blue="0" />
+			</font>
+		</state>
+	</label>
+	<!-- ToggleButton usado na UF do caso Consulta Convenios -->
+	<toggleButton name="botao_uf">
+		<state name="default" imagePath="/azul/botao_2_released.png">
+			<font type="/fonts/futura_mh.ttf" size="16" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_2_selected.png">
+			<font type="/fonts/futura_mh.ttf" size="16" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/azul/botao_2_disabled.png">
+			<font type="/fonts/futura_mh.ttf" size="16" bold="false">
+				<color red="220" green="220" blue="220" />
+			</font>
+		</state>
+	</toggleButton>
+
+	<!-- ToggleButton usado na tela de surpresinha em grande quantidade -->
+	<toggleButton name="botao_prognostico_surpresinha">
+		<state name="default" imagePath="/azul/botao_2_released.png">
+			<font type="/fonts/futura_mh.ttf" size="18" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_2_selected.png">
+			<font type="/fonts/futura_mh.ttf" size="18" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/azul/botao_2_disabled.png">
+			<font type="/fonts/futura_mh.ttf" size="18" bold="false">
+				<color red="220" green="220" blue="220" />
+			</font>
+		</state>
+	</toggleButton>
+
+	<!-- toggleButton usado nos jogos -->
+	<toggleButton name="botao_prognosticos">
+		<state name="default" imagePath="/azul/botao_released.png">
+			<font type="/fonts/futura_mh.ttf" size="24" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_selected.png">
+			<font type="/fonts/futura_mh.ttf" size="24" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/azul/botao_disabled.png">
+			<font type="/fonts/futura_mh.ttf" size="24" bold="false">
+				<color red="220" green="220" blue="220" />
+			</font>
+		</state>
+	</toggleButton>
+	<!-- toggleButton usado nos jogo lotomania -->
+	<toggleButton name="botao_prognosticos_lotomania">
+		<state name="default" imagePath="/azul/botao_3_released.png">
+			<font type="/fonts/futura_mh.ttf" size="18" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_3_selected.png">
+			<font type="/fonts/futura_mh.ttf" size="18" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/azul/botao_3_disabled.png">
+			<font type="/fonts/futura_mh.ttf" size="18" bold="false">
+				<color red="220" green="220" blue="220" />
+			</font>
+		</state>
+	</toggleButton>
+	<!-- toggleButton usado nos jogo diaDeSorte para selecionar o mes -->
+	<toggleButton name="botao_prognosticos_mes">
+		<state name="default" imagePath="/azul/botao_released.png">
+			<font type="/fonts/futura_mh.ttf" size="14" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_selected.png">
+			<font type="/fonts/futura_mh.ttf" size="14" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/azul/botao_disabled.png">
+			<font type="/fonts/futura_mh.ttf" size="14" bold="false">
+				<color red="220" green="220" blue="220" />
+			</font>
+		</state>
+	</toggleButton>
+	<!-- toggleButton usado para selecionar aposta -->
+	<toggleButton name="botao_jogo_1">
+		<state name="default" imagePath="/azul/botao_jogo_released.png">
+			<font type="/fonts/futurah.ttf" size="16" bold="false">
+				<color red="64" green="64" blue="128" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_jogo_selected.png">
+			<font type="/fonts/futurah.ttf" size="16" bold="false">
+				<color red="64" green="64" blue="128" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/azul/botao_jogo_released.png">
+			<font type="/fonts/futurah.ttf" size="16" bold="false">
+				<color red="192" green="192" blue="192" />
+			</font>
+		</state>
+	</toggleButton>
+	<!-- toggleButton usado na tecla fixar -->
+	<toggleButton name="botao_teclado_auxiliar">
+		<state name="default" imagePath="/azul/botao_aux1_released.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_aux1_selected.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</toggleButton>
+	<!-- toggleButton para marcar o jogo loteca -->
+	<toggleButton name="botao_loteca">
+		<state name="default" imagePath="/azul/label_lot_azul.png">
+			<font type="/fonts/futuram.ttf" size="16" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/label_lot_amarelo_x.png">
+			<font type="/fonts/futuram.ttf" size="16" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</toggleButton>
+	<!-- toggleButton para marcar o jogo lotogol -->
+	<toggleButton name="botao_lotogol">
+		<state name="default" imagePath="/azul/label_lot_azul.png">
+			<font type="/fonts/futuram.ttf" size="16" bold="false">
+				<color red="128" green="128" blue="128" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/label_lot_amarelo.png">
+			<font type="/fonts/futuram.ttf" size="16" bold="false">
+				<color red="85" green="105" blue="174" />
+			</font>
+		</state>
+	</toggleButton>
+
+	<!-- ToggleButton usado na UF do caso Consulta Convenios -->
+	<toggleButton name="botao_auxiliar">
+		<state name="default" imagePath="/azul/botao_aux2_released.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_aux2_selected.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/azul/botao_aux2_disabled.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="192" green="192" blue="192" />
+			</font>
+		</state>
+	</toggleButton>
+
+	<!-- botao usado no dialog da calculadora para fechar -->
+	<button name="botao_quadrado">
+		<state name="default"
+			imagePath="/azul/botao_calculadora_fechar.png">
+			<font type="/fonts/futura_mh.ttf" size="17" bold="false">
+				<color red="0" green="0" blue="0" />
+			</font>
+		</state>
+		<state name="touched"
+			imagePath="/azul/botao_calculadora_fechar.png">
+			<font type="/fonts/futura_mh.ttf" size="17" bold="false">
+				<color red="0" green="0" blue="0" />
+			</font>
+		</state>
+	</button>
+
+	<!-- botao usado no teclado -->
+	<button name="botao_teclado">
+		<state name="default" imagePath="/azul/botao_released.png">
+			<font type="/fonts/futura_mh.ttf" size="24" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_pressed.png">
+			<font type="/fonts/futura_mh.ttf" size="24" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao similar ao teclado com a fonte menor utilizando na calculadora -->
+	<button name="botao_teclado_fonte_pequena">
+		<state name="default" imagePath="/azul/botao_released.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="true">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_pressed.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="true">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao de ajuda -->
+	<button name="botao_teclado_2">
+		<state name="default" imagePath="/azul/botao_2_released.png">
+			<font type="/fonts/futura_mh.ttf" size="20" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_2_pressed.png">
+			<font type="/fonts/futura_mh.ttf" size="20" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao da calculadora -->
+	<button name="botao_menu_calculadora">
+		<state name="default"
+			imagePath="/azul/botao_calculadora_released.png">
+			<font type="/fonts/futura_mh.ttf" size="20" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched"
+			imagePath="/azul/botao_calculadora_pressed.png">
+			<font type="/fonts/futura_mh.ttf" size="20" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao em desuso -->
+	<button name="botao_teclado_3">
+		<state name="default" imagePath="/azul/botao_3_released.png">
+			<font type="/fonts/futura_mh.ttf" size="16" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_3_pressed.png">
+			<font type="/fonts/futura_mh.ttf" size="16" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao sim da caixa de dialog -->
+	<button name="botao_sim">
+		<state name="default" imagePath="/azul/botao_aux0_released.png">
+			<font type="/fonts/futura_mh.ttf" size="14" bold="false">
+				<color red="0" green="255" blue="0" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_aux0_pressed.png">
+			<font type="/fonts/futura_mh.ttf" size="14" bold="false">
+				<color red="0" green="255" blue="0" />
+			</font>
+		</state>
+	</button>
+
+	<!-- botao sim da caixa de dialog -->
+	<button name="botao_modulo_oferta">
+		<state name="default" imagePath="/azul/botao_aux0_released.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="0" green="255" blue="0" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_aux0_pressed.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="0" green="255" blue="0" />
+			</font>
+		</state>
+	</button>
+
+	<!-- botao nao da caixa de dialog -->
+	<button name="botao_nao">
+		<state name="default" imagePath="/azul/botao_aux0_released.png">
+			<font type="/fonts/futura_mh.ttf" size="14" bold="false">
+				<color red="255" green="128" blue="96" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_aux0_pressed.png">
+			<font type="/fonts/futura_mh.ttf" size="14" bold="false">
+				<color red="255" green="128" blue="96" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado no tecla limpar e voltar -->
+	<button name="botao_teclado_auxiliar_1">
+		<state name="default" imagePath="/azul/botao_aux1_released.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_aux1_pressed.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/azul/botao_aux1_disabled.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="192" green="192" blue="192" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado na tecla espaço, imprimir e surpresa -->
+	<button name="botao_teclado_auxiliar_2">
+		<state name="default" imagePath="/azul/botao_aux2_released.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_aux2_pressed.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/azul/botao_aux2_disabled.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="192" green="192" blue="192" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado na tecla manual -->
+	<button name="botao_teclado_auxiliar_3">
+		<state name="default" imagePath="/azul/botao_aux3_released.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_aux3_pressed.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/azul/botao_aux3_disabled.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="192" green="192" blue="192" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado na tecla confirmar -->
+	<button name="botao_confirmar">
+		<state name="default" imagePath="/azul/botao_aux2_released.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="0" green="255" blue="0" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_aux2_pressed.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="0" green="255" blue="0" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/azul/botao_aux2_released.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="181" green="191" blue="204" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado como secundario -->
+	<button name="botao_secundario">
+		<state name="default" imagePath="/azul/botao_aux2_released.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="248" green="172" blue="35" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_aux2_pressed.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="248" green="172" blue="35" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/azul/botao_aux2_released.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="181" green="191" blue="204" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado na tecla voltar modificado -->
+	<button name="botao_voltar">
+		<state name="default" imagePath="/azul/botao_aux2_released.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_aux2_pressed.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/azul/botao_aux2_released.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="200" green="200" blue="200" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado usado na tecla cancelar -->
+	<button name="botao_cancelar">
+		<state name="default" imagePath="/azul/botao_aux2_released.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="255" green="128" blue="96" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_aux2_pressed.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="255" green="128" blue="96" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/azul/botao_aux2_released.png">
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="181" green="191" blue="204" />
+			</font>
+		</state>
+	</button>
+	<!-- botao contendo dois labels -->
+	<button name="botao_two_label">
+		<state name="default"
+			imagePath="/azul/botao_retang_released.png">
+			<font type="/fonts/futura_mh.ttf" size="14" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_retang_pressed.png">
+			<font type="/fonts/futura_mh.ttf" size="14" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled"
+			imagePath="/azul/botao_retang_disabled.png">
+			<font type="/fonts/futura_mh.ttf" size="14" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+
+	<!-- botao usado no SOMAR -->
+	<button name="botao_somar">
+		<state name="default" imagePath="/azul/botao_somar_released.png"
+			spacement="0.8">
+			<font type="/fonts/futurbci.ttf" size="18" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_somar_pressed.png"
+			spacement="0.8">
+			<font type="/fonts/futurbci.ttf" size="18" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled"
+			imagePath="/azul/botao_somar_disabled.png" spacement="0.8">
+			<font type="/fonts/futurbci.ttf" size="18" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado no DIMINUIR -->
+	<button name="botao_diminuir">
+		<state name="default"
+			imagePath="/azul/botao_diminuir_released.png" spacement="0.8">
+			<font type="/fonts/futurbci.ttf" size="18" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched"
+			imagePath="/azul/botao_diminuir_pressed.png" spacement="0.8">
+			<font type="/fonts/futurbci.ttf" size="18" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled"
+			imagePath="/azul/botao_diminuir_disabled.png" spacement="0.8">
+			<font type="/fonts/futurbci.ttf" size="18" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+
+	<!-- botao usado no menu -->
+	<button name="botao_menu">
+		<state name="default" imagePath="/azul/botao_menu_released.png"
+			spacement="0.8">
+			<font type="/fonts/futurbci.ttf" size="18" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_menu_pressed.png"
+			spacement="0.8">
+			<font type="/fonts/futurbci.ttf" size="18" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/azul/botao_menu_disabled.png"
+			spacement="0.8">
+			<font type="/fonts/futurbci.ttf" size="18" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado no menu - serviços financeiros -->
+	<button name="botao_menu2">
+		<state name="default" imagePath="/azul/botao_menu2_released.png"
+			spacement="0.8">
+			<font type="/fonts/futurbci.ttf" size="18" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_menu2_pressed.png"
+			spacement="0.8">
+			<font type="/fonts/futurbci.ttf" size="18" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled"
+			imagePath="/azul/botao_menu2_disabled.png" spacement="0.8">
+			<font type="/fonts/futurbci.ttf" size="18" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao com seta usado no menu -->
+	<button name="botao_menu_seta">
+		<state name="default"
+			imagePath="/azul/botao_menu_seta_released.png" spacement="0.8">
+			<font type="/fonts/futurbci.ttf" size="18" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched"
+			imagePath="/azul/botao_menu_seta_pressed.png" spacement="0.8">
+			<font type="/fonts/futurbci.ttf" size="18" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled"
+			imagePath="/azul/botao_menu_seta_disabled.png" spacement="0.8">
+			<font type="/fonts/futurbci.ttf" size="18" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao com seta usado no menu - serviços financeiros -->
+	<button name="botao_menu2_seta">
+		<state name="default"
+			imagePath="/azul/botao_menu2_seta_released.png" spacement="0.8">
+			<font type="/fonts/futurbci.ttf" size="18" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched"
+			imagePath="/azul/botao_menu2_seta_pressed.png" spacement="0.8">
+			<font type="/fonts/futurbci.ttf" size="18" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled"
+			imagePath="/azul/botao_menu2_seta_disabled.png" spacement="0.8">
+			<font type="/fonts/futurbci.ttf" size="18" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado nas teclas parar -->
+	<button name="botao_menu_peq">
+		<state name="default"
+			imagePath="/azul/botao_menu_peq_released.png">
+			<font type="/fonts/futurbci.ttf" size="18" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched"
+			imagePath="/azul/botao_menu_peq_pressed.png">
+			<font type="/fonts/futurbci.ttf" size="18" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled"
+			imagePath="/azul/botao_menu_peq_disabled.png">
+			<font type="/fonts/futurbci.ttf" size="18" bold="false"
+				italic="false">
+				<color red="181" green="191" blue="204" />
+			</font>
+		</state>
+	</button>
+	
+	<!-- botao usado nas teclas para com ordenação -->
+	<button name="botao_ordenacao">
+		<state name="default"
+			imagePath="/azul/botoes-ordenar-normal.png">
+			<font type="/fonts/futura_mh.ttf" size="14" bold="false">
+				<color red="60" green="60" blue="60" />
+			</font>
+		</state>
+		<state name="touched"
+			imagePath="/azul/botoes-ordenar-pressed.png">
+			<font type="/fonts/futura_mh.ttf" size="14" bold="false">
+				<color red="60" green="60" blue="60" />
+			</font>
+		</state>
+		<state name="disabled"
+			imagePath="/azul/botoes-ordenar-disable.png">
+			<font type="/fonts/futura_mh.ttf" size="14" bold="false">
+				<color red="60" green="60" blue="60" />
+			</font>
+		</state>
+	</button>
+	
+	<!-- botao usado na tecla voltar e sair -->
+	<button name="botao_menu_peq_vermelho">
+		<state name="default"
+			imagePath="/azul/botao_menu_peq_released.png">
+			<font type="/fonts/futurbci.ttf" size="18" bold="false"
+				italic="false">
+				<color red="240" green="40" blue="45" />
+			</font>
+		</state>
+		<state name="touched"
+			imagePath="/azul/botao_menu_peq_pressed.png">
+			<font type="/fonts/futurbci.ttf" size="18" bold="false"
+				italic="false">
+				<color red="240" green="40" blue="45" />
+			</font>
+		</state>
+		<state name="disabled"
+			imagePath="/azul/botao_menu_peq_disabled.png">
+			<font type="/fonts/futurbci.ttf" size="18" bold="false"
+				italic="false">
+				<color red="181" green="191" blue="204" />
+			</font>
+		</state>
+	</button>
+	<button name="botao_menu_verde">
+		<state name="default" imagePath="/azul/botao_menu_released.png">
+			<font type="/fonts/futurbci.ttf" size="16" bold="false"
+				italic="false">
+				<color red="40" green="240" blue="45" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_menu_pressed.png">
+			<font type="/fonts/futurbci.ttf" size="16" bold="false"
+				italic="false">
+				<color red="40" green="240" blue="45" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/azul/botao_menu_disabled.png">
+			<font type="/fonts/futurbci.ttf" size="16" bold="false"
+				italic="false">
+				<color red="181" green="191" blue="204" />
+			</font>
+		</state>
+	</button>
+	<button name="botao_menu_laranja">
+		<state name="default" imagePath="/azul/botao_menu_released.png">
+			<font type="/fonts/futurbci.ttf" size="16" bold="false"
+				italic="false">
+				<color red="255" green="128" blue="96" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_menu_pressed.png">
+			<font type="/fonts/futurbci.ttf" size="16" bold="false"
+				italic="false">
+				<color red="255" green="128" blue="96" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/azul/botao_menu_disabled.png">
+			<font type="/fonts/futurbci.ttf" size="16" bold="false"
+				italic="false">
+				<color red="255" green="128" blue="96" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado na tecla megasena -->
+	<button name="botao_megasena">
+		<state name="default" imagePath="/botao_megasena.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/botao_megasena_pressed.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/botao_megasena_disabled.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado na tecla megasena especial -->
+	<button name="botao_megasena_especial">
+		<state name="default" imagePath="/botao_megasena_especial.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched"
+			imagePath="/botao_megasena_especial_pressed.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled"
+			imagePath="/botao_megasena_especial_disabled.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado na tecla lotofacil -->
+	<button name="botao_lotofacil">
+		<state name="default" imagePath="/botao_lotofacil.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/botao_lotofacil_pressed.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/botao_lotofacil_disabled.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado na tecla lotofacil especial -->
+	<button name="botao_lotofacil_especial">
+		<state name="default" imagePath="/botao_lotofacil_especial.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched"
+			imagePath="/botao_lotofacil_especial_pressed.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled"
+			imagePath="/botao_lotofacil_especial_disabled.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado na tecla quina -->
+	<button name="botao_quina">
+		<state name="default" imagePath="/botao_quina.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/botao_quina_pressed.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/botao_quina_disabled.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado na tecla quina especial -->
+	<button name="botao_quina_especial">
+		<state name="default" imagePath="/botao_quina_especial.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched"
+			imagePath="/botao_quina_especial_pressed.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled"
+			imagePath="/botao_quina_especial_disabled.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado na tecla lotomania -->
+	<button name="botao_lotomania">
+		<state name="default" imagePath="/botao_lotomania.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/botao_lotomania_pressed.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/botao_lotomania_disabled.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado na tecla lotomania especial -->
+	<button name="botao_lotomania_especial">
+		<state name="default" imagePath="/botao_lotomania_especial.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched"
+			imagePath="/botao_lotomania_especial_pressed.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled"
+			imagePath="/botao_lotomania_especial_disabled.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado na tecla loteca -->
+	<button name="botao_loteca">
+		<state name="default" imagePath="/botao_loteca.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/botao_loteca_pressed.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/botao_loteca_disabled.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado na tecla loteca especial -->
+	<button name="botao_loteca_especial">
+		<state name="default" imagePath="/botao_loteca_especial.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched"
+			imagePath="/botao_loteca_especial_pressed.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled"
+			imagePath="/botao_loteca_especial_disabled.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado na tecla lotogol -->
+	<button name="botao_lotogol">
+		<state name="default" imagePath="/botao_lotogol.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/botao_lotogol_pressed.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/botao_lotogol_disabled.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado na tecla lotogol especial -->
+	<button name="botao_lotogol_especial">
+		<state name="default" imagePath="/botao_lotogol_especial.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched"
+			imagePath="/botao_lotogol_especial_pressed.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled"
+			imagePath="/botao_lotogol_especial_disabled.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado na tecla duplasena -->
+	<button name="botao_duplasena">
+		<state name="default" imagePath="/botao_dupla_sena.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/botao_dupla_sena_pressed.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled"
+			imagePath="/botao_dupla_sena_disabled.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado na tecla dia de sorte -->
+	<button name="botao_dia_de_sorte">
+		<state name="default" imagePath="/botao_dia_de_sorte.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched"
+			imagePath="/botao_dia_de_sorte_pressed.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled"
+			imagePath="/botao_dia_de_sorte_disabled.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado na tecla super sete -->
+	<button name="botao_super_sete">
+		<state name="default" imagePath="/botao_super_sete.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/botao_super_sete_pressed.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled"
+			imagePath="/botao_super_sete_disabled.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+
+	<!-- botao usado na tecla milionaria -->
+	<button name="botao_milionaria">
+		<state name="default" imagePath="/botao_milionaria.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/botao_milionaria_pressed.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled"
+			imagePath="/botao_milionaria_disabled.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+
+	<!-- botao usado na tecla duplasena especial -->
+	<button name="botao_duplasena_especial">
+		<state name="default" imagePath="/botao_dupla_sena_especial.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched"
+			imagePath="/botao_dupla_sena_especial_pressed.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled"
+			imagePath="/botao_dupla_sena_especial_disabled.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado na tecla botao_federal -->
+	<button name="botao_federal">
+		<state name="default" imagePath="/botao_federal.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/botao_federal_pressed.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/botao_federal_disabled.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado na tecla timemania -->
+	<button name="botao_timemania">
+		<state name="default" imagePath="/botao_timemania.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/botao_timemania_pressed.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/botao_timemania_disabled.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado na tecla timemania especial -->
+	<button name="botao_timemania_especial">
+		<state name="default" imagePath="/botao_timemania_especial.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched"
+			imagePath="/botao_timemania_especial_pressed.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled"
+			imagePath="/botao_timemania_especial_disabled.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao usado na tecla jogos_futuros -->
+	<button name="botao_jogos_futuros">
+		<state name="default" imagePath="/botao__jogos_futuros.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched"
+			imagePath="/botao__jogos_futuros_pressed.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled"
+			imagePath="/botao__jogos_futuros_disabled.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao para cima usado no scroll -->
+	<button name="botao_scroll_up">
+		<state name="default" imagePath="/azul/botao_scroll_up.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched"
+			imagePath="/azul/botao_scroll_up_pressed.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao para baixo usado no scroll -->
+	<button name="botao_scroll_dn">
+		<state name="default" imagePath="/azul/botao_scroll_dn.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched"
+			imagePath="/azul/botao_scroll_dn_pressed.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao para direita usado no scroll -->
+	<button name="botao_scroll_rt">
+		<state name="default" imagePath="/azul/botao_scroll_rt.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched"
+			imagePath="/azul/botao_scroll_rt_pressed.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+	<!-- botao para esquerda usado no scroll -->
+	<button name="botao_scroll_lf">
+		<state name="default" imagePath="/azul/botao_scroll_lf.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched"
+			imagePath="/azul/botao_scroll_lf_pressed.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+
+	<!-- botao usado na tecla pix -->
+	<button name="botao_pix">
+		<state name="default" imagePath="/botao_pix.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/botao_pix_pressed.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/botao_pix_disabled.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+
+	<!-- botao usado na tecla pix de confirmar -->
+	<button name="botao_pix_confirmar">
+		<state name="default" imagePath="/botao_pix_confirmar.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched"
+			imagePath="/botao_pix_pressed_confirmado.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/botao_pix_disabled.png">
+			<font type="/fonts/arial.ttf" size="12" bold="false"
+				italic="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+	</button>
+
+
+	<!-- toggleButton usado nos serviÃ§os do DETRAN/SP -->
+	<toggleButton name="botao_taxas_detran_sp">
+		<state name="default" imagePath="/azul/botao_released.png">
+			<font type="/fonts/futura_mh.ttf" size="24" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched" imagePath="/azul/botao_selected.png">
+			<font type="/fonts/futura_mh.ttf" size="24" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled" imagePath="/azul/botao_disabled.png">
+			<font type="/fonts/futura_mh.ttf" size="24" bold="false">
+				<color red="220" green="220" blue="220" />
+			</font>
+		</state>
+	</toggleButton>
+
+	<scrollBar name="testBar"
+		slider="/botao_dupla_sena_pressed.png" rollUpButton="botao_scroll_up"
+		rollDownButton="botao_scroll_dn" rollLeftButton="botao_scroll_lf"
+		rollRigthButton="botao_scroll_rt">
+	</scrollBar>
+
+	<!-- tabelas com linhas azul escuro -->
+	<table name="typeTable">
+		<state name="default">
+			<backgroundColor red="146" green="168" blue="205"
+				alpha="255" />
+			<gridColor>
+				<verticalColor red="255" green="255" blue="255" />
+				<horizontalColor red="255" green="255" blue="255" />
+			</gridColor>
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched">
+			<backgroundColor red="239" green="169" blue="48"
+				alpha="255" />
+			<gridColor>
+				<verticalColor red="255" green="255" blue="255" />
+				<horizontalColor red="255" green="255" blue="255" />
+			</gridColor>
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled">
+			<backgroundColor red="200" green="200" blue="200"
+				alpha="255" />
+			<gridColor>
+				<verticalColor red="255" green="255" blue="255" />
+				<horizontalColor red="255" green="255" blue="255" />
+			</gridColor>
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<tableHeader name="typeTableHeader">
+			<state name="default">
+				<backgroundColor red="146" green="168" blue="205"
+					alpha="255" />
+				<gridColor>
+					<verticalColor red="255" green="255" blue="255" />
+					<horizontalColor red="255" green="255" blue="255" />
+				</gridColor>
+				<font type="/fonts/futura_mh.ttf" size="14" bold="false">
+					<color red="255" green="255" blue="255" />
+				</font>
+			</state>
+		</tableHeader>
+	</table>
+	<!-- tabelas com linhas azul claro -->
+	<table name="typeTable2">
+		<state name="default">
+			<backgroundColor red="166" green="185" blue="215"
+				alpha="255" />
+			<gridColor>
+				<verticalColor red="255" green="255" blue="255" />
+				<horizontalColor red="255" green="255" blue="255" />
+			</gridColor>
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="touched">
+			<backgroundColor red="239" green="169" blue="48"
+				alpha="255" />
+			<gridColor>
+				<verticalColor red="255" green="255" blue="255" />
+				<horizontalColor red="255" green="255" blue="255" />
+			</gridColor>
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<state name="disabled">
+			<backgroundColor red="200" green="200" blue="200"
+				alpha="255" />
+			<gridColor>
+				<verticalColor red="255" green="255" blue="255" />
+				<horizontalColor red="255" green="255" blue="255" />
+			</gridColor>
+			<font type="/fonts/futura_mh.ttf" size="12" bold="false">
+				<color red="255" green="255" blue="255" />
+			</font>
+		</state>
+		<tableHeader name="typeTableHeader">
+			<state name="default">
+				<backgroundColor red="146" green="168" blue="205"
+					alpha="255" />
+				<gridColor>
+					<verticalColor red="255" green="255" blue="255" />
+					<horizontalColor red="255" green="255" blue="255" />
+				</gridColor>
+				<font type="/fonts/futura_mh.ttf" size="14" bold="false">
+					<color red="255" green="255" blue="255" />
+				</font>
+			</state>
+		</tableHeader>
+	</table>
+
+</skin>

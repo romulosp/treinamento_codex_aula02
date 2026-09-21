@@ -1,20 +1,24 @@
-# Material de origem incorporado
+# Material de origem da Change
 
 **Autor:** Rômulo Penha
 
-Esta pasta torna a Change autocontida. Nenhuma etapa de especificação ou implementação deve depender do diretório externo usado durante a descoberta.
+Esta pasta deve tornar a Change autocontida. No estado atual, somente os
+arquivos textuais de entrada estão presentes. Código Java, configurações,
+fontes, imagens e a referência visual ainda precisam ser incorporados antes da
+implementação que dependa deles.
 
 ## Conteúdo
 
-- `codigo-java/`: 154 arquivos Java usados somente para compreender contratos, estados e comportamentos anteriores.
-- `configuracao/`: três XMLs e dois esquemas XSD de tema e menu.
-- `entrada/`: cópia do pedido textual original, tratado apenas como fonte de requisitos.
-- `fontes/`: oito arquivos TTF de conteúdo único.
-- `imagens/`: 144 imagens, uma propriedade de tema e duas bases de miniaturas herdadas. A subpasta `referencia/` contém a imagem visual fornecida pelo usuário.
+- `codigo-java/`: pendente; destino previsto para os 154 arquivos Java de referência.
+- `configuracao/`: pendente; destino previsto para os XMLs e esquemas de referência.
+- `entrada/`: cópia do pedido textual original e registro das decisões do prompt2, tratados apenas como fontes de requisitos.
+- `fontes/`: pendente; fontes servem apenas à análise de rastreabilidade.
+- `imagens/`: pendente; inclui a referência visual destinada à comparação humana.
 
 ## Regras de uso
 
-- O conteúdo é evidência de migração, não código de produção Android.
+- O conteúdo incorporado é evidência de migração, não código de produção Android.
+- A implementação não pode consultar caminhos externos; os materiais necessários devem estar versionados aqui antes de uso.
 - Somente arquivos com direito de uso comprovado podem ser copiados ao módulo `app`.
 - Saídas compiladas, metadados de IDE e duplicatas da pasta `bin` não foram incorporados.
 - As bases de miniaturas não devem entrar no aplicativo.

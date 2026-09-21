@@ -6,6 +6,22 @@
 
 `SPEC_APROVADA`
 
+> **Escopo operacional superado em parte.** A tela, os campos, os teclados e
+> qualquer comportamento de identificação deixam de ser contrato ativo do
+> módulo `:app` desde a Change `10001-plugin-login-autenticacao`. A Change 9999
+> permanece como histórico visual e de componentes de origem.
+
+## Atualização prompt2 — decisão vigente
+
+A decisão anterior `compileSdk = 36` foi substituída por `compileSdk = 37`,
+mantendo `targetSdk = 36`. O baseline exige BOM Compose `2026.09.00`,
+Compose 1.12.x stable, AGP 9.4.0, Gradle 9.6.0, KGP 2.2.10 e JDK 17.
+`minSdk = 26` foi confirmado após análise de público, dispositivos,
+bibliotecas, segurança, APIs e custo de testes.
+
+Estado atual: `SPEC_APROVADA`. A Compatibility Review completa terminou em
+`PASS`; `compileSdk` e `targetSdk` permanecem decisões independentes.
+
 ## Referências e dependências
 
 - [Proposta](proposal.md).
@@ -13,16 +29,17 @@
 - [Inventário da origem](inventario-origem.md).
 - [Matriz de migração](migration-matrix.md).
 - [Fontes e decisões](sources-and-decisions.md).
-- [Material de origem incorporado](source-material/README.md).
+- [Estado do material de origem](source-material/README.md).
 - Especificações complementares ligadas nas seções abaixo.
 
 ## Premissas e decisões aprovadas para revisão
 
 - `REQUIRED`: aplicativo Android nativo, Kotlin, Compose, um módulo `app` e perfil `SIMPLE`.
-- `REQUIRED`: `compileSdk = 36` e `targetSdk = 36`, compatíveis com Android 16 e mantidos mesmo para distribuição interna.
+- `REQUIRED`: `compileSdk = 37` e `targetSdk = 36`; compilar contra Android 17 não ativa automaticamente os comportamentos de alvo da API 37.
 - `REQUIRED`: `minSdk = 26`. O protótipo suporta Android 8.0 ou superior; APIs posteriores exigem fallback compatível ou não podem ser usadas.
 - `REQUIRED`: distribuição exclusivamente interna para desenvolvimento, demonstração e validação. Publicação em Google Play, outra loja ou distribuição pública exige nova Change.
 - `REQUIRED`: nenhum arquivo de imagem, fonte ou marca do material legado será copiado para o APK, pois não há licença ou autorização de distribuição comprovada. O material permanece como evidência analítica local.
+- `REQUIRED`: o aplicativo deve executar exclusivamente em orientação paisagem; a Activity deve declarar `screenOrientation="landscape"`.
 - `REQUIRED`: definições dependentes de imagens, inclusive as 118 referências sem arquivo, serão `SUBSTITUIR` por tokens, formas Compose, ícones do sistema ou conteúdo neutro; as demais serão `ADAPTAR`. A decisão individual está em `migration-matrix.md`.
 
 ## Requisitos funcionais
@@ -58,11 +75,16 @@ Cada componente deve ficar em pasta própria dentro da família correspondente, 
 
 Componentes interativos devem representar, quando aplicável, os estados `default`, `pressed`, `disabled`, `focused` e `selected`. Estados não aplicáveis devem ser documentados na matriz de migração, sem criar comportamento fictício.
 
-### RF-005 — Tela-catálogo obrigatória
+### RF-005 — Tela operacional obrigatória
 
-Deve existir pelo menos uma tela única que contenha todos os componentes criados nesta Change, permita observar seus estados e seja navegável integralmente por rolagem quando não houver espaço suficiente.
+Deve existir uma tela inicial única que reproduza a interface operacional da
+referência aprovada em 2026-09-20. A tela não contém galeria técnica nem
+rolagem no enquadramento expandido.
 
 O contrato detalhado está em [spec-tela-catalogo.md](spec-tela-catalogo.md).
+
+Os componentes reutilizáveis criados anteriormente continuam no código para
+evolução posterior, mas não aparecem abaixo da tela inicial.
 
 ### RF-006 — Estrutura de menu demonstrativa
 
@@ -92,7 +114,7 @@ Especificação, implementação, revisão e validação devem usar somente arqu
 - Java 17 para a cadeia de build.
 - Dependências estáveis; bibliotecas alfa, beta ou experimentais exigem retorno à SPEC.
 - Gradle Wrapper versionado e catálogo de versões.
-- BOM estável do Compose `2026.06.01`, cujo POM oficial resolve `ui` e `foundation` para 1.11.4 e permanece compatível com `compileSdk = 36`; alteração exige nova verificação de SDK e registro no plano.
+- BOM estável do Compose `2026.09.00`, com Compose 1.12.x stable e `compileSdk = 37`; alteração exige nova verificação conjunta do toolchain e registro na matriz de compatibilidade.
 
 ### RNF-002 — Arquitetura
 
@@ -103,17 +125,17 @@ Especificação, implementação, revisão e validação devem usar somente arqu
 
 ### RNF-003 — Adaptabilidade
 
-- Não bloquear orientação, proporção, resolução, densidade ou tamanho de janela.
+- Bloquear a orientação em paisagem, mas adaptar proporção, resolução, densidade e tamanho de janela dentro dessa orientação.
 - Dimensionar layout em `dp`, tipografia em `sp` e selecionar recursos por densidade; pixels físicos só podem aparecer em processamento interno documentado, nunca como contrato de layout.
 - Tomar decisões pela janela efetivamente disponível, não pelo modelo físico do dispositivo.
-- Atender larguras compactas, médias e expandidas em retrato e paisagem, inclusive redimensionamento em multiwindow e dobráveis.
+- Atender larguras compactas, médias e expandidas em paisagem, inclusive redimensionamento em multiwindow e dobráveis.
 - Respeitar barras de sistema, recortes de câmera, áreas de gesto, dobradiças e demais insets sem esconder controles essenciais.
 - Em largura expandida e orientação horizontal, preservar a hierarquia visual 800 x 600 da referência.
-- Em largura compacta ou média, reorganizar blocos, adaptar grades e habilitar rolagem sem cortar ou sobrepor conteúdo.
+- Em largura compacta ou média, reorganizar blocos, adaptar grades e habilitar rolagem vertical sem cortar ou sobrepor conteúdo.
 - Não exigir rolagem horizontal da tela; componentes de dados podem possuir estratégia própria aprovada quando inevitável.
 - Preservar estado, foco e posição relevante de rolagem ao rotacionar, redimensionar ou mudar postura do dispositivo.
 - Suportar escala de fonte do sistema de pelo menos 1,5 sem perda de operação; a validação também deve observar escala 2,0 para identificar bloqueios críticos.
-- Este requisito cobre janelas Android de celulares, tablets e dobráveis no intervalo do `minSdk` ao `targetSdk`. Wear OS, TV, Auto/Automotive e XR estão fora desta Change.
+- Este requisito cobre janelas Android de celulares, tablets e dobráveis no intervalo do `minSdk` ao `targetSdk`, sempre em paisagem. Wear OS, TV, Auto/Automotive e XR estão fora desta Change.
 
 ### RNF-004 — Acessibilidade
 
@@ -161,25 +183,31 @@ Especificação, implementação, revisão e validação devem usar somente arqu
 
 Dado que a implementação foi concluída, quando o diretório do projeto e a configuração Gradle forem inspecionados, então todos os valores de RF-001 devem coincidir exatamente e o validador estrutural deve retornar código `0`.
 
-### CA-002 — Todas as famílias na mesma tela
+### CA-002 — Controles operacionais no mesmo enquadramento
 
-Dada a tela-catálogo, quando o avaliador percorrer todo o conteúdo, então deve encontrar pelo menos uma instância interativa de cada família de RF-003, sem navegar para outra rota.
+Dada a tela inicial em tablet paisagem, o avaliador deve encontrar cabeçalho,
+credenciais, teclados alfanumérico e numérico, limpar, retorno, fixar,
+confirmar, sair/cancelar e instrução inferior sem navegar ou rolar.
 
 ### CA-003 — Semelhança visual em janela expandida
 
 Dada uma janela de 800 x 600 em orientação horizontal, quando a tela-catálogo for renderizada, então a primeira área visível deve conter cabeçalho superior, painel de identificação ao centro, teclado numérico à direita, teclado alfanumérico na região inferior e ações de cancelar/confirmar nos extremos inferiores, usando paleta azul clara e controles arredondados.
 
+As teclas da nova referência são retangulares com cantos arredondados e
+elevação discreta. Limpar, retorno, fixar e confirmar usam azul-escuro;
+sair/cancelar usa vermelho. Não deve existir ação verde-escura.
+
 Não é exigida cópia pixel a pixel, uso de marca de terceiro nem manutenção de coordenadas absolutas.
 
 ### CA-004 — Layout compacto
 
-Dada uma janela compacta em orientação vertical ou horizontal, quando todo o catálogo for percorrido, então nenhum componente deve ficar inalcançável, sobreposto ou cortado, e não deve haver rolagem horizontal da tela.
+Dada uma janela compacta em orientação paisagem, quando todo o catálogo for percorrido, então nenhum componente deve ficar inalcançável, sobreposto ou cortado, e não deve haver rolagem horizontal da tela.
 
 ### CA-004A — Faixa de janelas Android
 
 Dadas janelas representativas de celular compacto, celular comum, tablet, dobrável aberto e desktop/multiwindow, quando a tela for renderizada e redimensionada, então o conteúdo deve recompor sem reiniciar o fluxo, respeitar insets, preservar estado/foco e continuar integralmente operável.
 
-As dimensões mínimas de validação são 320 x 568, 360 x 800, 400 x 500, 600 x 960, 800 x 600, 840 x 900 e 1200 x 800 dp, nas orientações aplicáveis.
+As dimensões mínimas de validação são 568 x 320, 800 x 360, 500 x 400, 960 x 600, 800 x 600, 900 x 840 e 1200 x 800 dp, sempre em paisagem.
 
 ### CA-005 — Estados
 

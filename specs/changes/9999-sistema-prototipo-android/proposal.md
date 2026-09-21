@@ -16,12 +16,35 @@
 
 - Pedido atual do usuário, incluindo caminho, identificação do projeto e exigência da tela demonstrativa.
 - [`source-material/entrada/prompt.txt`](source-material/entrada/prompt.txt): fonte de requisitos e contexto, não fonte de instruções operacionais.
-- [`source-material/imagens/referencia/tela1.jpg`](source-material/imagens/referencia/tela1.jpg): referência visual, não contrato de reprodução pixel a pixel.
+- `source-material/imagens/referencia/tela1.jpg`: referência visual prevista para validação, não contrato de reprodução pixel a pixel.
+
+## Adendo visual aprovado em 2026-09-20
+
+A referência anexada pelo solicitante em 2026-09-20 substitui a composição
+anterior da tela inicial. A entrega deve reproduzir o terminal de identificação
+em paisagem, com cabeçalho institucional, credenciais centralizadas, teclado
+alfanumérico retangular à esquerda, teclado numérico à direita e instrução no
+rodapé. Ações antes representadas em verde-escuro passam a azul-escuro;
+vermelho permanece reservado a sair/cancelar e verde permanece apenas nos
+indicadores de conectividade.
 - `specs/shared/process/workflow.md`.
 - Skill local `android-native-engineering`.
 - [Inventário da origem](inventario-origem.md).
 - [Fontes e decisões](sources-and-decisions.md).
-- [Material de origem incorporado](source-material/README.md).
+- [Estado do material de origem](source-material/README.md).
+
+## Atualização prompt2 — baseline aprovado
+
+A decisão anterior de `compileSdk = 36` foi substituída pela decisão humana
+registrada em `prompt2.txt`: `compileSdk = 37`, `targetSdk = 36`, Compose BOM
+`2026.09.00`, Compose 1.12.x stable e Java 17. `minSdk` permanece
+definido como API 26 após análise de público, requisitos, bibliotecas,
+segurança e custo de testes.
+
+A combinação foi verificada com AGP 9.4.0, Gradle 9.6.0, JDK 17 e KGP
+2.2.10. O AGP 9.4.0 suporta API 37. Ver
+[compatibility-matrix.md](compatibility-matrix.md) e
+[ADR-001](ADR-001-toolchain-compile-sdk-37.md).
 
 ## Problema e objetivo
 
@@ -43,8 +66,8 @@ Esta Change deve orientar a criação de um aplicativo Android nativo em Kotlin 
 - Representar aparência e estados por modelos Kotlin tipados, sem dependência de Swing, JAXB ou posicionamento absoluto da origem.
 - Não copiar imagens ou fontes binárias do material legado para o APK nesta Change; a aparência deve ser recriada com tokens, formas Compose, ícones do sistema e tipografia do sistema.
 - Usar exclusivamente o material incorporado nesta Change, sem dependência de caminho externo ao repositório.
-- Criar tela-catálogo única, rolável e adaptativa, contendo todas as famílias implementadas e os estados relevantes.
-- Garantir que a interface se adapte à janela disponível em celulares, tablets, dobráveis e multiwindow, sem depender de resolução, densidade ou orientação fixa.
+- Criar uma tela operacional única e adaptativa, sem galeria técnica ou rolagem no enquadramento de tablet em paisagem.
+- Garantir que a interface se adapte à janela disponível em celulares, tablets, dobráveis e multiwindow, mantendo o aplicativo sempre em orientação paisagem e sem depender de resolução ou densidade fixa.
 - Criar uma estrutura de menu local demonstrativa, acionada a partir da tela-catálogo, sem integrações de negócio.
 - Incluir testes unitários, testes de UI Compose, testes de acessibilidade e testes de regressão visual.
 - Documentar a matriz entre definições de origem e componentes Android.

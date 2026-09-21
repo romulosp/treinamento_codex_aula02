@@ -1,5 +1,10 @@
 # Especificação complementar: fundação do aplicativo
 
+> **SUPERSEDIDA PARA A TOPOLOGIA ATUAL.** A fundação de módulo único foi
+> substituída pelas Changes 10000 e 10001: `:app` é host, `:shared-api` contém
+> contratos e `:plugin-login` contém a identificação. Este documento é apenas
+> registro da fundação original.
+
 **Autor:** Rômulo Penha
 
 ## Identidade
@@ -16,9 +21,10 @@
 - Kotlin.
 - Jetpack Compose Material 3.
 - Java 17.
-- `compileSdk = 36`.
+- `compileSdk = 37`.
 - `targetSdk = 36`.
 - `minSdk = 26` decidido para Android 8.0 ou superior.
+- Orientação fixa: paisagem (`android:screenOrientation="landscape"`).
 
 ## Distribuição
 

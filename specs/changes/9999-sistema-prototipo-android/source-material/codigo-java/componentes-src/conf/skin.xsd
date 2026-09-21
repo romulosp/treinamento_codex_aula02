@@ -1,0 +1,220 @@
+ <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+ <!-- Color -->	
+
+ <xs:simpleType name="colorType">
+  <xs:restriction base="xs:int">
+   <xs:minInclusive value="0"/>
+   <xs:maxInclusive value="255"/>
+  </xs:restriction>
+ </xs:simpleType>
+
+ 
+ <!-- Seta a cor de fundo do componente e o grau de transparencia da cor, atraves do atributo "alpha" -->
+ 
+ <xs:element name="backgroundColor">
+ 	<xs:complexType>
+  			<xs:attribute name="red" type="colorType" use="required"/> 
+  			<xs:attribute name="green" type="colorType" use="required"/> 
+  			<xs:attribute name="blue" type="colorType" use="required"/> 
+  			<xs:attribute name="alpha" type="colorType" use="required"/>
+  	</xs:complexType>
+ </xs:element>
+ 
+ <!-- Font -->
+ <xs:element name="font">
+ 	<xs:complexType>
+ 		<xs:sequence>
+ 			 <xs:element name="color" minOccurs="0">
+ 				<xs:complexType>
+  					<xs:attribute name="red" type="colorType" use="required"/> 
+		  			<xs:attribute name="green" type="colorType" use="required"/> 
+  					<xs:attribute name="blue" type="colorType" use="required"/> 
+			  	</xs:complexType>
+			 </xs:element>
+ 		</xs:sequence>
+		 <xs:attribute name="bold" type="xs:boolean" default="false"/>
+		 <xs:attribute name="underlined" type="xs:boolean" default="false"/>
+		 <xs:attribute name="italic" type="xs:boolean" default="false"/> 
+		 <xs:attribute name="size" type="xs:int" use="optional" default="0"/>
+		 <xs:attribute name="type" type="xs:string" use="optional" default="0"/>
+  	</xs:complexType>
+ </xs:element>
+
+ <!-- Skin -->
+ <xs:element name="skin">
+ <xs:complexType>
+ <xs:sequence>
+  <xs:element ref="panel" maxOccurs="unbounded" minOccurs="0"/> 
+  <xs:element ref="textField" maxOccurs="unbounded" minOccurs="0"/> 
+  <xs:element ref="passwordField" maxOccurs="unbounded" minOccurs="0"/> 
+  <xs:element ref="textArea" maxOccurs="unbounded" minOccurs="0"/> 
+  <xs:element ref="label" maxOccurs="unbounded" minOccurs="0"/> 
+  <xs:element ref="toggleButton" maxOccurs="unbounded" minOccurs="0"/> 
+  <xs:element ref="button" maxOccurs="unbounded" minOccurs="0"/> 
+  <xs:element ref="scrollBar" maxOccurs="unbounded" minOccurs="0"/> 
+  <xs:element ref="table" maxOccurs="unbounded" minOccurs="0"/> 
+  <xs:element ref="dialog" maxOccurs="unbounded" minOccurs="0"/> 
+  </xs:sequence>
+  </xs:complexType>
+  </xs:element>
+
+  <!-- State -->
+ <xs:element name="state">
+  <xs:complexType>
+   <xs:sequence>
+    <xs:element ref="backgroundColor" minOccurs="0"/> 
+    <xs:element ref="gridColor" minOccurs="0" />
+    <xs:element ref="font" minOccurs="0"/> 
+   </xs:sequence>
+	<xs:attribute name="name" use="required">
+    <xs:simpleType>
+     <xs:restriction base="xs:NMTOKEN">
+       <xs:enumeration value="default" /> 
+       <xs:enumeration value="focused" /> 
+       <xs:enumeration value="touched" /> 
+  	   <xs:enumeration value="disabled" /> 
+     </xs:restriction>
+  </xs:simpleType>
+  </xs:attribute>
+   <xs:attribute name="imagePath" use="optional" type="xs:string"/>    
+   <xs:attribute name="spacement" type="xs:double" use="optional" default="1.0"/>
+  </xs:complexType>
+ </xs:element>
+
+ <!-- Button -->
+ <xs:element name="button">
+	<xs:complexType>
+ 		<xs:sequence>
+			<xs:element ref="state" maxOccurs="3"/>
+		</xs:sequence>
+	<xs:attribute name="name" type="xs:NMTOKEN" use="required" /> 
+ 	</xs:complexType>
+ </xs:element>
+ <!-- Text Area -->
+ <xs:element name="textArea">
+	<xs:complexType>
+ 		<xs:sequence>
+			<xs:element ref="state" maxOccurs="3"/>
+		</xs:sequence>
+	<xs:attribute name="name" type="xs:NMTOKEN" use="required" /> 
+ 	</xs:complexType>
+ </xs:element>
+
+ <!-- Text Field -->
+ <xs:element name="textField">
+	<xs:complexType>
+ 		<xs:sequence>
+			<xs:element ref="state" maxOccurs="3"/>
+		</xs:sequence>
+	<xs:attribute name="name" type="xs:NMTOKEN" use="required" /> 
+ 	</xs:complexType>
+ </xs:element>
+
+ <!-- Password Field -->
+ <xs:element name="passwordField">
+	<xs:complexType>
+ 		<xs:sequence>
+			<xs:element ref="state" maxOccurs="3"/>
+		</xs:sequence>
+	<xs:attribute name="name" type="xs:NMTOKEN" use="required" /> 
+ 	</xs:complexType>
+ </xs:element>
+
+ <!-- Toogle Button -->
+ <xs:element name="toggleButton">
+	<xs:complexType>
+ 		<xs:sequence>
+			<xs:element ref="state" maxOccurs="3"/>
+		</xs:sequence>
+	<xs:attribute name="name" type="xs:NMTOKEN" use="required" /> 
+ 	</xs:complexType>
+ </xs:element>
+
+ <!-- Label -->
+ <xs:element name="label">
+	<xs:complexType>
+ 		<xs:sequence>
+			<xs:element ref="state"/>
+		</xs:sequence>
+	<xs:attribute name="name" type="xs:NMTOKEN" use="required" /> 
+ 	</xs:complexType>
+ </xs:element>
+
+ <!-- Panel -->
+ <xs:element name="panel">
+	<xs:complexType>
+ 		<xs:sequence>
+			<xs:element ref="state"/>
+		</xs:sequence>
+	<xs:attribute name="name" type="xs:NMTOKEN" use="required" /> 
+ 	</xs:complexType>
+ </xs:element>
+ 
+  <!-- Dialog -->
+ <xs:element name="dialog">
+	<xs:complexType>
+ 		<xs:sequence>
+			<xs:element ref="state"/>
+		</xs:sequence>
+	<xs:attribute name="name" type="xs:NMTOKEN" use="required" /> 
+ 	</xs:complexType>
+ </xs:element>
+ 
+ <!-- Scroll Bar -->
+ <xs:element name="scrollBar">
+	<xs:complexType>
+	<xs:attribute name="name" type="xs:NMTOKEN" use="required" /> 
+	<xs:attribute name="slider" type="xs:NMTOKEN" use="optional" /> 
+	<xs:attribute name="rollUpButton" type="xs:NMTOKEN" use="required" /> 
+	<xs:attribute name="rollDownButton" type="xs:NMTOKEN" use="required" /> 
+	<xs:attribute name="rollRigthButton" type="xs:NMTOKEN" use="required" /> 
+	<xs:attribute name="rollLeftButton" type="xs:NMTOKEN" use="required" /> 
+ 	</xs:complexType>
+ </xs:element>
+
+ <!-- Table -->
+ <xs:element name="table">
+	<xs:complexType>
+		<xs:sequence>
+			<xs:element ref="state" maxOccurs="3" minOccurs="3"/>
+			<xs:element ref="tableHeader" maxOccurs="1"/>
+		</xs:sequence>
+		<xs:attribute name="name" type="xs:NMTOKEN" use="required" /> 
+  	</xs:complexType>
+ </xs:element>
+ 
+  <!-- TableHeader -->
+ <xs:element name="tableHeader">
+	<xs:complexType>
+		<xs:sequence>
+			<xs:element ref="state" maxOccurs="1"/> 
+		</xs:sequence>
+		<xs:attribute name="name" type="xs:NMTOKEN" use="required" /> 
+  	</xs:complexType>
+ </xs:element>
+ 
+ <!-- GridColor -->
+ <xs:element name="gridColor">
+	<xs:complexType>
+		<xs:sequence>
+			<xs:element name="verticalColor" >
+ 				<xs:complexType>
+  					<xs:attribute name="red" type="colorType" use="required"/> 
+		  			<xs:attribute name="green" type="colorType" use="required"/> 
+  					<xs:attribute name="blue" type="colorType" use="required"/> 
+			  	</xs:complexType>
+			</xs:element>
+			<xs:element name="horizontalColor" >
+ 				<xs:complexType>
+  					<xs:attribute name="red" type="colorType" use="required"/> 
+		  			<xs:attribute name="green" type="colorType" use="required"/> 
+  					<xs:attribute name="blue" type="colorType" use="required"/> 
+			  	</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+  	</xs:complexType>
+ </xs:element>
+
+
+</xs:schema>

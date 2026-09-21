@@ -6,9 +6,24 @@
 
 `SPEC_APROVADA`
 
+## Atualização prompt2 — decisão de toolchain
+
+O baseline vigente é `compileSdk = 37`, `targetSdk = 36`, BOM Compose
+`2026.09.00`, Compose 1.12.x stable, AGP 9.4.0, Gradle 9.6.0,
+KGP 2.2.10 e JDK 17. `minSdk = 26`. A combinação foi validada pelas fontes
+oficiais registradas na matriz de compatibilidade.
+
 ## Contexto
 
 A origem utiliza Java desktop, desenho por imagens, dimensões fixas e uma configuração XML que instancia estilos por nome. O destino é um aplicativo Android nativo executado em janelas variáveis. A migração deve preservar intenção visual e estados, não a tecnologia nem as coordenadas anteriores.
+
+### Adendo visual de 2026-09-20
+
+A tela inicial usa a nova referência aprovada pelo solicitante e não exibe a
+galeria técnica no fluxo principal. O cabeçalho e a marca são desenhados por
+texto e formas Compose, sem copiar o bitmap anexado para o APK. Teclas comuns
+usam superfície clara retangular; ações usam azul-escuro e cancelamento usa
+vermelho. O verde fica restrito aos três indicadores de conectividade.
 
 ## Referências
 
@@ -79,7 +94,7 @@ Recursos rasterizados terão estratégia explícita de `ContentScale`, recorte e
 
 ### D-008 — Plataforma e distribuição
 
-O aplicativo usa `minSdk = 26`, `compileSdk = 36`, `targetSdk = 36`, Java 17 e BOM Compose estável `2026.06.01` (Compose UI/Foundation 1.11.4). A entrega é interna e demonstrativa. Publicação pública, Google Play ou incorporação de ativos legados exige nova Change e nova análise de direitos.
+O aplicativo usa `minSdk = 26`, `compileSdk = 37`, `targetSdk = 36`, Java 17, AGP 9.4.0, Gradle 9.6.0, KGP 2.2.10 e BOM Compose estável `2026.09.00` (Compose 1.12.x). A entrega é interna e demonstrativa. Publicação pública, Google Play ou incorporação de ativos legados exige nova Change e nova análise de direitos.
 
 ## Arquitetura e componentes
 

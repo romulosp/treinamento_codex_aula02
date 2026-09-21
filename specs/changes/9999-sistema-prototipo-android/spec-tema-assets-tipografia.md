@@ -14,7 +14,8 @@ A paleta deve preservar a intenção da referência:
 - azul médio/escuro para ações e teclas;
 - branco para superfícies de entrada;
 - cinza para cabeçalho e estados desabilitados;
-- verde para confirmar e vermelho para cancelar/erro;
+- azul-escuro para confirmar e demais ações operacionais, conforme adendo visual de 2026-09-20;
+- verde exclusivamente para indicadores positivos de conectividade/status;
 - foco com contraste perceptível, sem depender somente da cor.
 
 Valores exatos serão definidos como tokens neutros durante a implementação a partir da intenção cromática descrita acima, sem extrair ou copiar binários legados.

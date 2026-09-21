@@ -7,15 +7,29 @@
 - Consulta realizada em 2026-09-19.
 - Fontes Android/Google oficiais têm prioridade.
 - Links externos abaixo são citações de autoridade temporal, não dependências de arquivo ou build.
-- Todo material específico desta migração foi incorporado em `source-material/`.
+- As entradas textuais estão em `source-material/`; os demais materiais identificados no inventário ainda aguardam incorporação e conferência antes do uso na implementação.
 
 ## Decisões Android
+
+### Política permanente de versionamento
+
+- Regra: em novos projetos ou atualizações relevantes, usar o stack stable mais recente oficialmente compatível e aprovado na data da decisão.
+- Limitação: as versões desta Change não se tornam regra permanente da skill ou do harness.
+- Estabilidade: stable é permitido; RC ou beta exige necessidade e aprovação explícita; alpha, preview ou experimental exige classificação `EXPERIMENTAL`, ADR, risco, validação adicional e aprovação.
+- Fonte de verdade desta Change: [compatibility-matrix.md](compatibility-matrix.md).
+
+### Toolchain aprovado
+
+- Fonte: [notas oficiais do AGP 9.4.0](https://developer.android.com/build/releases/agp-9-4-0-release-notes), consultadas em 2026-09-19.
+- Decisão: AGP 9.4.0, Gradle 9.6.0, JDK 17 e KGP 2.2.10.
+- Evidência: o AGP 9.4.0 suporta API 37 e publica essas versões na tabela de compatibilidade.
+- Classificação: `REQUIRED` nesta Change.
 
 ### SDK alvo
 
 - Fonte: [requisito de API alvo da Google Play](https://developer.android.com/google/play/requirements/target-sdk).
 - Fato temporal: desde 2026-08-31, novos aplicativos e atualizações para telefones devem mirar Android 16, API 36, ou superior.
-- Decisão: `compileSdk = 36` e `targetSdk = 36`.
+- Decisão: `compileSdk = 37` e `targetSdk = 36`; são decisões independentes.
 - Classificação: requisito da Google Play para publicação pública e baseline técnico `REQUIRED` por decisão desta Change interna.
 - Limitação: a escolha do alvo não autoriza publicação; o canal permanece exclusivamente interno.
 
@@ -31,10 +45,10 @@
 
 - Fontes: [BOM do Jetpack Compose](https://developer.android.com/develop/ui/compose/bom), [configuração do Compose](https://developer.android.com/develop/ui/compose/setup-compose-dependencies-and-compiler) e POM oficial do BOM no Google Maven.
 - Fato temporal: o BOM mais recente `2026.09.00` resolve Compose 1.12.1, e a documentação oficial exige `compileSdk = 37` a partir do Compose 1.12.0.
-- Evidência de compatibilidade: o POM oficial de `androidx.compose:compose-bom:2026.06.01` existe e resolve `ui`, `foundation` e `ui-test-junit4` para 1.11.4 e Material 3 para 1.4.0.
-- Decisão: usar BOM estável `2026.06.01` para preservar `compileSdk = 36` e `targetSdk = 36`.
+- Evidência de compatibilidade: a documentação oficial do Compose indica BOM `2026.09.00`, Compose 1.12.x, `compileSdk = 37` e AGP 9; as notas oficiais do AGP 9.4.0 suportam API 37 e registram Gradle 9.6.0, JDK 17 e KGP 2.2.10.
+- Decisão: usar BOM estável `2026.09.00` com AGP 9.4.0, Gradle 9.6.0, JDK 17 e KGP 2.2.10.
 - Classificação: `REQUIRED` nesta Change.
-- Limitação: qualquer atualização posterior exige comprovar o SDK mínimo de compilação dos artefatos resolvidos e retornar à revisão da SPEC se exigir API 37 ou alterar o contrato.
+- Limitação: qualquer atualização posterior exige nova verificação conjunta e registro em `compatibility-matrix.md`.
 
 ### Distribuição
 
@@ -53,7 +67,7 @@
 ### Adaptabilidade
 
 - Fonte: [suporte a tamanhos de tela](https://developer.android.com/develop/adaptive-apps/guides/support-different-display-sizes).
-- Decisão: reagir ao espaço real da janela, preservar estado, respeitar insets e não fixar resolução, densidade, proporção ou orientação.
+- Decisão: executar somente em paisagem, reagir ao espaço real da janela, preservar estado, respeitar insets e não fixar resolução, densidade ou proporção.
 - Classificação: `RECOMMENDED`.
 - Escopo interpretado: celulares, tablets, dobráveis e multiwindow. Wear OS, TV, Auto/Automotive e XR exigem Changes próprias.
 

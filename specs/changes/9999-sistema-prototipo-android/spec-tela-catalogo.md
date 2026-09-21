@@ -1,12 +1,31 @@
 # Especificação complementar: tela-catálogo
 
+> **SUPERSEDIDA PARA OPERAÇÃO.** A partir da Change
+> `10001-plugin-login-autenticacao`, esta tela e suas regras de identificação
+> pertencem exclusivamente ao APK `:plugin-login`. Este documento permanece
+> somente como registro histórico da composição visual entregue na Change 9999
+> e não autoriza a presença de login no módulo `:app`.
+
 **Autor:** Rômulo Penha
 
 ## Objetivo
 
 Ser a evidência executável de que todos os componentes criados nesta Change existem, são interativos e formam uma interface coerente semelhante à imagem local de referência.
 
-## Conteúdo obrigatório na mesma rota
+## Adendo de composição — 2026-09-20
+
+A tela inicial deixa de exibir a galeria técnica abaixo da primeira dobra e
+passa a reproduzir somente a interface operacional anexada pelo solicitante.
+O conteúdo visível é: cabeçalho institucional, data/hora demonstrativa,
+Gateway/DNS/HTTP, identificação, usuário, senha mascarada, teclado
+alfanumérico, teclado numérico, confirmar, limpar, retorno, fixar,
+sair/cancelar e instrução inferior.
+
+Os campos são sempre editáveis e selecionam automaticamente o alvo do teclado
+virtual ao receber foco. Não existem botões intermediários para escolher
+usuário ou senha.
+
+## Componentes reutilizáveis preservados fora da tela inicial
 
 1. Cabeçalho com nome do protótipo, status e ações auxiliares.
 2. Painel de identificação com campo de usuário e campo de senha.
@@ -22,11 +41,14 @@ Ser a evidência executável de que todos os componentes criados nesta Change ex
 12. Teclado de calculadora demonstrativo.
 13. Acesso ao menu demonstrativo.
 
+Esta lista permanece como inventário de componentes implementados. O adendo
+de 2026-09-20 substitui a obrigação de exibi-los na mesma rota operacional.
+
 Uma família adicionada durante a implementação deve ser acrescentada a esta lista antes de sua criação.
 
 ## Primeiro enquadramento expandido
 
-Em 800 x 600 horizontal, o primeiro enquadramento deve reproduzir a hierarquia da referência: cabeçalho no topo, credenciais na área central, números à direita, letras embaixo e ações opostas no rodapé. As demais seções podem continuar abaixo por rolagem vertical.
+Em tablet horizontal, o único enquadramento deve reproduzir a hierarquia da nova referência: cabeçalho no topo, credenciais na área central, teclado alfanumérico retangular à esquerda, teclado numérico à direita, ações integradas ao teclado e instrução no rodapé. Não há continuação de galeria abaixo da tela.
 
 ## Layout compacto
 

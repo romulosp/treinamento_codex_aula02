@@ -1,5 +1,9 @@
 # Especificação complementar: entrada de senha
 
+> **SUPERSEDIDA PARA OPERAÇÃO.** O campo de senha da identificação migrou para
+> `:plugin-login` na Change `10001-plugin-login-autenticacao`; este documento
+> não descreve mais componente ativo no host.
+
 **Autor:** Rômulo Penha
 
 ## Componente
