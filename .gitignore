@@ -35,6 +35,15 @@ Desktop.ini
 
 **/apps/frontend/web/**
 **/apps/frontend/smartphone/**
+!**/apps/frontend/smartphone/sistema-prototipo-android/
+!**/apps/frontend/smartphone/sistema-prototipo-android/**
+**/apps/frontend/smartphone/sistema-prototipo-android/.gradle/
+**/apps/frontend/smartphone/sistema-prototipo-android/**/build/
+**/apps/frontend/smartphone/sistema-prototipo-android/local.properties
+!specs/changes/9999-sistema-prototipo-android/source-material/
+!specs/changes/9999-sistema-prototipo-android/source-material/**
+specs/changes/9999-sistema-prototipo-android/source-material/**/bin/
+specs/changes/9999-sistema-prototipo-android/source-material/**/build/
 **/apps/frontend/desktop/**
 
 # Dependencias, builds e credenciais locais: manter depois das regras de inclusao.

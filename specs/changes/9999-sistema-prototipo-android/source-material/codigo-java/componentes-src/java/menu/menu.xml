@@ -1,0 +1,479 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<menuXml>
+	<itemMenuXml nome="Principal">
+		<itemMenuXml nome="MEGA-SENA">
+			<itemMenuXml nome="MEGA-SENA" codigoMovimento="702" nomeMovimento="Mega-Sena" atalho="F1" />
+			<itemMenuXml nome="MEGA-SENA ESPECIAL" codigoMovimento="702" nomeMovimento="Mega-Sena Especial" />
+		</itemMenuXml>
+		<itemMenuXml nome="LOTOFÁCIL">
+			<itemMenuXml nome="LOTOFÁCIL" codigoMovimento="708" nomeMovimento="Lotofácil" atalho="F2" />
+			<itemMenuXml nome="LOTOFÁCIL ESPECIAL" codigoMovimento="708" nomeMovimento="Lotofácil Especial" />
+		</itemMenuXml>
+		<itemMenuXml nome="QUINA">
+			<itemMenuXml nome="QUINA" codigoMovimento="703" nomeMovimento="Quina" atalho="F3" />
+			<itemMenuXml nome="QUINA ESPECIAL" codigoMovimento="703" nomeMovimento="Quina Especial" />
+		</itemMenuXml>
+	 
+		<itemMenuXml nome="LOTOMANIA" codigoMovimento="716" />
+		
+		<itemMenuXml nome="LOTECA" codigoMovimento="819" atalho="F5" />
+		<!-- Loteca Especial - basta apagar a linha acima e descomentar o codigo abaixo.
+			<itemMenuXml nome="LOTECA"> <itemMenuXml nome="LOTECA" codigoMovimento="819" atalho="F5"/> <itemMenuXml nome="LOTECA ESPECIAL" codigoMovimento="819"/> 
+		</itemMenuXml> -->
+		<!--<itemMenuXml nome="LOTOGOL" codigoMovimento="814" atalho="F6" />-->
+		<!-- LotoGol Especial - basta apagar a linha acima e descomentar o codigo abaixo.
+		<itemMenuXml nome="LOTOGOL"> <itemMenuXml nome="LOTOGOL" codigoMovimento="814" atalho="F6"/> 
+			<itemMenuXml nome="LOTOGOL ESPECIAL" codigoMovimento="814"/>
+		</itemMenuXml> -->
+		<itemMenuXml nome="DUPLA-SENA">
+			<itemMenuXml nome="DUPLA-SENA" codigoMovimento="718" nomeMovimento="Dupla-Sena" atalho="F7" />
+			<itemMenuXml nome="DUPLA-SENA ESPECIAL" codigoMovimento="718" nomeMovimento="Dupla-Sena Especial" />
+		</itemMenuXml>
+		<itemMenuXml nome="TIMEMANIA" codigoMovimento="720" />
+		<!-- Timemania Especial - basta apagar a linha acima e descomentar o codigo abaixo.
+			<itemMenuXml nome="TIMEMANIA"> <itemMenuXml nome="TIMEMANIA" codigoMovimento="720"/> 
+		<itemMenuXml nome="TIMEMANIA ESPECIAL" codigoMovimento="720"/> </itemMenuXml> -->
+		<itemMenuXml nome="DIA DE SORTE" codigoMovimento="711"/>
+		<itemMenuXml nome="SUPER SETE" codigoMovimento="707"/>
+		<itemMenuXml nome="MILIONÁRIA" codigoMovimento="709"/>
+	
+		<itemMenuXml nome="  ARRECADA BOLETO  DE COBRANÇA" tituloPrincipal="ARRECADA BOLETO COBRANÇA" codigoMovimento="850010" atalho="F8"/>
+		<itemMenuXml nome="ARRECADAÇÃO DE CONVÊNIOS" tituloPrincipal="ARRECADAÇÃO DE CONVÊNIOS" codigoMovimento="850100"/>
+		
+		<itemMenuXml nome="BENEFÍCIOS SOCIAIS" tituloPrincipal="BENEFÍCIOS SOCIAIS">
+			<itemMenuXml nome="PAGA FGTS" tituloPrincipal="Paga FGTS">
+				<itemMenuXml nome="            CARTÃO            E SENHA" codigoMovimento="40101"/>
+				<itemMenuXml nome="         SEM CARTÃO       SEM SENHA" codigoMovimento="40102"/>
+				<itemMenuXml nome="         SEM CARTÃO       COM SENHA" codigoMovimento="40103"/>
+			</itemMenuXml>
+			<itemMenuXml nome="PAGA SEGURO DESEMPREGO" codigoMovimento="40301"/>
+			<itemMenuXml nome="PAGA BENEFÍCIOS SOCIAIS" codigoMovimento="40401"/>
+			<!-- TESTE	ABONO SALARIAL -->
+			<itemMenuXml nome="ABONO SALARIAL" codigoMovimento="40202"/>
+			<itemMenuXml nome="PAGA INSS" codigoMovimento="40402"/>
+		</itemMenuXml>
+	
+		<itemMenuXml nome="OUTROS SERVIÇOS FINANCEIROS" tituloPrincipal="OUTROS SERVIÇOS FINANCEIROS">
+			<itemMenuXml nome="DEPÓSITO" codigoMovimento="10201" atalho="F11"/>
+
+			<itemMenuXml nome="CAIXA TEM" tituloPrincipal="CAIXA TEM">
+						<itemMenuXml nome="ATIVAÇÃO E SAQUE CAIXA TEM" codigoMovimento="999821"/>
+						<itemMenuXml nome="RECUPERAR ACESSO CAIXA TEM" codigoMovimento="999842"/>
+			</itemMenuXml>
+			
+			<itemMenuXml nome="CONSULTA SALDO" codigoMovimento="10301" atalho="F10"/>
+			<itemMenuXml nome="ABERTURA CONTA" tituloPrincipal="ABERTURA CONTA">
+				<itemMenuXml nome="POUPANÇA CAIXA FÁCIL" codigoMovimento="10507"/>
+			</itemMenuXml>
+			
+			<itemMenuXml nome="SAQUE" tituloPrincipal="SAQUE">
+				<itemMenuXml nome="SAQUE COM CARTÃO" codigoMovimento="10101" atalho="F9"/>
+				<itemMenuXml nome="SAQUE SEM CARTÃO" codigoMovimento="10105" />
+			</itemMenuXml>
+			
+			<itemMenuXml nome="SAQUE POUP. SOCIAL DIGITAL" codigoMovimento="999803"/>
+			<itemMenuXml nome="FATURA AVULSA CARTÃO" codigoMovimento="850301"/>
+			
+			<itemMenuXml nome="CADASTRA SENHA" tituloPrincipal="CADASTRA SENHA">
+				<itemMenuXml nome="CARTÃO DO CIDADÃO" codigoMovimento="650001"/>
+				<itemMenuXml nome="BOLSA FAMÍLIA" codigoMovimento="650004"/>
+				<itemMenuXml nome="PÉ DE MEIA" codigoMovimento="650008"/>
+			</itemMenuXml>
+			
+			<itemMenuXml nome="REC" codigoMovimento="010602" tituloPrincipal="Recebimento Eletrônico CAIXA"/>
+			<itemMenuXml nome="RECARGA PRÉ-PAGO" codigoMovimento="850031" atalho="F12"/>
+			<itemMenuXml nome="PROCESSA CAIXACAP" tituloPrincipal="Processa CAIXACAP">
+				<itemMenuXml nome="RECEBIMENTO" codigoMovimento="850105"/>
+				<itemMenuXml nome="RESGATE" codigoMovimento="40501"/>
+			</itemMenuXml>
+<!-- 			<itemMenuXml nome="BILHETE ÚNICO SPTRANS" codigoMovimento="850250"/> -->
+			<itemMenuXml nome="PEC" tituloPrincipal="Pagamento Eletrônico CAIXA" opcao="99" codigoMovimento="850211"/>
+			<!-- <itemMenuXml nome="CONTRATA CARTÃO" tituloPrincipal="CONTRATA CARTÃO"/>  -->
+			<itemMenuXml nome="PRODUTOS NEGOCIAIS" tituloPrincipal="PRODUTOS NEGOCIAIS">
+				<itemMenuXml nome="CONSIGNADO" tituloPrincipal="CONSIGNADO">
+					<itemMenuXml nome="CONTRATA/RENOVA CONSIGNADO" codigoMovimento="10950"/>
+				</itemMenuXml>	
+				<itemMenuXml nome="CONTRATA CARTÃO CRÉDITO" codigoMovimento="10910"/>
+				<itemMenuXml nome="PRODUTOS DE SEGURIDADE" codigoMovimento="999806"/>
+				<itemMenuXml nome="EMPRÉSTIMO PESSOAL" codigoMovimento="999898"/>
+			</itemMenuXml>
+			<itemMenuXml nome="ARRECADA GPS" codigoMovimento="850001"/>
+			
+		 </itemMenuXml>
+		 <itemMenuXml nome="ATENDIMENTO" codigoMovimento="999920" opcao="99"/>
+		 
+		 <itemMenuXml nome="ÚLTIMOS RESULTADOS" tituloPrincipal="CONSULTA ÚLTIMOS RESULTADOS">
+			<itemMenuXml nome="MEGA-SENA" codigoMovimento="502" tituloPrincipal="CONSULTA ÚLTIMOS RESULTADOS">
+				<itemMenuXml nome="RESULTADO RATEIO" codigoMovimento="502" opcao="0"/>
+				<itemMenuXml nome="ÚLTIMOS RESULTADOS" codigoMovimento="502" opcao="1"/>
+			</itemMenuXml>
+			<itemMenuXml nome="LOTOFÁCIL" codigoMovimento="508" tituloPrincipal="CONSULTA ÚLTIMOS RESULTADOS">
+				<itemMenuXml nome="RESULTADO RATEIO" codigoMovimento="508" opcao="0"/>
+				<itemMenuXml nome="ÚLTIMOS RESULTADOS" codigoMovimento="508" opcao="1"/>
+			</itemMenuXml>
+			<itemMenuXml nome="QUINA" codigoMovimento="503" tituloPrincipal="CONSULTA ÚLTIMOS RESULTADOS">
+				<itemMenuXml nome="RESULTADO RATEIO" codigoMovimento="503" opcao="0"/>
+				<itemMenuXml nome="ÚLTIMOS RESULTADOS" codigoMovimento="503" opcao="1"/>
+			</itemMenuXml>
+			<itemMenuXml nome="LOTOMANIA" codigoMovimento="516" tituloPrincipal="CONSULTA ÚLTIMOS RESULTADOS">
+				<itemMenuXml nome="RESULTADO RATEIO" codigoMovimento="516" opcao="0"/>
+				<itemMenuXml nome="ÚLTIMOS RESULTADOS" codigoMovimento="516" opcao="1"/>
+			</itemMenuXml>
+			<itemMenuXml nome="FEDERAL" codigoMovimento="510"/>
+			<!--<itemMenuXml nome="LOTOGOL" codigoMovimento="514" tituloPrincipal="CONSULTA ÚLTIMOS RESULTADOS">
+				<itemMenuXml nome="RESULTADO RATEIO" codigoMovimento="514" opcao="0"/>
+				<itemMenuXml nome="ÚLTIMOS RESULTADOS" codigoMovimento="514" opcao="1"/>
+			</itemMenuXml>-->
+			<itemMenuXml nome="DUPLA-SENA" codigoMovimento="518" tituloPrincipal="CONSULTA ÚLTIMOS RESULTADOS">
+				<itemMenuXml nome="RESULTADO RATEIO" codigoMovimento="518" opcao="0"/>
+				<itemMenuXml nome="ÚLTIMOS RESULTADOS" codigoMovimento="518" opcao="1"/>
+			</itemMenuXml>
+			<itemMenuXml nome="LOTECA" codigoMovimento="519" tituloPrincipal="CONSULTA ÚLTIMOS RESULTADOS">
+				<itemMenuXml nome="RESULTADO RATEIO" codigoMovimento="519" opcao="0"/>
+				<itemMenuXml nome="ÚLTIMOS RESULTADOS" codigoMovimento="519" opcao="1"/>
+			</itemMenuXml>
+			<itemMenuXml nome="TIMEMANIA" codigoMovimento="520" tituloPrincipal="CONSULTA ÚLTIMOS RESULTADOS">
+				<itemMenuXml nome="RESULTADO RATEIO" codigoMovimento="520" opcao="0"/>
+				<itemMenuXml nome="ÚLTIMOS RESULTADOS" codigoMovimento="520" opcao="1"/>
+			</itemMenuXml>
+			<itemMenuXml nome="DIA DE SORTE" codigoMovimento="511" tituloPrincipal="CONSULTA ÚLTIMOS RESULTADOS">
+				<itemMenuXml nome="RESULTADO RATEIO" codigoMovimento="511" opcao="0"/>
+				<itemMenuXml nome="ÚLTIMOS RESULTADOS" codigoMovimento="511" opcao="1"/>
+			</itemMenuXml>
+			<itemMenuXml nome="SUPER SETE" codigoMovimento="513" tituloPrincipal="CONSULTA ÚLTIMOS RESULTADOS">
+				<itemMenuXml nome="RESULTADO RATEIO" codigoMovimento="513" opcao="0"/>
+				<itemMenuXml nome="ÚLTIMOS RESULTADOS" codigoMovimento="513" opcao="1"/>
+			</itemMenuXml>
+			<itemMenuXml nome="MILIONÁRIA" codigoMovimento="515" tituloPrincipal="CONSULTA ÚLTIMOS RESULTADOS">
+				<itemMenuXml nome="RESULTADO RATEIO" codigoMovimento="515" opcao="0"/>
+				<itemMenuXml nome="ÚLTIMOS RESULTADOS" codigoMovimento="515" opcao="1"/>
+			</itemMenuXml>			
+		</itemMenuXml>
+		<itemMenuXml nome="APOIO" tituloPrincipal="APOIO">
+			<itemMenuXml nome="LEITURA DE NOTIFICAÇÕES" codigoMovimento="120101"/>
+			<itemMenuXml nome="ENCALHE" codigoMovimento="1710"/>
+			<itemMenuXml nome="MANUTENÇÃO DE USUÁRIOS" tituloPrincipal="MANUTENÇÃO DE USUÁRIOS">
+				<itemMenuXml nome="INCLUSÃO" codigoMovimento="100701"/>
+				<itemMenuXml nome="EXCLUSÃO" codigoMovimento="100702"/>
+				<itemMenuXml nome="ALTERAÇÃO" codigoMovimento="100704"/>
+				<itemMenuXml nome="ALTERAÇÃO SENHA" codigoMovimento="100705"/>
+				<itemMenuXml nome="DESBLOQUEIO" codigoMovimento="100709"/><!-- RTC17711533 -->
+			</itemMenuXml>
+			<itemMenuXml nome="ANÁLISE DO EQUIPAMENTO" tituloPrincipal="ANÁLISE DO EQUIPAMENTO">
+				<itemMenuXml nome="IMPRESSORA" codigoMovimento="-1"/>
+				<itemMenuXml nome="LEITORA DE MARCAS" codigoMovimento="-1"/>
+				<itemMenuXml nome="LEITORA DE CÓDIGO DE BARRAS" codigoMovimento="-1"/>
+			</itemMenuXml>
+			<itemMenuXml nome="OBTÉM DV DE NSB" tituloPrincipal="OBTÉM DV DE NSB">
+				<itemMenuXml nome="APOSTA SIMPLES" codigoMovimento="50201" />
+				<itemMenuXml nome="COTA BOLÃO" codigoMovimento="50202" />
+			</itemMenuXml>
+			<itemMenuXml nome="EMITE RECIBO DE TROCA" codigoMovimento="1200"/>
+			<itemMenuXml nome="REIMPRESSÃO" tituloPrincipal="REIMPRESSÃO">
+				<itemMenuXml nome="ATENDIMENTO" codigoMovimento="80353" opcao="2"/>
+				<itemMenuXml nome="APOSTA" codigoMovimento="80306"/>
+				<itemMenuXml nome="PAGAMENTO PRÊMIO PROGNÓSTICO" codigoMovimento="80308"/>
+				<itemMenuXml nome="PAGAMENTO PRÊMIO FEDERAL" codigoMovimento="80309"/>
+				<itemMenuXml nome="PAGAMENTO PRÊMIO INSTANTANEA" codigoMovimento="80310"/>
+				<itemMenuXml nome="BILHETE TROCA" codigoMovimento="80349"/>
+				<itemMenuXml nome="ENCALHE FEDERAL" codigoMovimento="80312"/>
+				<itemMenuXml nome="ESTORNO DE CONTAS" codigoMovimento="80313"/>
+				<itemMenuXml nome="ESTORNO TRANSAÇÃO FINANCEIRA" codigoMovimento="80314"/>
+				<itemMenuXml nome="INVALIDAÇÃO" codigoMovimento="80307"/>
+				<itemMenuXml nome="DECLARAÇÃO DE ISENTOS" codigoMovimento="80345"/>
+				<itemMenuXml nome="CONTAS" codigoMovimento="80315"/>
+				<itemMenuXml nome="TRANSAÇÃO FINANCEIRA" codigoMovimento="80302"/>
+				<itemMenuXml nome="COTA DE BOLÃO" codigoMovimento="80348"/>
+				<itemMenuXml nome="COTA VIRTUAL" codigoMovimento="80352"/>
+				<itemMenuXml nome="TRANSAÇÃO" codigoMovimento="80301"/>
+			</itemMenuXml>
+			<itemMenuXml nome="ESTORNA TRANSAÇÕES" tituloPrincipal="ESTORNA TRANSAÇÕES" codigoMovimento="990101">
+				<itemMenuXml nome="APOSTAS" tituloPrincipal="ESTORNA TRANSAÇÕES - APOSTAS">
+					<itemMenuXml nome="MEGA-SENA" codigoMovimento="990102" opcao="2"/>
+					<itemMenuXml nome="QUINA" codigoMovimento="990103" opcao="3"/>
+					<itemMenuXml nome="LOTOFÁCIL" codigoMovimento="990108" opcao="8"/>
+					<!--<itemMenuXml nome="LOTOGOL" codigoMovimento="990114" opcao="14"/>-->
+					<itemMenuXml nome="LOTOMANIA" codigoMovimento="990116" opcao="16"/>
+					<itemMenuXml nome="DUPLA-SENA" codigoMovimento="990118" opcao="18"/>
+					<itemMenuXml nome="LOTECA" codigoMovimento="990119" opcao="19"/>
+					<itemMenuXml nome="TIMEMANIA" codigoMovimento="990120" opcao="20"/>
+					<itemMenuXml nome="DIA DE SORTE" codigoMovimento="990111" opcao="11"/>
+					<itemMenuXml nome="SUPER SETE" codigoMovimento="990107" opcao="7"/>	
+					<itemMenuXml nome="MILIONÁRIA" codigoMovimento="990109" opcao="9"/>						
+				</itemMenuXml>
+				<itemMenuXml nome="DEMAIS TRANSAÇÕES" codigoMovimento="990202"/>
+			</itemMenuXml>
+			<itemMenuXml nome="RESOLVE TRANSAÇÕES PENDENTES" codigoMovimento="100902"/>
+		</itemMenuXml>
+		
+		<itemMenuXml nome="BOLÃO" tituloPrincipal="BOLÃO">
+			<itemMenuXml nome="MEGA-SENA">
+				<itemMenuXml nome="BOLÃO MEGA-SENA" codigoMovimento="721" nomeMovimento="Bolão Mega-Sena"/>
+				<itemMenuXml nome="BOLÃO MEGA-SENA ESPECIAL" codigoMovimento="721" nomeMovimento="Bolão Mega-Sena Especial"/>
+			</itemMenuXml>
+			<itemMenuXml nome="LOTOFÁCIL">
+				<itemMenuXml nome="BOLÃO LOTOFÁCIL" codigoMovimento="723" nomeMovimento="Bolão Lotofácil"/>
+				<itemMenuXml nome="BOLÃO LOTOFÁCIL ESPECIAL" codigoMovimento="723" nomeMovimento="Bolão Lotofácil Especial"/>
+			</itemMenuXml>
+			<itemMenuXml nome="QUINA">
+				<itemMenuXml nome="BOLÃO QUINA" codigoMovimento="722" nomeMovimento="Bolão Quina"/>
+				<itemMenuXml nome="BOLÃO QUINA ESPECIAL" codigoMovimento="722" nomeMovimento="Bolão Quina Especial"/>
+			</itemMenuXml>
+			<itemMenuXml nome="BOLÃO LOTECA" codigoMovimento="820" nomeMovimento="Bolão Loteca"/>
+			<itemMenuXml nome="BOLÃO DUPLA-SENA">
+				<itemMenuXml nome="BOLÃO DUPLA-SENA" codigoMovimento="724" nomeMovimento="Bolão Dupla-Sena" atalho="F7"/>
+				<itemMenuXml nome="BOLÃO DUPLA-SENA ESPECIAL" codigoMovimento="724" nomeMovimento="Bolão Dupla-Sena Especial"/>
+			</itemMenuXml>
+			<itemMenuXml nome="BOLÃO DIA DE SORTE" codigoMovimento="712"/>
+			<itemMenuXml nome="BOLÃO TIMEMANIA" codigoMovimento="725"/>
+			<itemMenuXml nome="BOLÃO SUPER SETE" codigoMovimento="713"/>
+			<itemMenuXml nome="BOLÃO MILIONÁRIA" codigoMovimento="714" />
+			<itemMenuXml nome="BOLÕES DIGITAIS" codigoMovimento="803">
+				<itemMenuXml nome="VENDER COTAS" codigoMovimento="791" />
+				<itemMenuXml nome="BOLÕES MARKETPLACE" codigoMovimento="790" />
+				<itemMenuXml nome="BOLÕES CONCLUÍDOS" codigoMovimento="792" />
+			</itemMenuXml>
+		</itemMenuXml>
+				
+		<itemMenuXml nome="RELATÓRIOS" tituloPrincipal="RELATÓRIOS">
+			<itemMenuXml nome="RESUMO DA SESSÃO" codigoMovimento="80203"/>
+			<itemMenuXml nome="RESUMO DA EFL" tituloPrincipal="Relatório de Resumo da EFL" codigoMovimento="80202">
+				<itemMenuXml nome="HOJE" codigoMovimento="80202" opcao="1"/>
+				<itemMenuXml nome="SEGUNDA" codigoMovimento="80202" opcao="2"/>
+				<itemMenuXml nome="TERÇA" codigoMovimento="80202" opcao="3"/>
+				<itemMenuXml nome="QUARTA" codigoMovimento="80202" opcao="4"/>
+				<itemMenuXml nome="QUINTA" codigoMovimento="80202" opcao="5"/>
+				<itemMenuXml nome="SEXTA" codigoMovimento="80202" opcao="6"/>
+				<itemMenuXml nome="SÁBADO" codigoMovimento="80202" opcao="7"/>
+				<itemMenuXml nome="DOMINGO" codigoMovimento="80202" opcao="8"/>
+			</itemMenuXml>
+			<itemMenuXml nome="RESUMO DO OPERADOR" tituloPrincipal="Relatório de Resumo do Operador" codigoMovimento="80204">
+				<itemMenuXml nome="HOJE" codigoMovimento="80204" opcao="1"/>
+				<itemMenuXml nome="SEGUNDA" codigoMovimento="80204" opcao="2"/>
+				<itemMenuXml nome="TERÇA" codigoMovimento="80204" opcao="3"/>
+				<itemMenuXml nome="QUARTA" codigoMovimento="80204" opcao="4"/>
+				<itemMenuXml nome="QUINTA" codigoMovimento="80204" opcao="5"/>
+				<itemMenuXml nome="SEXTA" codigoMovimento="80204" opcao="6"/>
+				<itemMenuXml nome="SÁBADO" codigoMovimento="80204" opcao="7"/>
+				<itemMenuXml nome="DOMINGO" codigoMovimento="80204" opcao="8"/>
+			</itemMenuXml>
+			<itemMenuXml nome="COBRANÇA LOTERIAS" tituloPrincipal="Relatório de Cobrança Diária de Loterias" codigoMovimento="80211">
+				<itemMenuXml nome="HOJE" codigoMovimento="80211" opcao="1"/>
+				<itemMenuXml nome="SEGUNDA" codigoMovimento="80211" opcao="2"/>
+				<itemMenuXml nome="TERÇA" codigoMovimento="80211" opcao="3"/>
+				<itemMenuXml nome="QUARTA" codigoMovimento="80211" opcao="4"/>
+				<itemMenuXml nome="QUINTA" codigoMovimento="80211" opcao="5"/>
+				<itemMenuXml nome="SEXTA" codigoMovimento="80211" opcao="6"/>
+				<itemMenuXml nome="SÁBADO" codigoMovimento="80211" opcao="7"/>
+				<itemMenuXml nome="DOMINGO" codigoMovimento="80211" opcao="8"/>
+			</itemMenuXml>
+			
+			<itemMenuXml nome="COMISSÃO JOGOS" tituloPrincipal="Relatório de Comissões Jogos" codigoMovimento="80227">
+				<itemMenuXml nome="ÚLTIMO" codigoMovimento="80227" opcao="1"/>
+				<itemMenuXml nome="DIGITAR DATA" codigoMovimento="80227" opcao="2"/>
+			</itemMenuXml>
+			
+			<!--<itemMenuXml nome="JOGOS DE LOTOGOL" codigoMovimento="614"/>-->
+			<itemMenuXml nome="JOGOS DE LOTECA" codigoMovimento="619"/>
+			<itemMenuXml nome="CONTAS, SERVIÇOS E TARIFAÇÃO" tituloPrincipal="Emite Relatório de Contas Serviços e Tarifação">
+				<itemMenuXml nome="LOG DE AUDITORIA" codigoMovimento="80220" tituloPrincipal="Relatório - LOG DE AUDITORIA">
+					<itemMenuXml nome="TRANSAÇÕES DA EFL" codigoMovimento="80220" tituloPrincipal="Relatório - LOG DE AUDITORIA">
+						<itemMenuXml nome="HOJE" codigoMovimento="80220" opcao="9"/>
+						<itemMenuXml nome="SEGUNDA" codigoMovimento="80220" opcao="10"/>
+						<itemMenuXml nome="TERÇA" codigoMovimento="80220" opcao="11"/>
+						<itemMenuXml nome="QUARTA" codigoMovimento="80220" opcao="12"/>
+						<itemMenuXml nome="QUINTA" codigoMovimento="80220" opcao="13"/>
+						<itemMenuXml nome="SEXTA" codigoMovimento="80220" opcao="14"/>
+						<itemMenuXml nome="SÁBADO" codigoMovimento="80220" opcao="15"/>
+						<itemMenuXml nome="DOMINGO" codigoMovimento="80220" opcao="16"/>
+					</itemMenuXml>
+					<itemMenuXml nome="  TRANSAÇÕES DE   TODA UL" codigoMovimento="80220" tituloPrincipal="Relatório - LOG DE AUDITORIA">
+						<itemMenuXml nome="HOJE" codigoMovimento="80220" opcao="1"/>
+						<itemMenuXml nome="SEGUNDA" codigoMovimento="80220" opcao="2"/>
+						<itemMenuXml nome="TERÇA" codigoMovimento="80220" opcao="3"/>
+						<itemMenuXml nome="QUARTA" codigoMovimento="80220" opcao="4"/>
+						<itemMenuXml nome="QUINTA" codigoMovimento="80220" opcao="5"/>
+						<itemMenuXml nome="SEXTA" codigoMovimento="80220" opcao="6"/>
+						<itemMenuXml nome="SÁBADO" codigoMovimento="80220" opcao="7"/>
+						<itemMenuXml nome="DOMINGO" codigoMovimento="80220" opcao="8"/>
+					</itemMenuXml>
+				</itemMenuXml>
+				<itemMenuXml nome="RESUMO DO DIA FINANCEIRO" codigoMovimento="80210" tituloPrincipal="Relatório - RESUMO DO DIA FINANCEIRO">
+					<itemMenuXml nome="HOJE" codigoMovimento="80210" opcao="1"/>
+					<itemMenuXml nome="SEGUNDA" codigoMovimento="80210" opcao="2"/>
+					<itemMenuXml nome="TERÇA" codigoMovimento="80210" opcao="3"/>
+					<itemMenuXml nome="QUARTA" codigoMovimento="80210" opcao="4"/>
+					<itemMenuXml nome="QUINTA" codigoMovimento="80210" opcao="5"/>
+					<itemMenuXml nome="SEXTA" codigoMovimento="80210" opcao="6"/>
+					<itemMenuXml nome="SÁBADO" codigoMovimento="80210" opcao="7"/>
+					<itemMenuXml nome="DOMINGO" codigoMovimento="80210" opcao="8"/>
+				</itemMenuXml>
+				<itemMenuXml nome="TARIFAÇÃO DE CONTAS E SERVIÇOS FINANCEIROS" codigoMovimento="80215" tituloPrincipal="Relatório - TARIFAÇÃO DE CONTAS E SERVIÇOS FINANCEIROS">
+					<itemMenuXml nome="ÚLTIMO" codigoMovimento="80215" opcao="1"/>
+					<itemMenuXml nome="PENÚLTIMO" codigoMovimento="80215" opcao="2"/>
+					<itemMenuXml nome="ANTEPENÚLTIMO" codigoMovimento="80215" opcao="3"/>
+				</itemMenuXml>
+				<itemMenuXml nome="COBRANÇA DIÁRIA DE CONTAS E SERVIÇOS" codigoMovimento="80222" tituloPrincipal="Relatório - COBRANÇA DIÁRIA DE CONTAS E SERVIÇOS">
+					<itemMenuXml nome="ÚLTIMO" codigoMovimento="80222" opcao="1"/>
+					<itemMenuXml nome="PENÚLTIMO" codigoMovimento="80222" opcao="2"/>
+					<itemMenuXml nome="ANTEPENÚLTIMO" codigoMovimento="80222" opcao="3"/>
+					<itemMenuXml nome="DIGITAR DATA" codigoMovimento="80222"/>
+				</itemMenuXml>
+			</itemMenuXml>
+			<itemMenuXml nome="RESUMO DE BOLÃO - TERMINAL" codigoMovimento="80206" tituloPrincipal="Relatório - RESUMO DE BOLÃO TERMINAL">
+<!-- 				<itemMenuXml nome="DIÁRIO" codigoMovimento="80206" tituloPrincipal="Relatório - RESUMO DE BOLÃO TERMINAL"> -->
+					<itemMenuXml nome="HOJE" codigoMovimento="080206" opcao="1"/>
+					<itemMenuXml nome="SEGUNDA" codigoMovimento="080206" opcao="2"/>
+					<itemMenuXml nome="TERÇA" codigoMovimento="080206" opcao="3"/>
+					<itemMenuXml nome="QUARTA" codigoMovimento="080206" opcao="4"/>
+					<itemMenuXml nome="QUINTA" codigoMovimento="080206" opcao="5"/>
+					<itemMenuXml nome="SEXTA" codigoMovimento="080206" opcao="6"/>
+					<itemMenuXml nome="SÁBADO" codigoMovimento="080206" opcao="7"/>
+					<itemMenuXml nome="DOMINGO" codigoMovimento="080206" opcao="8"/>
+<!-- 				</itemMenuXml> -->
+<!-- 				<itemMenuXml nome="MENSAL" codigoMovimento="80206" opcao="9" tituloPrincipal="Relatório - RESUMO DE BOLÃO TERMINAL"/> -->
+			</itemMenuXml>
+			<itemMenuXml nome="RESUMO DE BOLAO - UL" codigoMovimento="80207" tituloPrincipal="Relatório - RESUMO DE BOLÃO LOTÉRICA">
+<!-- 				<itemMenuXml nome="DIÁRIO" codigoMovimento="80207" tituloPrincipal="Relatório - RESUMO DE BOLÃO LOTÉRICA">	 -->
+					<itemMenuXml nome="HOJE" codigoMovimento="80207" opcao="1"/>
+					<itemMenuXml nome="SEGUNDA" codigoMovimento="80207" opcao="2"/>
+					<itemMenuXml nome="TERÇA" codigoMovimento="80207" opcao="3"/>
+					<itemMenuXml nome="QUARTA" codigoMovimento="80207" opcao="4"/>
+					<itemMenuXml nome="QUINTA" codigoMovimento="80207" opcao="5"/>
+					<itemMenuXml nome="SEXTA" codigoMovimento="80207" opcao="6"/>
+					<itemMenuXml nome="SÁBADO" codigoMovimento="80207" opcao="7"/>
+					<itemMenuXml nome="DOMINGO" codigoMovimento="80207" opcao="8"/>
+<!-- 				</itemMenuXml> -->
+<!-- 				<itemMenuXml nome="MENSAL" codigoMovimento="80207" opcao="9" tituloPrincipal="Relatório - RESUMO DE BOLÃO LOTÉRICA"/> -->
+			</itemMenuXml>
+			<itemMenuXml nome="RESUMO DE BOLÃO - OPERADOR " codigoMovimento="80205" tituloPrincipal="Relatório - RESUMO DE BOLÃO OPERADOR">
+				<itemMenuXml nome="HOJE" codigoMovimento="80205" opcao="1"/>
+			    <itemMenuXml nome="SEGUNDA" codigoMovimento="80205" opcao="2"/>
+				<itemMenuXml nome="TERÇA" codigoMovimento="80205" opcao="3"/>
+				<itemMenuXml nome="QUARTA" codigoMovimento="80205" opcao="4"/>
+				<itemMenuXml nome="QUINTA" codigoMovimento="80205" opcao="5"/>
+				<itemMenuXml nome="SEXTA" codigoMovimento="80205" opcao="6"/>
+				<itemMenuXml nome="SÁBADO" codigoMovimento="80205" opcao="7"/>
+				<itemMenuXml nome="DOMINGO" codigoMovimento="80205" opcao="8"/>
+			</itemMenuXml>
+			
+			
+			<itemMenuXml nome="MEIOS DE PAGAMENTO"  tituloPrincipal="RELATÓRIO MEIOS DE PAGAMENTO">
+				<!--PIX -->
+				<itemMenuXml nome="PIX"  tituloPrincipal="RELATÓRIO DE PIX">
+					<itemMenuXml nome="PIX POR TERMINAL" codigoMovimento="10926" tituloPrincipal="RELATÓRIO DE PIX POR TERMINAL">
+								<itemMenuXml nome="HOJE" codigoMovimento="10926" opcao="0"/>
+								<itemMenuXml nome="SEGUNDA" codigoMovimento="10926" opcao="2"/>
+								<itemMenuXml nome="TERÇA" codigoMovimento="10926" opcao="3"/>
+								<itemMenuXml nome="QUARTA" codigoMovimento="10926" opcao="4"/>
+								<itemMenuXml nome="QUINTA" codigoMovimento="10926" opcao="5"/>
+								<itemMenuXml nome="SEXTA" codigoMovimento="10926" opcao="6"/>
+								<itemMenuXml nome="SÁBADO" codigoMovimento="10926" opcao="7"/>
+								<itemMenuXml nome="DOMINGO" codigoMovimento="10926" opcao="1"/>
+					</itemMenuXml>
+						
+					<itemMenuXml nome="DETALHAMENTO PIX" codigoMovimento="10918" tituloPrincipal="RELATÓRIO DETALHAMENTO PIX">
+								<itemMenuXml nome="HOJE" codigoMovimento="10918" opcao="0"/>
+								<itemMenuXml nome="SEGUNDA" codigoMovimento="10918" opcao="2"/>
+								<itemMenuXml nome="TERÇA" codigoMovimento="10918" opcao="3"/>
+								<itemMenuXml nome="QUARTA" codigoMovimento="10918" opcao="4"/>
+								<itemMenuXml nome="QUINTA" codigoMovimento="10918" opcao="5"/>
+								<itemMenuXml nome="SEXTA" codigoMovimento="10918" opcao="6"/>
+								<itemMenuXml nome="SÁBADO" codigoMovimento="10918" opcao="7"/>
+								<itemMenuXml nome="DOMINGO" codigoMovimento="10918" opcao="1"/>
+					</itemMenuXml>
+				</itemMenuXml>
+				<!--PAG CARTAO -->
+				<itemMenuXml nome="CARTÃO CRÉDITO/DÉBITO"  tituloPrincipal="RELATÓRIO CARTÃO CRÉDITO/DÉBITO">
+					<itemMenuXml nome="CARTÃO POR TERMINAL" codigoMovimento="999862" tituloPrincipal="RELATÓRIO DE CARTÃO POR TERMINAL">
+								<itemMenuXml nome="HOJE" codigoMovimento="999862" opcao="0"/>
+								<itemMenuXml nome="SEGUNDA" codigoMovimento="999862" opcao="2"/>
+								<itemMenuXml nome="TERÇA" codigoMovimento="999862" opcao="3"/>
+								<itemMenuXml nome="QUARTA" codigoMovimento="999862" opcao="4"/>
+								<itemMenuXml nome="QUINTA" codigoMovimento="999862" opcao="5"/>
+								<itemMenuXml nome="SEXTA" codigoMovimento="999862" opcao="6"/>
+								<itemMenuXml nome="SÁBADO" codigoMovimento="999862" opcao="7"/>
+								<itemMenuXml nome="DOMINGO" codigoMovimento="999862" opcao="1"/>
+					</itemMenuXml>
+					<itemMenuXml nome="DETALHAMENTO CARTÃO" codigoMovimento="999863" tituloPrincipal="RELATÓRIO DETALHAMENTO CARTÃO">
+								<itemMenuXml nome="HOJE" codigoMovimento="999863" opcao="0"/>
+								<itemMenuXml nome="SEGUNDA" codigoMovimento="999863" opcao="2"/>
+								<itemMenuXml nome="TERÇA" codigoMovimento="999863" opcao="3"/>
+								<itemMenuXml nome="QUARTA" codigoMovimento="999863" opcao="4"/>
+								<itemMenuXml nome="QUINTA" codigoMovimento="999863" opcao="5"/>
+								<itemMenuXml nome="SEXTA" codigoMovimento="999863" opcao="6"/>
+								<itemMenuXml nome="SÁBADO" codigoMovimento="999863" opcao="7"/>
+								<itemMenuXml nome="DOMINGO" codigoMovimento="999863" opcao="1"/>
+					</itemMenuXml>				
+				</itemMenuXml>
+			</itemMenuXml>
+				
+				
+				<itemMenuXml nome="MARKETPLACE" tituloPrincipal="Relatórios de Bolões MARKETPLACE">		
+				<itemMenuXml nome="LANÇAMENTOS FINANCEIROS" tituloPrincipal="Relatório De Lançamentos Financeiros Diários Das Vendas Virtuais Efetivadas" codigoMovimento="80216">
+					<itemMenuXml nome="HOJE" codigoMovimento="80216" opcao="1"/>
+					<itemMenuXml nome="SEGUNDA" codigoMovimento="80216" opcao="2"/>
+					<itemMenuXml nome="TERÇA" codigoMovimento="80216" opcao="3"/>
+					<itemMenuXml nome="QUARTA" codigoMovimento="80216" opcao="4"/>
+					<itemMenuXml nome="QUINTA" codigoMovimento="80216" opcao="5"/>
+					<itemMenuXml nome="SEXTA" codigoMovimento="80216" opcao="6"/>
+					<itemMenuXml nome="SÁBADO" codigoMovimento="80216" opcao="7"/>
+					<itemMenuXml nome="DOMINGO" codigoMovimento="80216" opcao="8"/>
+				</itemMenuXml>
+				<itemMenuXml nome="COTAS VIRTUAIS DISPONÍVEIS" codigoMovimento="809" />
+			
+			<itemMenuXml nome="COTAS VIRTUAIS" tituloPrincipal="Resumos de Cotas Virtuais">		
+				
+				<itemMenuXml nome="RESUMO DA UL" codigoMovimento="80219" tituloPrincipal="Resumos de Cotas Virtuais">
+					<itemMenuXml nome="HOJE" codigoMovimento="80219" opcao="1"/>
+					<itemMenuXml nome="SEGUNDA" codigoMovimento="80219" opcao="2"/>
+					<itemMenuXml nome="TERÇA" codigoMovimento="80219" opcao="3"/>
+					<itemMenuXml nome="QUARTA" codigoMovimento="80219" opcao="4"/>
+					<itemMenuXml nome="QUINTA" codigoMovimento="80219" opcao="5"/>
+					<itemMenuXml nome="SEXTA" codigoMovimento="80219" opcao="6"/>
+					<itemMenuXml nome="SÁBADO" codigoMovimento="80219" opcao="7"/>
+					<itemMenuXml nome="DOMINGO" codigoMovimento="80219" opcao="8"/>
+				</itemMenuXml>	
+							
+				<itemMenuXml nome="RESUMO DO TERMINAL" codigoMovimento="80218" tituloPrincipal="Resumos de Cotas Virtuais">
+					<itemMenuXml nome="HOJE" codigoMovimento="80218" opcao="1"/>
+					<itemMenuXml nome="SEGUNDA" codigoMovimento="80218" opcao="2"/>
+					<itemMenuXml nome="TERÇA" codigoMovimento="80218" opcao="3"/>
+					<itemMenuXml nome="QUARTA" codigoMovimento="80218" opcao="4"/>
+					<itemMenuXml nome="QUINTA" codigoMovimento="80218" opcao="5"/>
+					<itemMenuXml nome="SEXTA" codigoMovimento="80218" opcao="6"/>
+					<itemMenuXml nome="SÁBADO" codigoMovimento="80218" opcao="7"/>
+					<itemMenuXml nome="DOMINGO" codigoMovimento="80218" opcao="8"/>
+				</itemMenuXml>	
+				
+				<itemMenuXml nome="RESUMO DO OPERADOR" tituloPrincipal="Resumos de Cotas Virtuais" codigoMovimento="80217">
+                    <itemMenuXml nome="HOJE" codigoMovimento="80217" opcao="1"/>
+                    <itemMenuXml nome="SEGUNDA" codigoMovimento="80217" opcao="2"/>
+                    <itemMenuXml nome="TERÇA" codigoMovimento="80217" opcao="3"/>
+                    <itemMenuXml nome="QUARTA" codigoMovimento="80217" opcao="4"/>
+                    <itemMenuXml nome="QUINTA" codigoMovimento="80217" opcao="5"/>
+                    <itemMenuXml nome="SEXTA" codigoMovimento="80217" opcao="6"/>
+                    <itemMenuXml nome="SÁBADO" codigoMovimento="80217" opcao="7"/>
+                    <itemMenuXml nome="DOMINGO" codigoMovimento="80217" opcao="8"/>
+                </itemMenuXml>
+			</itemMenuXml>			
+		</itemMenuXml>
+		</itemMenuXml>
+		
+		<itemMenuXml nome="PAGA PREMIADOS" tituloPrincipal="PAGA PREMIADOS">
+			<itemMenuXml nome="PROGNÓSTICOS" codigoMovimento="1500"/>
+			<itemMenuXml nome="LOTERIA FEDERAL" codigoMovimento="1510"/>
+			<itemMenuXml nome="INSTANTÂNEA" codigoMovimento="1513"/>
+		</itemMenuXml>
+		<itemMenuXml nome="MEIOS DE PAGAMENTO" tituloPrincipal="MEIOS DE PAGAMENTO">
+			<itemMenuXml nome="PIX" tituloPrincipal="PIX">
+				<itemMenuXml nome="RECEBIMENTO" codigoMovimento="10931" opcao="99"/>
+				<itemMenuXml nome="CONSULTAR RECEBIMENTO" codigoMovimento="10934" opcao="99"/>
+			</itemMenuXml>
+			<itemMenuXml nome="CARTÃO CRÉDITO/DÉBITO" codigoMovimento="999860" opcao="99"/>
+			<itemMenuXml nome="ENTRADA EM  DINHEIRO " codigoMovimento="999921" opcao="2"/>
+		</itemMenuXml>
+		
+		<itemMenuXml nome="OFERTAR" codigoMovimento="999829" opcao="90"/>
+	</itemMenuXml>
+</menuXml>

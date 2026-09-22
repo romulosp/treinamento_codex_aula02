@@ -145,10 +145,85 @@ def build_android_native_engineering_pdf():
     return output
 
 
+def build_change_10002_pdf():
+    """Produz a auditoria atual da Change 10002 sem substituir relatórios anteriores."""
+    from reportlab.platypus import SimpleDocTemplate
+
+    output = OUTPUT.with_name("relatorio-10002-microkernel-pasta-dinamica.pdf")
+    styles = build_styles()
+    paragraphs = [
+        ("Auditoria de seguranca", "title"),
+        ("10002-microkernel-pasta-dinamica - 21/09/2026", "subtitle"),
+        ("Resultado", "h1"),
+        ("Nenhum achado de seguranca confirmado permanece em aberto nesta Change.", "body"),
+        ("Escopo e metodo", "h1"),
+        ("Foram inspecionados os modulos Android app, shared-api e plugin-login, o loader DexClassLoader, o observador FileObserver, o manifesto do plugin, os manifests Android, o script de entrega, as dependencias e os testes. A auditoria combinou leitura estatica, busca por segredos e APIs perigosas, build, lint, testes instrumentados e execucao no AVD.", "body"),
+        ("Fronteira de confianca", "h1"),
+        ("A pasta externa e tratada como staging nao confiavel. O host copia o APK para quarentena privada, calcula SHA-256, confere assinatura contra o host, pacote, manifesto e API, promove somente o arquivo validado e somente leitura e entrega apenas esse arquivo ao classloader.", "body"),
+        ("Entradas e carregamento", "h1"),
+        ("Caminho canonico, extensao, tamanho, JSON estruturado, schema, SemVer, capacidade, prioridade e dependencias sao verificados antes da carga. Falhas geram REJECTED ou ERROR, removem artefatos rejeitados e nao registram credenciais.", "body"),
+        ("Segredos e privacidade", "h1"),
+        ("Nao foram encontrados tokens, senhas, chaves ou credenciais nos artefatos analisados. O plugin envia ao host somente evento de sessao com identificador opaco e expiracao; usuario e senha nao sao persistidos nem registrados.", "body"),
+        ("Categorias nao aplicaveis", "h1"),
+        ("Tenant, IDOR, API REST, banco de dados, rede, XSS e deploy remoto nao existem no escopo desta Change. Autenticacao real de backend tambem nao existe; o login local e demonstrativo e nao e controle de acesso para producao.", "body"),
+        ("Limitacoes", "h1"),
+        ("Nao foi injetado um APK assinado deliberadamente com callback defeituoso. A contençao das fronteiras foi verificada por codigo, testes instrumentados de rejeicao e execucao manual do plugin valido.", "body"),
+        ("Recomendacoes", "h1"),
+        ("Manter assinatura interna controlada, repetir auditoria ao adicionar capacidades e criar uma Change propria antes de qualquer autenticacao remota ou distribuicao de plugins fora do ambiente interno.", "body"),
+    ]
+    SimpleDocTemplate(
+        str(output),
+        pagesize=A4,
+        leftMargin=2 * cm,
+        rightMargin=2 * cm,
+        topMargin=1.5 * cm,
+        bottomMargin=1.5 * cm,
+        title="Auditoria 10002-microkernel-pasta-dinamica",
+        author="Codex",
+    ).build([Paragraph(text, styles[kind]) for text, kind in paragraphs])
+    return output
+
+
+def build_change_10001_pdf():
+    """Produz a auditoria da Change 10001 sem substituir relatórios anteriores."""
+    from reportlab.platypus import SimpleDocTemplate
+
+    output = OUTPUT.with_name("relatorio-10001-plugin-login-autenticacao.pdf")
+    styles = build_styles()
+    paragraphs = [
+        ("Auditoria de segurança", "title"),
+        ("10001-plugin-login-autenticacao - 21/09/2026", "subtitle"),
+        ("Resultado", "h1"),
+        ("Nenhum achado de segurança confirmado permanece em aberto nesta Change.", "body"),
+        ("Escopo e método", "h1"),
+        ("Foram inspecionados o host Android, o módulo shared-api, o APK plugin-login, o manifesto, o carregador DexClassLoader, a tela Compose, os testes e o script de execução. A auditoria combinou análise estática, busca por segredos e APIs perigosas, testes automatizados, lint, build e execução no emulador.", "body"),
+        ("Autenticação e privacidade", "h1"),
+        ("A autenticação é local e demonstrativa. O plugin publica somente SessionStateChangedEvent com identificador opaco e expiração. Usuário e senha permanecem no plugin, não são persistidos, enviados ao host ou registrados.", "body"),
+        ("Isolamento e entrada", "h1"),
+        ("O host não contém regra ou campos de login. O plugin depende da API compartilhada como compileOnly, declara startup-auth e é carregado a partir de APK validado em área privada. A entrada do usuário é limitada e a primeira posição exige L.", "body"),
+        ("Categorias não aplicáveis", "h1"),
+        ("Backend, rede, banco, tenant, IDOR, autorização de servidor, XSS e deploy remoto não existem no escopo. O login local não deve ser usado como controle de acesso de produção.", "body"),
+        ("Limitação", "h1"),
+        ("Não foi realizado teste de penetração nem validação de credenciais reais. A assinatura de distribuição permanece limitada ao ambiente interno de desenvolvimento conforme a SPEC.", "body"),
+        ("Recomendações", "h1"),
+        ("Criar Change própria antes de autenticação remota, armazenamento de credenciais ou distribuição externa. Repetir a auditoria ao adicionar capacidades ao plugin.", "body"),
+    ]
+    SimpleDocTemplate(
+        str(output), pagesize=A4, leftMargin=2 * cm, rightMargin=2 * cm,
+        topMargin=1.5 * cm, bottomMargin=1.5 * cm,
+        title="Auditoria 10001-plugin-login-autenticacao", author="Codex",
+    ).build([Paragraph(text, styles[kind]) for text, kind in paragraphs])
+    return output
+
+
 if __name__ == "__main__":
     import sys
     if "--change-067" in sys.argv:
         print(build_android_native_engineering_pdf())
+    elif "--change-10002" in sys.argv:
+        print(build_change_10002_pdf())
+    elif "--change-10001" in sys.argv:
+        print(build_change_10001_pdf())
     elif "--change-011" in sys.argv:
         print(build_correction_pdf())
     else:
