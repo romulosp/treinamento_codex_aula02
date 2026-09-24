@@ -149,4 +149,7 @@ interface IPluginNegocioApp : IPluginApp, IMenuProvider {
 
     /** Mantém compatibilidade com o descritor de menu inicialmente publicado. */
     override fun menuItems(): List<BusinessMenuItem> = businessMenuItems
+
+    /** Cria a tela neutra de demonstração sem receber credenciais ou tokens. */
+    fun createBusinessScreen(context: Context): View
 }

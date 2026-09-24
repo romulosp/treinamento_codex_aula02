@@ -2,6 +2,7 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -21,10 +22,13 @@ abstract class StageLoginPluginTask : DefaultTask() {
     @get:OutputDirectory
     abstract val outputDirectory: DirectoryProperty
 
+    @get:Input
+    abstract val assetName: org.gradle.api.provider.Property<String>
+
     /** Copia o APK para o caminho estável esperado pelo bootstrap do host. */
     @TaskAction
     fun stage() {
-        val target = outputDirectory.file("plugins/plugin-login.apk").get().asFile
+        val target = outputDirectory.file("plugins/${assetName.get()}").get().asFile
         check(target.parentFile.mkdirs() || target.parentFile.isDirectory)
         pluginApk.get().asFile.copyTo(target, overwrite = true)
     }
@@ -34,6 +38,14 @@ val stageDebugLoginPlugin = tasks.register<StageLoginPluginTask>("stageDebugLogi
     dependsOn(":plugin-login:assembleDebug")
     pluginApk.set(project(":plugin-login").layout.buildDirectory.file("outputs/apk/debug/plugin-login-debug.apk"))
     outputDirectory.set(layout.buildDirectory.dir("generated/loginPluginAssets/debug"))
+    assetName.set("plugin-login.apk")
+}
+
+val stageDebugBusinessPlugin = tasks.register<StageLoginPluginTask>("stageDebugBusinessPlugin") {
+    dependsOn(":plugin-negocio:assembleDebug")
+    pluginApk.set(project(":plugin-negocio").layout.buildDirectory.file("outputs/apk/debug/plugin-negocio-debug.apk"))
+    outputDirectory.set(layout.buildDirectory.dir("generated/businessPluginAssets/debug"))
+    assetName.set("plugin-negocio.apk")
 }
 
 android {
@@ -63,6 +75,10 @@ androidComponents {
     onVariants(selector().withBuildType("debug")) { variant ->
         variant.sources.assets?.addGeneratedSourceDirectory(
             stageDebugLoginPlugin,
+            StageLoginPluginTask::outputDirectory,
+        )
+        variant.sources.assets?.addGeneratedSourceDirectory(
+            stageDebugBusinessPlugin,
             StageLoginPluginTask::outputDirectory,
         )
     }

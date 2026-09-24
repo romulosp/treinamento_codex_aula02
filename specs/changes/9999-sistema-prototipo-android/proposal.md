@@ -6,6 +6,17 @@
 
 `SPEC_APROVADA`
 
+## Revisão de arquitetura de 2026-09-24
+
+Autorizada pelo solicitante após a conclusão da Change 10000. A implementação
+remanescente deixa de pertencer ao módulo `:app`: catálogo visual e menu neutro
+serão fornecidos por um APK interno `:plugin-negocio`, depois da autenticação.
+O host mantém somente composição, sessão, validação e roteamento seguro.
+
+O baseline desta execução é `minSdk = 29`, `compileSdk = 37`, `targetSdk = 36`
+e Java 17, conforme a Change 10000. Os requisitos anteriores de módulo único,
+`minSdk = 26`, ausência de rede e confirmação local são históricos.
+
 ## Responsável e data
 
 - Solicitante: Romulo Penha

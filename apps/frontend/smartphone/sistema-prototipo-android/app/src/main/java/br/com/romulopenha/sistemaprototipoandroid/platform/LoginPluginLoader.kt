@@ -5,6 +5,7 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import org.json.JSONObject
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IPluginApp
+import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IPluginNegocioApp
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IAuthenticationPluginApp
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IPluginRouter
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IUIRegistry
@@ -58,6 +59,12 @@ internal data class PluginDescriptor(
     val dependencies: Set<String>,
 )
 
+/** Critérios de identidade e capacidade exigidos antes de carregar um APK. */
+internal data class PluginLoadingRequest(
+    val pluginId: String,
+    val requiredCapability: String,
+)
+
 /** APK promovido ao repositório privado e apto a chegar ao classloader. */
 internal data class VerifiedLoginPlugin(
     val apk: File,
@@ -80,6 +87,9 @@ internal data class LoadedLoginPlugin(
     fun logout(sessionId: String): Boolean = app.logout(sessionId)
 }
 
+/** Instância de menu de negócio já validada e ativada pelo host. */
+internal data class LoadedBusinessPlugin(val items: List<br.com.romulopenha.sistemaprototipoandroid.sharedapi.BusinessMenuItem>)
+
 /** Valida, promove e instancia exclusivamente o plugin interno de autenticação. */
 internal object LoginPluginLoader {
     private const val PluginId = "br.com.romulopenha.sistemaprototipoandroid.login"
@@ -89,6 +99,7 @@ internal object LoginPluginLoader {
     private val SemVerPattern = Regex("\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?")
     private val DependencyPattern = Regex("[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*")
     private val HostApi = SharedApi.version
+    internal val LoginRequest = PluginLoadingRequest(PluginId, StartupAuthCapability)
 
     /**
      * Move semanticamente um candidato para quarentena, valida-o e o promove.
@@ -101,6 +112,7 @@ internal object LoginPluginLoader {
         stagingRoot: File,
         candidate: File,
         onTransition: (PluginTransition) -> Unit,
+        request: PluginLoadingRequest = LoginRequest,
     ): VerifiedLoginPlugin {
         onTransition(PluginTransition(PluginRuntimeStatus.DISCOVERED))
         var safeCandidate: File? = null
@@ -125,7 +137,7 @@ internal object LoginPluginLoader {
 
             val digest = sha256(quarantined!!)
             val descriptor = readDescriptor(quarantined!!)
-            validateDescriptor(descriptor)
+            validateDescriptor(descriptor, request)
             validateArchive(context, quarantined!!, descriptor)
             val verified = promote(context, quarantined!!, descriptor, digest)
             onTransition(verified.transition(PluginRuntimeStatus.VERIFIED))
@@ -150,12 +162,13 @@ internal object LoginPluginLoader {
     fun findVerified(
         context: Context,
         onTransition: (PluginTransition) -> Unit,
+        request: PluginLoadingRequest = LoginRequest,
     ): List<VerifiedLoginPlugin> {
         val repository = File(context.filesDir, "plugins/verified").apply { mkdirs() }
         return repository.listFiles { file -> file.isFile && file.extension == "apk" }
             .orEmpty()
             .sortedByDescending(File::lastModified)
-            .mapNotNull { apk -> verifyRepositoryEntry(context, apk, onTransition) }
+            .mapNotNull { apk -> verifyRepositoryEntry(context, apk, onTransition, request) }
     }
 
     /**
@@ -207,6 +220,29 @@ internal object LoginPluginLoader {
         }
     }
 
+    /** Carrega somente descritores de menu de um plugin já verificado. */
+    fun loadBusiness(context: Context, verified: VerifiedLoginPlugin, onTransition: (PluginTransition) -> Unit): LoadedBusinessPlugin {
+        var app: IPluginApp? = null
+        return try {
+            val optimized = File(context.codeCacheDir, "plugins/${verified.digestSha256}").apply { mkdirs() }
+            val loader = DexClassLoader(verified.apk.absolutePath, optimized.absolutePath, null, context.classLoader)
+            app = loader.loadClass(verified.descriptor.entryClass).getDeclaredConstructor().newInstance() as IPluginApp
+            onTransition(verified.transition(PluginRuntimeStatus.LOADED))
+            validateRuntimeManifest(app.manifest, verified.descriptor)
+            app.onLoad(HostContext)
+            app.onAttach(NoopRegistry, EmptyRouter)
+            onTransition(verified.transition(PluginRuntimeStatus.ATTACHED))
+            val business = app as? IPluginNegocioApp ?: error("Plugin não implementa contrato de negócio")
+            app.onActivate()
+            onTransition(verified.transition(PluginRuntimeStatus.ACTIVE))
+            LoadedBusinessPlugin(business.menuItems())
+        } catch (error: Exception) {
+            failLoad(app, verified, onTransition, error)
+        } catch (error: LinkageError) {
+            failLoad(app, verified, onTransition, error)
+        }
+    }
+
     private fun failLoad(
         app: IPluginApp?,
         verified: VerifiedLoginPlugin,
@@ -228,12 +264,13 @@ internal object LoginPluginLoader {
         context: Context,
         apk: File,
         onTransition: (PluginTransition) -> Unit,
+        request: PluginLoadingRequest,
     ): VerifiedLoginPlugin? = try {
         check(!apk.canWrite()) { "APK verificado tornou-se gravável" }
         val digest = sha256(apk)
         check(apk.name == "$digest.apk") { "Digest do repositório divergente" }
         val descriptor = readDescriptor(apk)
-        validateDescriptor(descriptor)
+        validateDescriptor(descriptor, request)
         validateArchive(context, apk, descriptor)
         VerifiedLoginPlugin(apk, descriptor, digest).also {
             onTransition(it.transition(PluginRuntimeStatus.VERIFIED))
@@ -270,15 +307,15 @@ internal object LoginPluginLoader {
     }
 
     /** Confere identidade, API, entry class e capacidade antes da inspeção do APK. */
-    private fun validateDescriptor(descriptor: PluginDescriptor) {
+    private fun validateDescriptor(descriptor: PluginDescriptor, request: PluginLoadingRequest) {
         require(descriptor.schemaVersion == ManifestSchemaVersion) { "Versão de manifesto incompatível" }
-        require(descriptor.pluginId == PluginId) { "Identidade de plugin incompatível" }
+        require(descriptor.pluginId == request.pluginId) { "Identidade de plugin incompatível" }
         require(descriptor.displayName.isNotBlank()) { "Nome de exibição ausente" }
         require(SemVerPattern.matches(descriptor.pluginVersion)) { "Versão de plugin inválida" }
         require(descriptor.requiredMajor == HostApi.major) { "Major da API incompatível" }
         require(descriptor.requiredMinor <= HostApi.minor) { "Minor da API incompatível" }
         require(descriptor.priority >= 0) { "Prioridade inválida" }
-        require(StartupAuthCapability in descriptor.capabilities) { "Capacidade startup-auth ausente" }
+        require(request.requiredCapability in descriptor.capabilities) { "Capacidade obrigatória ausente" }
         require(descriptor.dependencies.all(DependencyPattern::matches)) { "Dependência de plugin inválida" }
         require(descriptor.entryClass.startsWith("${descriptor.declaredPackageName}.")) {
             "Entry class fora do pacote declarado"
@@ -410,6 +447,12 @@ internal object LoginPluginLoader {
 
     private object EmptyRouter : IPluginRouter {
         override fun navigate(route: PluginRoute) = Unit
+    }
+
+    /** Recusa registro de capacidade de autenticação por plugin de negócio. */
+    private object NoopRegistry : IUIRegistry {
+        override fun registerStartupAuth(factory: PluginScreenFactory): Nothing =
+            error("Plugin de negócio não pode registrar startup-auth")
     }
 
     /** Aceita exatamente uma fábrica `startup-auth` durante o attach. */

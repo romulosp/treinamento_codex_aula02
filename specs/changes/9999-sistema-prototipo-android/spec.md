@@ -6,6 +6,17 @@
 
 `SPEC_APROVADA`
 
+## Revisão operacional de 2026-09-24
+
+O catálogo de componentes e o menu demonstrativo remanescentes serão entregues
+por `:plugin-negocio`, APK interno assinado e validado pela plataforma da Change
+10000. O `:app` não recebe regras, árvore ou conteúdo de negócio; ele só exibe
+descritores fornecidos pelo plugin depois de sessão SSO válida.
+
+O baseline operacional desta revisão é `minSdk = 29`, `compileSdk = 37`,
+`targetSdk = 36` e Java 17. A confirmação local demonstrativa é substituída pela
+sessão opaca de `plugin-login`; nenhum segredo é enviado ao plugin de negócio.
+
 > **Escopo operacional superado em parte.** A tela, os campos, os teclados e
 > qualquer comportamento de identificação deixam de ser contrato ativo do
 > módulo `:app` desde a Change `10001-plugin-login-autenticacao`. A Change 9999

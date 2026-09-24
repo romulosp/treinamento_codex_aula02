@@ -4,7 +4,14 @@
 
 ## Status
 
-`IMPLEMENTACAO_BLOQUEADA`
+`SPEC_APROVADA`
+
+## Plano de continuação de 2026-09-24
+
+1. Aprovar a revisão que preserva o microkernel e cria `:plugin-negocio`.
+2. Criar o APK de negócio, seu manifesto e o bootstrap debug.
+3. Carregar o plugin após a sessão, preservando falha isolada e logout atual.
+4. Implementar menu, seleção, feedback e testes no plugin.
 
 ## Atualização prompt2 — compatibility review e execução
 

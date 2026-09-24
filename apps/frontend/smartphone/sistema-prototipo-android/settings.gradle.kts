@@ -20,3 +20,4 @@ rootProject.name = "sistema-prototipo-android"
 include(":app")
 include(":shared-api")
 include(":plugin-login")
+include(":plugin-negocio")

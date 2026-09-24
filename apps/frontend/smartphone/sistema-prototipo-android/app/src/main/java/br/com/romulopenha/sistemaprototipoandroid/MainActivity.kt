@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import br.com.romulopenha.sistemaprototipoandroid.platform.DynamicLoginPluginManager
+import br.com.romulopenha.sistemaprototipoandroid.platform.BusinessPluginManager
 import br.com.romulopenha.sistemaprototipoandroid.platform.PluginHostState
 import br.com.romulopenha.sistemaprototipoandroid.platform.PluginRuntimeStatus
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.BusinessMenuItem
@@ -42,25 +43,33 @@ class MainActivity : ComponentActivity() {
     )
     private var session by mutableStateOf<PluginEvent.SessionStateChanged?>(null)
     private var logoutInProgress by mutableStateOf(false)
+    private var businessItems by mutableStateOf(emptyList<BusinessMenuItem>())
     private lateinit var pluginManager: DynamicLoginPluginManager
+    private lateinit var businessPluginManager: BusinessPluginManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         pluginManager = DynamicLoginPluginManager(applicationContext) { state ->
             hostState = state
         }
+        businessPluginManager = BusinessPluginManager(applicationContext) { items -> businessItems = items }
         setContent {
             PluginHostContent(
                 state = hostState,
                 session = session,
+                businessItems = businessItems,
                 logoutInProgress = logoutInProgress,
-                onSessionEstablished = { established -> session = established },
+                onSessionEstablished = { established ->
+                    session = established
+                    businessPluginManager.startAfterSession()
+                },
                 onLogout = { established ->
                     if (!logoutInProgress) {
                         logoutInProgress = true
                         pluginManager.logout(established.sessionId) {
                             logoutInProgress = false
                             session = null
+                            businessPluginManager.clear()
                         }
                     }
                 },
@@ -96,6 +105,7 @@ class MainActivity : ComponentActivity() {
 private fun PluginHostContent(
     state: PluginHostState,
     session: PluginEvent.SessionStateChanged?,
+    businessItems: List<BusinessMenuItem>,
     logoutInProgress: Boolean,
     onSessionEstablished: (PluginEvent.SessionStateChanged) -> Unit,
     onLogout: (PluginEvent.SessionStateChanged) -> Unit,
@@ -110,7 +120,7 @@ private fun PluginHostContent(
             currentOnLogout(session)
         }
         BusinessMenuScreen(
-            items = emptyList(),
+            items = businessItems,
             logoutInProgress = logoutInProgress,
             onLogout = { onLogout(session) },
             modifier = modifier,

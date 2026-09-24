@@ -6,6 +6,13 @@
 
 `SPEC_APROVADA`
 
+## Revisão de arquitetura de 2026-09-24
+
+O desenho de módulo único foi substituído pela topologia vigente: `:app`,
+`:shared-api`, `:plugin-login` e o novo `:plugin-negocio`. O novo APK depende
+de `:shared-api` como `compileOnly`, declara itens neutros pelo contrato
+`IPluginNegocioApp` e nunca recebe credenciais, tokens ou contexto de rede.
+
 ## Atualização prompt2 — decisão de toolchain
 
 O baseline vigente é `compileSdk = 37`, `targetSdk = 36`, BOM Compose

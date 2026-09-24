@@ -4,7 +4,7 @@
 
 ## Status
 
-`IMPLEMENTACAO_BLOQUEADA`
+`SPEC_APROVADA — IMPLEMENTACAO_EM_ANDAMENTO`
 
 ## Atualização prompt2 — compatibilidade resolvida
 
@@ -30,7 +30,7 @@
 - [x] Ler `compose-component-design` antes de criar ou estilizar componentes Compose.
 - [x] Ler `compose-state-and-effects` antes de implementar estado, ViewModel ou efeitos.
 - [x] Ler `compose-focus-navigation` antes de implementar foco, teclado, acessibilidade ou navegação.
-- [ ] Ler `compose-animations` antes de implementar transições, gestos ou motion previstos pela SPEC.
+- [x] Ler `compose-animations` antes de implementar transições, gestos ou motion previstos pela SPEC.
 - [x] Ler `compose-ui-testing-patterns` antes dos testes Compose e instrumentados.
 - [x] Executar o validador estrutural; resultado `0`.
 - [x] Disponibilizar Android SDK API 26/API 37 e Build Tools 36.0.0 para desbloquear o build.
@@ -81,6 +81,7 @@
 
 ## Revisão e validação
 
+- [x] Registrar checkpoint parcial de implementação aprovado pelo solicitante.
 - [ ] Executar revisão de implementação contra toda a SPEC.
 - [ ] Executar revisão de segurança e privacidade.
 - [ ] Registrar comandos, ambiente, resultados, códigos de saída e evidências em `validation.md`.
