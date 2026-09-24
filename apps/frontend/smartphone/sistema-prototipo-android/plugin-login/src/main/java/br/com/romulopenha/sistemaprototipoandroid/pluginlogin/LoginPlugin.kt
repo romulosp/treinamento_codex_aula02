@@ -28,6 +28,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,14 +51,18 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IPluginApp
+import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IAuthenticationPluginApp
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IPluginRouter
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IUIRegistry
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.PluginEvent
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.PluginHostContext
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.PluginManifest
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.PluginScreenFactory
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.launch
 
 private val TerminalBlue = Color(0xFF075792)
 private val TerminalDeepBlue = Color(0xFF064C83)
@@ -71,13 +76,13 @@ private val TerminalGreen = Color(0xFF1EB15A)
  * O plugin registra exclusivamente a capacidade `startup-auth`; dados de senha
  * permanecem dentro da sua UI e nunca são publicados para o host.
  */
-class PluginLoginApp : IPluginApp {
+class PluginLoginApp : IAuthenticationPluginApp {
     override val manifest = PluginManifest(
         pluginId = "br.com.romulopenha.sistemaprototipoandroid.login",
         displayName = "Login",
-        pluginVersion = "1.0.1",
+        pluginVersion = "1.1.0",
         requiredSharedApiMajor = 1,
-        requiredSharedApiMinor = 0,
+        requiredSharedApiMinor = 1,
         entryClass = PluginLoginApp::class.java.name,
         capabilities = setOf("startup-auth"),
     )
@@ -91,6 +96,8 @@ class PluginLoginApp : IPluginApp {
     override fun onActivate() = Unit
 
     override fun onDetach() = Unit
+
+    override fun logout(sessionId: String): Boolean = BackendCredentialAuthenticator().logout(sessionId)
 }
 
 private object LoginScreenFactory : PluginScreenFactory {
@@ -105,14 +112,20 @@ private object LoginScreenFactory : PluginScreenFactory {
 /** Campo que receberá a próxima entrada no terminal de login. */
 internal enum class LoginInputTarget { USER, PASSWORD }
 
+/**
+ * Estado imutável do terminal, mantido somente em memória pelo plugin.
+ *
+ * @property isAuthenticating impede confirmações concorrentes durante a rede
+ * @property message instrução genérica que nunca contém credenciais
+ */
 @Immutable
-/** Estado imutável do terminal, mantido somente em memória pelo plugin. */
 internal data class LoginUiState(
     val user: String = "",
     val password: String = "",
     val target: LoginInputTarget = LoginInputTarget.USER,
     val uppercase: Boolean = true,
     val editRevision: Int = 0,
+    val isAuthenticating: Boolean = false,
     val message: String = "INFORME USUÁRIO E SENHA E PRESSIONE CONFIRMAR PARA CONTINUAR.",
 )
 
@@ -146,11 +159,7 @@ internal object LoginReducer {
         LoginEvent.Backspace -> state.editTarget("") { it.dropLast(1) }
         LoginEvent.Clear -> state.editTarget("") { "" }
         LoginEvent.ToggleCase -> state.copy(uppercase = !state.uppercase)
-        LoginEvent.Confirm -> if (state.user.startsWith('L') && state.password.isNotEmpty()) {
-            state.copy(message = "AUTENTICAÇÃO LOCAL CONFIRMADA.")
-        } else {
-            state.copy(message = "INFORME USUÁRIO INICIADO EM L E SENHA PARA CONTINUAR.")
-        }
+        LoginEvent.Confirm -> state
     }
 
     private fun LoginUiState.editTarget(
@@ -183,17 +192,69 @@ internal object LoginReducer {
 }
 
 /**
- * Mantém o estado de apresentação e emite sessão somente após validação local.
+ * Mantém o estado de apresentação e emite sessão somente após validação remota.
  *
  * A classe é pública porque [androidx.lifecycle.ViewModelProvider] a instancia
  * por reflexão; estado e eventos permanecem internos ao APK do plugin.
  */
-class LoginViewModel : ViewModel() {
+class LoginViewModel internal constructor(
+    private val authenticator: CredentialAuthenticator,
+) : ViewModel() {
+    /** Construtor usado pelo ViewModelProvider no APK carregado dinamicamente. */
+    constructor() : this(BackendCredentialAuthenticator())
+
+    private val mutableSessionEvents = MutableSharedFlow<PluginEvent.SessionStateChanged>(extraBufferCapacity = 1)
+
+    /** Eventos de sessão sem replay, consumidos uma única vez pela rota. */
+    internal val sessionEvents = mutableSessionEvents.asSharedFlow()
+
     internal var state by mutableStateOf(LoginUiState())
         private set
 
+    /** Processa edição local ou inicia uma única tentativa de autenticação. */
     internal fun onEvent(event: LoginEvent) {
-        state = LoginReducer.reduce(state, event)
+        if (event == LoginEvent.Confirm) {
+            authenticate()
+        } else {
+            state = LoginReducer.reduce(state, event)
+        }
+    }
+
+    /** Captura a credencial atual, executa rede no data layer e reduz o resultado. */
+    private fun authenticate() {
+        val credentials = state
+        if (credentials.isAuthenticating) return
+        if (!credentials.user.startsWith('L') || credentials.password.isEmpty()) {
+            state = credentials.copy(message = "INFORME USUÁRIO INICIADO EM L E SENHA PARA CONTINUAR.")
+            return
+        }
+        state = credentials.copy(isAuthenticating = true, message = "AUTENTICANDO...")
+        viewModelScope.launch {
+            when (val result = authenticator.authenticate(credentials.user, credentials.password)) {
+                is AuthenticationResult.Success -> {
+                    state = state.copy(
+                        password = "",
+                        isAuthenticating = false,
+                        message = "AUTENTICAÇÃO CONFIRMADA.",
+                    )
+                    mutableSessionEvents.emit(
+                        PluginEvent.SessionStateChanged(result.sessionId, result.expiresAtEpochMillis),
+                    )
+                }
+                AuthenticationResult.InvalidCredentials -> {
+                    state = state.copy(
+                        isAuthenticating = false,
+                        message = "USUÁRIO OU SENHA INVÁLIDOS.",
+                    )
+                }
+                AuthenticationResult.Unavailable -> {
+                    state = state.copy(
+                        isAuthenticating = false,
+                        message = "SERVIÇO DE AUTENTICAÇÃO INDISPONÍVEL.",
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -201,7 +262,11 @@ class LoginViewModel : ViewModel() {
 private fun LoginRoute(onSessionEstablished: (PluginEvent.SessionStateChanged) -> Unit) {
     val viewModel: LoginViewModel = viewModel()
     val state = viewModel.state
-    LoginScreen(state = state, onEvent = viewModel::onEvent, onSessionEstablished = onSessionEstablished)
+    val currentOnSessionEstablished by rememberUpdatedState(onSessionEstablished)
+    LaunchedEffect(viewModel) {
+        viewModel.sessionEvents.collect(currentOnSessionEstablished)
+    }
+    LoginScreen(state = state, onEvent = viewModel::onEvent)
 }
 
 /** Renderiza a tela de autenticação e restaura foco no fim do campo alterado. */
@@ -209,7 +274,6 @@ private fun LoginRoute(onSessionEstablished: (PluginEvent.SessionStateChanged) -
 internal fun LoginScreen(
     state: LoginUiState,
     onEvent: (LoginEvent) -> Unit,
-    onSessionEstablished: (PluginEvent.SessionStateChanged) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val userFocus = remember { FocusRequester() }
@@ -246,11 +310,6 @@ internal fun LoginScreen(
                 }
             }
             InstructionBar(state.message)
-        }
-    }
-    if (state.message == "AUTENTICAÇÃO LOCAL CONFIRMADA.") {
-        LaunchedEffect(state.message) {
-            onSessionEstablished(PluginEvent.SessionStateChanged("local-login-session", Long.MAX_VALUE))
         }
     }
 }
@@ -331,12 +390,23 @@ private fun AlphaKeyboard(state: LoginUiState, onEvent: (LoginEvent) -> Unit, ke
                 KeyRow(listOf("Q", "W", "E", "R", "T", "Y", "U", "I", "P", "[", "]"), onEvent, keySize, gap, state.uppercase)
                 KeyRow(listOf("A", "S", "D", "F", "G", "H", "J", "K", "L", "'", "\\"), onEvent, keySize, gap, state.uppercase)
             }
-            ActionKey("ENTER", { onEvent(LoginEvent.Backspace) }, keySize * 1.7f, keySize * 2 + gap, Modifier.testTag("enter-button"))
+            ActionKey(
+                "ENTER",
+                { onEvent(LoginEvent.Backspace) },
+                keySize * 1.7f,
+                Modifier.testTag("enter-button"),
+                keySize * 2 + gap,
+            )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
             ActionKey(if (state.uppercase) "FIXAR" else "SOLTAR", { onEvent(LoginEvent.ToggleCase) }, keySize * 1.8f)
             listOf("Z", "X", "C", "V", "B", "N", "M", ",", ".").forEach { Key(it.display(state.uppercase), { onEvent(LoginEvent.KeyPressed(it)) }, keySize) }
-            ActionKey("CONFIRMAR", { onEvent(LoginEvent.Confirm) }, keySize * 2.8f)
+            ActionKey(
+                label = if (state.isAuthenticating) "AGUARDE" else "CONFIRMAR",
+                onClick = { onEvent(LoginEvent.Confirm) },
+                width = keySize * 2.8f,
+                enabled = !state.isAuthenticating,
+            )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
             Spacer(Modifier.width(keySize * 2.3f))
@@ -373,8 +443,15 @@ private fun Key(label: String, onClick: () -> Unit, size: Dp, modifier: Modifier
 }
 
 @Composable
-private fun ActionKey(label: String, onClick: () -> Unit, width: Dp, height: Dp = 50.dp, modifier: Modifier = Modifier) {
-    Surface(onClick = onClick, modifier = modifier.width(width).height(height).shadow(3.dp, RoundedCornerShape(8.dp)).semantics { role = Role.Button }, shape = RoundedCornerShape(8.dp), color = TerminalBlue, contentColor = Color.White) {
+private fun ActionKey(
+    label: String,
+    onClick: () -> Unit,
+    width: Dp,
+    modifier: Modifier = Modifier,
+    height: Dp = 50.dp,
+    enabled: Boolean = true,
+) {
+    Surface(onClick = onClick, enabled = enabled, modifier = modifier.width(width).height(height).shadow(3.dp, RoundedCornerShape(8.dp)).semantics { role = Role.Button }, shape = RoundedCornerShape(8.dp), color = TerminalBlue, contentColor = Color.White) {
         Box(contentAlignment = Alignment.Center) { Text(label, fontSize = 13.sp) }
     }
 }

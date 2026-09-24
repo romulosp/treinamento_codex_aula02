@@ -25,9 +25,17 @@ interface PluginHostContext {
 
 /** Evento seguro compartilhado entre plugin e host. */
 sealed interface PluginEvent {
-    /** Indica sessão local estabelecida sem transportar senha ou token. */
+    /** Indica sessão SSO estabelecida sem transportar senha ou token. */
     data class SessionStateChanged(val sessionId: String, val expiresAtEpochMillis: Long) : PluginEvent
 }
+
+/** Item declarativo que um plugin de negócio oferece ao menu do host. */
+data class BusinessMenuItem(
+    val id: String,
+    val titulo: String,
+    val rota: String,
+    val ordem: Int,
+)
 
 /** Registro no qual o plugin declara a tela da capacidade inicial. */
 interface IUIRegistry {
@@ -60,4 +68,21 @@ interface IPluginApp {
 
     /** Libera referências cooperativas quando o host encerra o plugin. */
     fun onDetach()
+}
+
+/**
+ * Especialização do plugin de autenticação que encerra uma sessão opaca.
+ *
+ * O host invoca [logout] fora da main thread. A implementação não recebe nem
+ * devolve tokens do provedor.
+ */
+interface IAuthenticationPluginApp : IPluginApp {
+    /** Solicita logout remoto e devolve se a API respondeu com sucesso. */
+    fun logout(sessionId: String): Boolean
+}
+
+/** Plugin de negócio elegível para compor a tela inicial do host. */
+interface IPluginNegocioApp : IPluginApp {
+    /** Itens imutáveis publicados pelo plugin depois da validação do APK. */
+    val businessMenuItems: List<BusinessMenuItem>
 }

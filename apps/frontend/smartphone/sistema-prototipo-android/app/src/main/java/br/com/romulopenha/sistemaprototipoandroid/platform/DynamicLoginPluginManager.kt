@@ -111,6 +111,39 @@ internal class DynamicLoginPluginManager(
         }
     }
 
+    /**
+     * Executa logout do plugin na fila serial e sempre conclui no main looper.
+     *
+     * O resultado informa somente se a API confirmou o logout; o host deve
+     * remover o acesso local mesmo quando o retorno for falso.
+     */
+    fun logout(sessionId: String, onCompleted: (Boolean) -> Unit) {
+        worker.execute {
+            val completed = try {
+                activePlugin?.logout(sessionId) == true
+            } catch (error: Exception) {
+                audit(
+                    PluginTransition(
+                        status = PluginRuntimeStatus.ERROR,
+                        reason = error.javaClass.simpleName,
+                    ),
+                    error,
+                )
+                false
+            } catch (error: LinkageError) {
+                audit(
+                    PluginTransition(
+                        status = PluginRuntimeStatus.ERROR,
+                        reason = error.javaClass.simpleName,
+                    ),
+                    error,
+                )
+                false
+            }
+            mainHandler.post { onCompleted(completed) }
+        }
+    }
+
     /** Libera observer, fila e referência cooperativa da instância ativa. */
     override fun close() {
         stop()
@@ -138,17 +171,47 @@ internal class DynamicLoginPluginManager(
         pendingScan = worker.schedule(::scan, delayMillis, TimeUnit.MILLISECONDS)
     }
 
-    /** Recupera o repositório verificado e depois consome o staging observado. */
+    /** Prioriza o bootstrap debug atual e usa o repositório anterior como fallback. */
     private fun scan() {
+        val bundledCandidate = if (activePlugin == null) {
+            try {
+                BundledLoginPluginInstaller.installIfPresent(applicationContext, stagingDirectory)
+            } catch (error: Exception) {
+                audit(
+                    PluginTransition(
+                        status = PluginRuntimeStatus.ERROR,
+                        reason = error.javaClass.simpleName,
+                    ),
+                    error,
+                )
+                publish(
+                    PluginHostState(
+                        status = PluginRuntimeStatus.ERROR,
+                        message = "Plugin de autenticação indisponível.",
+                    ),
+                )
+                return
+            }
+        } else {
+            null
+        }
+
+        val candidates = BundledLoginPluginInstaller.prioritize(
+            bundledCandidate = bundledCandidate,
+            inboxCandidates = stagingDirectory.listFiles { file ->
+            file.isFile && file.extension.equals("apk", ignoreCase = true)
+            }.orEmpty().asList(),
+        )
+
+        if (activePlugin == null && bundledCandidate != null) {
+            processCandidate(bundledCandidate)
+        }
+
         if (activePlugin == null) {
             LoginPluginLoader.findVerified(applicationContext, ::onTransition)
                 .firstOrNull()
                 ?.let(::activate)
         }
-
-        val candidates = stagingDirectory.listFiles { file ->
-            file.isFile && file.extension.equals("apk", ignoreCase = true)
-        }.orEmpty().sortedBy(File::lastModified)
 
         if (activePlugin == null && candidates.isEmpty()) {
             publish(
@@ -158,7 +221,9 @@ internal class DynamicLoginPluginManager(
                 ),
             )
         }
-        candidates.forEach(::processCandidate)
+        candidates
+            .filterNot { candidate -> candidate.absoluteFile == bundledCandidate?.absoluteFile }
+            .forEach(::processCandidate)
     }
 
     /** Executa o pipeline de um candidato sem afetar uma instância ativa em rejeição. */

@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -31,7 +32,6 @@ class LoginScreenTest {
                     state = LoginReducer.reduce(state, it)
                     observedUser = state.user
                 },
-                onSessionEstablished = {},
             )
         }
 
@@ -43,10 +43,19 @@ class LoginScreenTest {
     @Test
     fun mostraEnterENaoMostraCancelar() {
         composeRule.setContent {
-            LoginScreen(LoginUiState(), onEvent = {}, onSessionEstablished = {})
+            LoginScreen(LoginUiState(), onEvent = {})
         }
 
         composeRule.onNodeWithText("ENTER").performClick()
         composeRule.onAllNodesWithText("SAIR/CANCELAR").assertCountEquals(0)
+    }
+
+    @Test
+    fun autenticacaoEmAndamentoBloqueiaNovaConfirmacao() {
+        composeRule.setContent {
+            LoginScreen(LoginUiState(isAuthenticating = true), onEvent = {})
+        }
+
+        composeRule.onNodeWithText("AGUARDE").assertIsNotEnabled()
     }
 }

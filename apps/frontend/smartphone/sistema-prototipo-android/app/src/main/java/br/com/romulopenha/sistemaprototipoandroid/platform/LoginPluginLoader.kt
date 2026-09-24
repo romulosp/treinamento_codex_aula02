@@ -5,6 +5,7 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import org.json.JSONObject
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IPluginApp
+import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IAuthenticationPluginApp
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IPluginRouter
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IUIRegistry
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.PluginEvent
@@ -67,10 +68,13 @@ internal data class LoadedLoginPlugin(
     val screenFactory: PluginScreenFactory,
     val digestSha256: String,
     val pluginVersion: String,
-    private val app: IPluginApp,
+    private val app: IAuthenticationPluginApp,
 ) {
     /** Solicita limpeza cooperativa; não promete descarregar classes do processo. */
     fun detach() = app.onDetach()
+
+    /** Executa o contrato remoto de logout; o chamador deve estar fora da main thread. */
+    fun logout(sessionId: String): Boolean = app.logout(sessionId)
 }
 
 /** Valida, promove e instancia exclusivamente o plugin interno de autenticação. */
@@ -81,7 +85,7 @@ internal object LoginPluginLoader {
     private const val ManifestSchemaVersion = 1
     private val SemVerPattern = Regex("\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?")
     private val DependencyPattern = Regex("[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*")
-    private val HostApi = SharedApiVersion(major = 1, minor = 0, patch = 0)
+    private val HostApi = SharedApiVersion(major = 1, minor = 1, patch = 0)
 
     /**
      * Move semanticamente um candidato para quarentena, valida-o e o promove.
@@ -181,11 +185,13 @@ internal object LoginPluginLoader {
             app.onLoad(HostContext)
             app.onAttach(registry, EmptyRouter)
             onTransition(verified.transition(PluginRuntimeStatus.ATTACHED))
+            val authenticationApp = app as? IAuthenticationPluginApp
+                ?: error("Plugin startup-auth não implementa contrato de autenticação")
             val loaded = LoadedLoginPlugin(
                 screenFactory = requireNotNull(registry.factory),
                 digestSha256 = verified.digestSha256,
                 pluginVersion = verified.descriptor.pluginVersion,
-                app = app,
+                app = authenticationApp,
             )
             app.onActivate()
             onTransition(verified.transition(PluginRuntimeStatus.ACTIVE))

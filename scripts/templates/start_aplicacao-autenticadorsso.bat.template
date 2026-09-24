@@ -1,0 +1,55 @@
+@echo off
+setlocal EnableExtensions DisableDelayedExpansion
+cd /d "%~dp0"
+
+set "JAVA_HOME=C:\Desenvolvimento\jdk-17.0.11"
+set "PATH=%JAVA_HOME%\bin;%PATH%"
+set "OIDC_AUTH_SERVER_URL_MOBILE_INTRANET=${OIDC_AUTH_SERVER_URL_MOBILE_INTRANET}"
+set "OIDC_CLIENT_ID_MOBILE_SERVICE_INTRANET=${OIDC_CLIENT_ID_MOBILE_SERVICE_INTRANET}"
+set "OIDC_CLIENT_SECRET_MOBILE_SERVICE_INTRANET=${OIDC_CLIENT_SECRET_MOBILE_SERVICE_INTRANET}"
+set "KEYCLOAK_COMPOSE_DIR=D:\desenvolvimento\keyclock"
+
+if not exist "%JAVA_HOME%\bin\java.exe" (
+  echo ERRO: Java 17 nao encontrado.
+  exit /b 1
+)
+if not exist "%~dp0mvnw.cmd" (
+  echo ERRO: Maven Wrapper nao encontrado.
+  exit /b 1
+)
+
+powershell.exe -NoProfile -Command "try { $r = Invoke-WebRequest -UseBasicParsing -Uri '%OIDC_AUTH_SERVER_URL_MOBILE_INTRANET%/.well-known/openid-configuration' -TimeoutSec 3; if ($r.StatusCode -eq 200) { exit 0 } } catch {}; exit 1"
+if not errorlevel 1 goto keycloak_ok
+
+if not exist "%KEYCLOAK_COMPOSE_DIR%\docker-compose.yaml" (
+  echo ERRO: docker-compose.yaml do Keycloak nao encontrado.
+  exit /b 1
+)
+echo Iniciando Keycloak local...
+pushd "%KEYCLOAK_COMPOSE_DIR%"
+docker compose up -d
+if errorlevel 1 (
+  popd
+  echo ERRO: nao foi possivel iniciar o Keycloak.
+  exit /b 1
+)
+popd
+
+set /a TENTATIVAS=0
+:aguardar_keycloak
+powershell.exe -NoProfile -Command "try { $r = Invoke-WebRequest -UseBasicParsing -Uri '%OIDC_AUTH_SERVER_URL_MOBILE_INTRANET%/.well-known/openid-configuration' -TimeoutSec 3; if ($r.StatusCode -eq 200) { exit 0 } } catch {}; exit 1"
+if not errorlevel 1 goto keycloak_ok
+set /a TENTATIVAS+=1
+if %TENTATIVAS% GEQ 30 (
+  echo ERRO: Keycloak nao ficou disponivel no tempo esperado.
+  exit /b 1
+)
+timeout /t 2 /nobreak >nul
+goto aguardar_keycloak
+
+:keycloak_ok
+echo Configuracao SSO carregada do arquivo externo.
+echo API: http://127.0.0.1:8180/contexto/autenticacao-validacao-credencial
+call "%~dp0mvnw.cmd" quarkus:dev
+set "CODIGO=%errorlevel%"
+endlocal & exit /b %CODIGO%

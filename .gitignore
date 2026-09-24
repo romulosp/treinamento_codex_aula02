@@ -14,6 +14,7 @@
 **/*.log
 apps/backend/gerenciartarefas/start_aplicacao.bat
 apps/backend/gerenciarcategorias/start_aplicacao.bat
+apps/backend/autenticadorsso/start_aplicacao.bat
 !scripts/
 !scripts/**
 !.agents/skills/android-native-engineering/agents/openai.yaml

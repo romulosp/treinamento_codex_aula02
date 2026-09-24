@@ -44,3 +44,13 @@
 - O script `scripts/sonar/validar-codigo.ps1` orquestra a preparação e execução do SonarQube via Docker Compose e scanner local para aplicações Java e frontend; em caso de indisponibilidade operacional (Docker ou PostgreSQL), o script requer obrigatoriamente fallback para Auditoria de Qualidade LLM.
 - O suporte Golang vigente está documentado em `specs/system/backend-golang.md`; a Skill principal é `.agents/skills/backend-golang/SKILL.md`, com perfis `api` e `desktop`, 30 Skills complementares, arquitetura em camadas, Gin, GORM, testes, segurança e fallback de qualidade documentados.
 - O suporte Android nativo vigente está documentado em `specs/system/android-native-engineering.md`; a Skill principal é `.agents/skills/android-native-engineering/SKILL.md`, com perfis `SIMPLE`, `STANDARD`, `ENTERPRISE` e `HIGH_ASSURANCE`, composição de skills oficiais, quality gates e KDoc obrigatório para contratos Kotlin aplicáveis.
+- O protótipo Android em `apps/frontend/smartphone/sistema-prototipo-android/` usa
+  plugins de autenticação dinâmicos e, no build `debug`, incorpora o APK de
+  login somente como entrega de bootstrap ao inbox validado. No emulador, a API
+  local é acessada por `http://10.0.2.2:8180`; a variante `release` não recebe
+  esse asset nem a permissão de cleartext.
+- O SSO local do protótipo valida credenciais no Keycloak por uma API Quarkus
+  local em `apps/backend/autenticadorsso/`, retornando ao Android somente sessão
+  opaca e expiração. O módulo local permanece fora do Git pela política global
+  de `apps/backend/**`; o launcher é renderizado a partir do arquivo externo
+  `D:/desenvolvimento/chave_des/chave_des.properties`, sem segredos versionados.

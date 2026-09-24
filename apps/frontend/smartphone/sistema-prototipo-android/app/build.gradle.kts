@@ -1,8 +1,39 @@
+import org.gradle.api.DefaultTask
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.TaskAction
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
+}
+
+/** Gera o diretório de assets debug contendo o APK independente de login. */
+abstract class StageLoginPluginTask : DefaultTask() {
+    /** APK produzido pelo módulo `:plugin-login`. */
+    @get:InputFile
+    abstract val pluginApk: RegularFileProperty
+
+    /** Diretório conectado à variante debug pela Variant API do AGP. */
+    @get:OutputDirectory
+    abstract val outputDirectory: DirectoryProperty
+
+    /** Copia o APK para o caminho estável esperado pelo bootstrap do host. */
+    @TaskAction
+    fun stage() {
+        val target = outputDirectory.file("plugins/plugin-login.apk").get().asFile
+        check(target.parentFile.mkdirs() || target.parentFile.isDirectory)
+        pluginApk.get().asFile.copyTo(target, overwrite = true)
+    }
+}
+
+val stageDebugLoginPlugin = tasks.register<StageLoginPluginTask>("stageDebugLoginPlugin") {
+    dependsOn(":plugin-login:assembleDebug")
+    pluginApk.set(project(":plugin-login").layout.buildDirectory.file("outputs/apk/debug/plugin-login-debug.apk"))
+    outputDirectory.set(layout.buildDirectory.dir("generated/loginPluginAssets/debug"))
 }
 
 android {
@@ -26,6 +57,15 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+}
+
+androidComponents {
+    onVariants(selector().withBuildType("debug")) { variant ->
+        variant.sources.assets?.addGeneratedSourceDirectory(
+            stageDebugLoginPlugin,
+            StageLoginPluginTask::outputDirectory,
+        )
+    }
 }
 
 kotlin {

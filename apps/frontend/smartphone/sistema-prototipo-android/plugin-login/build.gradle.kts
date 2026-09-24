@@ -17,7 +17,18 @@ android {
         versionName = "1.0.1"
     }
 
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
+
+    defaultConfig {
+        buildConfigField(
+            "String",
+            "AUTH_API_BASE_URL",
+            "\"${providers.gradleProperty("authApiBaseUrl").orElse("http://10.0.2.2:8180").get()}\"",
+        )
+    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -37,6 +48,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.11.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
     androidTestImplementation(composeBom)
     androidTestImplementation(project(":shared-api"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
