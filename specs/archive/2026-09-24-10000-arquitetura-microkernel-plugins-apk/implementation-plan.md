@@ -2,10 +2,10 @@
 
 ## Status
 
-`PENDENTE_IMPLEMENTACAO`
+`IMPLEMENTADA`
 
-`proposal.md` e `spec.md` estão em `SPEC_APROVADA`; este plano permanece
-pendente até autorização da implementação pelo solicitante.
+Implementação autorizada pelo solicitante e concluída em 2026-09-24. O AAR
+`shared-api:1.1.0` é publicado localmente em `shared-api/build/local-maven`.
 
 ## Sequência prevista
 

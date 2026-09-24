@@ -11,8 +11,9 @@ import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IUIRegistry
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.PluginEvent
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.PluginHostContext
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.PluginManifest
+import br.com.romulopenha.sistemaprototipoandroid.sharedapi.PluginRoute
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.PluginScreenFactory
-import br.com.romulopenha.sistemaprototipoandroid.sharedapi.SharedApiVersion
+import br.com.romulopenha.sistemaprototipoandroid.sharedapi.SharedApi
 import dalvik.system.DexClassLoader
 import java.io.File
 import java.security.MessageDigest
@@ -27,6 +28,7 @@ internal enum class PluginRuntimeStatus {
     LOADED,
     ATTACHED,
     ACTIVE,
+    DETACHED,
     REJECTED,
     ERROR,
     PENDING_RESTART,
@@ -66,6 +68,7 @@ internal data class VerifiedLoginPlugin(
 /** Instância ativa e sua fábrica de tela, mantidas pelo manager do microkernel. */
 internal data class LoadedLoginPlugin(
     val screenFactory: PluginScreenFactory,
+    val pluginId: String,
     val digestSha256: String,
     val pluginVersion: String,
     private val app: IAuthenticationPluginApp,
@@ -85,7 +88,7 @@ internal object LoginPluginLoader {
     private const val ManifestSchemaVersion = 1
     private val SemVerPattern = Regex("\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?")
     private val DependencyPattern = Regex("[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*")
-    private val HostApi = SharedApiVersion(major = 1, minor = 1, patch = 0)
+    private val HostApi = SharedApi.version
 
     /**
      * Move semanticamente um candidato para quarentena, valida-o e o promove.
@@ -189,6 +192,7 @@ internal object LoginPluginLoader {
                 ?: error("Plugin startup-auth não implementa contrato de autenticação")
             val loaded = LoadedLoginPlugin(
                 screenFactory = requireNotNull(registry.factory),
+                pluginId = verified.descriptor.pluginId,
                 digestSha256 = verified.digestSha256,
                 pluginVersion = verified.descriptor.pluginVersion,
                 app = authenticationApp,
@@ -404,7 +408,9 @@ internal object LoginPluginLoader {
         override fun publish(event: PluginEvent) = Unit
     }
 
-    private object EmptyRouter : IPluginRouter
+    private object EmptyRouter : IPluginRouter {
+        override fun navigate(route: PluginRoute) = Unit
+    }
 
     /** Aceita exatamente uma fábrica `startup-auth` durante o attach. */
     private class StartupAuthRegistry : IUIRegistry {

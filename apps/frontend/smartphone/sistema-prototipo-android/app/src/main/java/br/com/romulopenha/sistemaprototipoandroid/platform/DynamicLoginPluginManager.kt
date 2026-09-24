@@ -6,7 +6,10 @@ import android.os.FileObserver
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IPluginManager
+import br.com.romulopenha.sistemaprototipoandroid.sharedapi.PluginLifecycleState
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -18,6 +21,28 @@ internal data class PluginHostState(
     val message: String,
 )
 
+/** Decisão imutável sobre um APK validado diante da revisão atualmente ativa. */
+internal enum class PluginActivationDecision {
+    /** Não há instância em memória; o candidato pode ser ativado. */
+    ACTIVATE,
+
+    /** O mesmo artefato já está ativo e não exige qualquer ação. */
+    UNCHANGED,
+
+    /** Há uma revisão diferente ativa; a troca deve aguardar novo processo. */
+    PENDING_RESTART,
+}
+
+/** Aplica a regra de atualização sem carregar, descarregar ou executar classes. */
+internal object PluginUpdatePolicy {
+    /** Decide o tratamento exclusivamente pelos digests de artefatos já verificados. */
+    fun decide(activeDigestSha256: String?, candidateDigestSha256: String): PluginActivationDecision = when {
+        activeDigestSha256 == null -> PluginActivationDecision.ACTIVATE
+        activeDigestSha256 == candidateDigestSha256 -> PluginActivationDecision.UNCHANGED
+        else -> PluginActivationDecision.PENDING_RESTART
+    }
+}
+
 /**
  * Coordena descoberta, fila serial, ciclo de vida e recuperação do plugin login.
  *
@@ -27,7 +52,7 @@ internal data class PluginHostState(
 internal class DynamicLoginPluginManager(
     context: Context,
     private val onStateChanged: (PluginHostState) -> Unit,
-) : AutoCloseable {
+) : IPluginManager, AutoCloseable {
     private val applicationContext = context.applicationContext
     private val mainHandler = Handler(Looper.getMainLooper())
     private val worker: ScheduledExecutorService =
@@ -41,6 +66,15 @@ internal class DynamicLoginPluginManager(
     private var observer: FileObserver? = null
     private var pendingScan: ScheduledFuture<*>? = null
     private var activePlugin: LoadedLoginPlugin? = null
+    private val statesByPluginId = ConcurrentHashMap<String, PluginLifecycleState>()
+
+    /** Agenda uma descoberta sem carregar código na thread solicitante. */
+    override fun requestDiscovery() {
+        scheduleScan(delayMillis = 0)
+    }
+
+    /** Expõe somente o último estado de ciclo de vida conhecido para a identidade pedida. */
+    override fun stateOf(pluginId: String): PluginLifecycleState? = statesByPluginId[pluginId]
 
     /** Inicia observação e agenda recuperação/varredura de boot. */
     @Synchronized
@@ -95,6 +129,16 @@ internal class DynamicLoginPluginManager(
             val current = activePlugin
             activePlugin = null
             runCatching { current?.detach() }
+            current?.let {
+                onTransition(
+                    PluginTransition(
+                        status = PluginRuntimeStatus.DETACHED,
+                        pluginId = it.pluginId,
+                        version = it.pluginVersion,
+                        digestSha256 = it.digestSha256,
+                    ),
+                )
+            }
             val transition = PluginTransition(
                 status = PluginRuntimeStatus.ERROR,
                 version = current?.pluginVersion,
@@ -150,6 +194,16 @@ internal class DynamicLoginPluginManager(
         val current = activePlugin
         activePlugin = null
         runCatching { current?.detach() }
+        current?.let {
+            onTransition(
+                PluginTransition(
+                    status = PluginRuntimeStatus.DETACHED,
+                    pluginId = it.pluginId,
+                    version = it.pluginVersion,
+                    digestSha256 = it.digestSha256,
+                ),
+            )
+        }
         worker.shutdownNow()
     }
 
@@ -236,12 +290,12 @@ internal class DynamicLoginPluginManager(
                 onTransition = ::onTransition,
             )
             val current = activePlugin
-            when {
-                current == null -> activate(verified)
-                current.digestSha256 == verified.digestSha256 -> Unit
-                else -> {
+            when (PluginUpdatePolicy.decide(current?.digestSha256, verified.digestSha256)) {
+                PluginActivationDecision.ACTIVATE -> activate(verified)
+                PluginActivationDecision.UNCHANGED -> Unit
+                PluginActivationDecision.PENDING_RESTART -> {
                     val transition = verified.transition(PluginRuntimeStatus.PENDING_RESTART)
-                    audit(transition)
+                    onTransition(transition)
                     publish(
                         PluginHostState(
                             status = PluginRuntimeStatus.PENDING_RESTART,
@@ -305,6 +359,9 @@ internal class DynamicLoginPluginManager(
 
     /** Audita cada transição e publica progresso enquanto ainda não há plugin ativo. */
     private fun onTransition(transition: PluginTransition) {
+        transition.pluginId?.let { pluginId ->
+            transition.status.asPublicState()?.let { statesByPluginId[pluginId] = it }
+        }
         audit(transition)
         if (transition.status in TransitionalStatuses && activePlugin == null) {
             publish(
@@ -348,6 +405,21 @@ internal class DynamicLoginPluginManager(
         version = descriptor.pluginVersion,
         digestSha256 = digestSha256,
     )
+
+    /** Traduz estados internos sem expor a espera transitória como estado de contrato. */
+    private fun PluginRuntimeStatus.asPublicState(): PluginLifecycleState? = when (this) {
+        PluginRuntimeStatus.WAITING -> null
+        PluginRuntimeStatus.DISCOVERED -> PluginLifecycleState.DISCOVERED
+        PluginRuntimeStatus.STAGED -> PluginLifecycleState.STAGED
+        PluginRuntimeStatus.VERIFIED -> PluginLifecycleState.VERIFIED
+        PluginRuntimeStatus.LOADED -> PluginLifecycleState.LOADED
+        PluginRuntimeStatus.ATTACHED -> PluginLifecycleState.ATTACHED
+        PluginRuntimeStatus.ACTIVE -> PluginLifecycleState.ACTIVE
+        PluginRuntimeStatus.DETACHED -> PluginLifecycleState.DETACHED
+        PluginRuntimeStatus.REJECTED -> PluginLifecycleState.REJECTED
+        PluginRuntimeStatus.ERROR -> PluginLifecycleState.ERROR
+        PluginRuntimeStatus.PENDING_RESTART -> PluginLifecycleState.PENDING_RESTART
+    }
 
     private companion object {
         const val LogTag = "DynamicPluginManager"

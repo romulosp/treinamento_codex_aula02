@@ -60,6 +60,7 @@ import br.com.romulopenha.sistemaprototipoandroid.sharedapi.PluginEvent
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.PluginHostContext
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.PluginManifest
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.PluginScreenFactory
+import br.com.romulopenha.sistemaprototipoandroid.sharedapi.SharedApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
@@ -238,7 +239,12 @@ class LoginViewModel internal constructor(
                         message = "AUTENTICAÇÃO CONFIRMADA.",
                     )
                     mutableSessionEvents.emit(
-                        PluginEvent.SessionStateChanged(result.sessionId, result.expiresAtEpochMillis),
+                        PluginEvent.SessionStateChanged(
+                            pluginId = PluginLoginApp().manifest.pluginId,
+                            contractVersion = SharedApi.version,
+                            sessionId = result.sessionId,
+                            expiresAtEpochMillis = result.expiresAtEpochMillis,
+                        ),
                     )
                 }
                 AuthenticationResult.InvalidCredentials -> {

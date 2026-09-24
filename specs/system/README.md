@@ -49,6 +49,11 @@
   login somente como entrega de bootstrap ao inbox validado. No emulador, a API
   local é acessada por `http://10.0.2.2:8180`; a variante `release` não recebe
   esse asset nem a permissão de cleartext.
+- A plataforma Android usa os módulos `:app`, `:shared-api` e `:plugin-login`;
+  o host não depende de plugins. O AAR `shared-api:1.1.0` é publicado no Maven
+  local do projeto e os APKs internos só chegam ao `DexClassLoader` após
+  quarentena privada, digest, assinatura, pacote, manifesto e compatibilidade.
+  Revisão de plugin já ativa é registrada como `PENDING_RESTART`, sem hot swap.
 - O SSO local do protótipo valida credenciais no Keycloak por uma API Quarkus
   local em `apps/backend/autenticadorsso/`, retornando ao Android somente sessão
   opaca e expiração. O módulo local permanece fora do Git pela política global
