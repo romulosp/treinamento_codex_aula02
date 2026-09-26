@@ -1,0 +1,488 @@
+DECISÃO HUMANA APROVADA — ATUALIZAÇÃO DO BASELINE ANDROID
+
+A incompatibilidade identificada entre a SPEC atual e o stack Android/Compose
+foi analisada.
+
+Está APROVADA a atualização do baseline tecnológico conforme abaixo.
+
+============================================================
+1. DECISÃO APROVADA
+============================================================
+
+Adotar como baseline atual:
+
+Android:
+- compileSdk = 37
+- targetSdk = 36
+- minSdk = NEEDS_DECISION
+
+Jetpack Compose:
+- utilizar Compose BOM 2026.09.00
+- utilizar somente versões STABLE compatíveis com esse BOM
+- Compose 1.12.x stable como baseline atual
+
+Build:
+- utilizar Android Gradle Plugin 9.x compatível com compileSdk 37
+- utilizar JDK 17
+- validar a versão do Kotlin compatível com:
+  - AGP escolhido;
+  - Compose;
+  - demais componentes do build.
+
+IMPORTANTE:
+
+Não definir minSdk arbitrariamente.
+
+O minSdk deverá continuar como NEEDS_DECISION até que seja analisado com base em:
+
+- público-alvo;
+- dispositivos suportados;
+- requisitos funcionais;
+- bibliotecas utilizadas;
+- requisitos de segurança;
+- APIs Android necessárias;
+- impacto de manutenção e testes.
+
+============================================================
+2. POLÍTICA DE VERSIONAMENTO
+============================================================
+
+Não transformar as versões acima em uma regra eterna da Skill/Harness.
+
+A política permanente deverá ser:
+
+"Para novos projetos ou atualizações relevantes, utilizar o stack STABLE
+mais recente oficialmente compatível e aprovado na data da criação ou
+atualização do projeto."
+
+A combinação efetivamente utilizada deverá ser registrada em:
+
+research/compatibility-matrix.md
+
+ou no artefato equivalente definido pelo projeto.
+
+Registrar no mínimo:
+
+- data da verificação;
+- compileSdk;
+- targetSdk;
+- minSdk;
+- Android Gradle Plugin;
+- Gradle;
+- JDK;
+- Kotlin;
+- Compose BOM;
+- Compose;
+- status de estabilidade;
+- fontes oficiais;
+- incompatibilidades conhecidas;
+- observações.
+
+============================================================
+3. POLÍTICA DE ESTABILIDADE
+============================================================
+
+Aplicar a seguinte política:
+
+STABLE
+→ permitido como baseline normal.
+
+RC/BETA
+→ somente mediante necessidade demonstrada, evidência e decisão explícita.
+
+ALPHA/PREVIEW/EXPERIMENTAL
+→ não utilizar como baseline de produção.
+→ somente utilizar mediante:
+   - classificação EXPERIMENTAL;
+   - justificativa;
+   - ADR;
+   - análise de risco;
+   - validação adicional;
+   - aprovação explícita.
+
+Nunca selecionar versão apenas por ser a mais recente.
+
+Selecionar a versão STABLE mais recente que forme uma combinação
+oficialmente compatível com o restante do toolchain.
+
+============================================================
+4. COMPILESKD E TARGETSDK
+============================================================
+
+Não tratar compileSdk e targetSdk como se fossem a mesma decisão.
+
+Neste momento:
+
+compileSdk = 37
+
+é aprovado para permitir compilação contra o SDK atual exigido pelo
+stack Compose selecionado.
+
+targetSdk = 36
+
+permanece aprovado inicialmente.
+
+A adoção futura de:
+
+targetSdk = 37
+
+deverá ser tratada como decisão independente e deverá considerar:
+
+- mudanças comportamentais;
+- compatibilidade;
+- testes;
+- impacto funcional;
+- segurança;
+- requisitos da Google Play;
+- documentação oficial vigente.
+
+Não alterar targetSdk para 37 automaticamente apenas porque
+compileSdk foi atualizado para 37.
+
+============================================================
+5. ATUALIZAÇÃO DA SPEC
+============================================================
+
+Atualize todos os artefatos afetados pela decisão.
+
+No mínimo, revisar:
+
+- spec;
+- research;
+- architecture;
+- compatibility matrix;
+- execution plan;
+- tasks;
+- validation;
+- ADRs;
+- referências;
+- evidências.
+
+Não duplicar informação desnecessariamente.
+
+Quando existir uma fonte de verdade apropriada, referenciá-la.
+
+Registrar claramente que a decisão anterior:
+
+compileSdk = 36
+
+foi substituída pelo novo baseline:
+
+compileSdk = 37
+
+e registrar o motivo:
+
+incompatibilidade identificada com o stack Compose stable aprovado.
+
+Se a decisão justificar ADR, criar ou atualizar o ADR correspondente.
+
+============================================================
+6. EVIDÊNCIA
+============================================================
+
+Registre as fontes oficiais utilizadas para validar:
+
+- requisito do Compose;
+- Compose BOM;
+- compileSdk;
+- AGP;
+- JDK;
+- Kotlin;
+- targetSdk;
+- requisitos relevantes da Google Play.
+
+Para cada fonte relevante registrar, quando possível:
+
+- URL;
+- organização;
+- data da consulta;
+- versão/status;
+- conclusão suportada.
+
+Não utilizar memória do modelo como evidência.
+
+============================================================
+7. COMPATIBILITY REVIEW
+============================================================
+
+Depois de atualizar a documentação, execute novamente a análise de
+compatibilidade do stack completo.
+
+Validar conjuntamente:
+
+JDK
+↓
+Gradle
+↓
+Android Gradle Plugin
+↓
+Kotlin
+↓
+Compose Plugin/Compiler
+↓
+Compose BOM
+↓
+Compose Libraries
+↓
+compileSdk
+↓
+targetSdk
+↓
+demais bibliotecas aprovadas
+
+Não validar esses componentes isoladamente.
+
+O objetivo é verificar se a combinação completa é compatível.
+
+============================================================
+8. RESULTADO DA REVISÃO
+============================================================
+
+Se houver incompatibilidade:
+
+- NÃO implemente;
+- NÃO faça downgrade silencioso;
+- NÃO faça upgrade silencioso;
+- NÃO altere arquitetura;
+- NÃO escolha outra biblioteca automaticamente.
+
+Classifique:
+
+BLOCKED
+
+Registre:
+
+- incompatibilidade;
+- evidência;
+- componentes envolvidos;
+- alternativas;
+- impacto;
+- recomendação técnica sem executar a decisão.
+
+Retorne para decisão humana somente quando realmente houver uma
+decisão arquitetural, tecnológica ou de produto necessária.
+
+============================================================
+9. RETOMADA AUTOMÁTICA DO WORKFLOW
+============================================================
+
+Se a Compatibility Review terminar com:
+
+PASS
+
+não solicite nova confirmação apenas para continuar uma decisão que
+já foi aprovada neste prompt.
+
+Retome automaticamente o workflow exatamente do ponto em que foi
+interrompido.
+
+Fluxo esperado:
+
+SPEC UPDATE
+↓
+COMPATIBILITY REVIEW
+↓
+PASS
+↓
+PLAN REVIEW
+↓
+TASKS REVIEW
+↓
+IMPLEMENT
+↓
+UNIT TESTS
+↓
+COVERAGE
+↓
+LINT
+↓
+STATIC ANALYSIS
+↓
+ARCHITECTURE CHECKS
+↓
+INTEGRATION/INSTRUMENTED TESTS QUANDO APLICÁVEL
+↓
+SECURITY CHECKS
+↓
+VALIDATION
+↓
+EVIDENCE
+↓
+REVIEW
+↓
+SYSTEM SPEC UPDATE
+↓
+CLOSE
+
+============================================================
+10. TESTES E COBERTURA
+============================================================
+
+Preservar a política aprovada de testes unitários:
+
+< 80%
+→ QUALITY GATE FAIL
+
+80% a < 90%
+→ ACEITÁVEL
+
+>= 90%
+→ TARGET ATINGIDO
+
+100%
+→ não obrigatório
+
+Cobertura deverá ser calculada sobre código elegível conforme a
+política do projeto.
+
+Não:
+
+- criar testes artificiais apenas para elevar coverage;
+- excluir código injustificadamente da cobertura;
+- remover testes para fazer pipeline passar;
+- reduzir assertions;
+- ignorar casos de erro.
+
+Cobertura não substitui qualidade dos testes.
+
+============================================================
+11. BOUNDED RECOVERY
+============================================================
+
+Durante implementação e validação, utilizar recuperação controlada.
+
+O agente poderá corrigir automaticamente problemas locais como:
+
+- compile errors;
+- imports;
+- formatting;
+- lint relacionado à mudança;
+- testes quebrados pela própria implementação;
+- pequenos problemas diretamente derivados da tarefa aprovada.
+
+O agente NÃO poderá utilizar recovery para:
+
+- trocar arquitetura;
+- trocar biblioteca;
+- alterar contrato;
+- alterar requisito;
+- alterar autenticação;
+- alterar política de segurança;
+- reduzir testes;
+- ampliar escopo;
+- realizar downgrade/upgrade estrutural não aprovado.
+
+Aplicar limite de tentativas.
+
+Se o mesmo problema persistir além do limite definido:
+
+→ interromper;
+→ registrar evidências;
+→ classificar a falha;
+→ escalar.
+
+Nunca entrar em loop infinito.
+
+============================================================
+12. CONTROLE DE ESCOPO
+============================================================
+
+Implemente somente o que estiver aprovado pela SPEC.
+
+Durante a implementação:
+
+- não adicionar dependência sem justificativa;
+- não criar abstração preventiva;
+- não alterar arquitetura silenciosamente;
+- não modificar arquivos fora do escopo sem necessidade demonstrável;
+- não inventar API;
+- não assumir comportamento não documentado;
+- não substituir requisito por interpretação do agente.
+
+Quando encontrar uma nova decisão necessária:
+
+NEEDS_DECISION
+
+Quando faltar evidência:
+
+NEEDS_EVIDENCE
+
+Quando houver impedimento real:
+
+BLOCKED
+
+Quando a informação tiver sido comprovada:
+
+VERIFIED
+
+============================================================
+13. RASTREABILIDADE
+============================================================
+
+Preservar, quando aplicável:
+
+REGRA
+↓
+FONTE
+↓
+DECISÃO
+↓
+ADR
+↓
+TASK
+↓
+IMPLEMENTAÇÃO
+↓
+TESTE
+↓
+EVIDÊNCIA
+
+Qualquer mudança relevante deverá ser rastreável até a SPEC ou decisão
+que a autorizou.
+
+============================================================
+14. CONDIÇÃO PARA CONCLUSÃO
+============================================================
+
+Não considerar a mudança concluída apenas porque o código compila.
+
+A conclusão exige:
+
+- SPEC consistente;
+- compatibility review PASS;
+- implementação aderente à SPEC;
+- testes aplicáveis executados;
+- cobertura >= 80%;
+- quality gates aprovados;
+- ausência de violação arquitetural conhecida;
+- validações de segurança aplicáveis;
+- evidências registradas;
+- revisão concluída;
+- documentação atualizada;
+- nenhuma decisão crítica pendente.
+
+============================================================
+15. AÇÃO AGORA
+============================================================
+
+Execute agora, nesta ordem:
+
+1. Atualize a SPEC com a decisão aprovada.
+2. Atualize a compatibility matrix.
+3. Atualize ADR/research/evidências relacionados.
+4. Verifique novamente as fontes oficiais atuais.
+5. Execute novamente a Compatibility Review.
+6. Se houver conflito real, pare em BLOCKED e apresente evidências.
+7. Se o resultado for PASS, continue automaticamente para Plan Review.
+8. Revise as tasks.
+9. Continue a implementação.
+10. Execute todos os testes e quality gates aplicáveis.
+11. Registre evidências reais.
+12. Execute revisão final SPEC vs PLAN vs TASKS vs CODE vs TESTS vs EVIDENCE.
+13. Atualize a system spec quando exigido pelo workflow.
+14. Conclua somente se todos os critérios de conclusão forem satisfeitos.
+
+Não peça nova autorização para etapas já cobertas por esta decisão.
+
+Pare somente quando surgir uma NOVA decisão que esteja fora do escopo
+ou dos limites explicitamente aprovados acima.

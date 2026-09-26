@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "pluginId": "br.com.romulopenha.sistemaprototipoandroid.negocio",
+  "displayName": "Menu demonstrativo",
+  "pluginVersion": "1.0.0",
+  "requiredSharedApiMajor": 1,
+  "requiredSharedApiMinor": 1,
+  "entryClass": "br.com.romulopenha.sistemaprototipoandroid.pluginnegocio.PluginNegocioApp",
+  "declaredPackageName": "br.com.romulopenha.sistemaprototipoandroid.pluginnegocio",
+  "priority": 100,
+  "capabilities": ["business-menu"],
+  "dependencies": []
+}

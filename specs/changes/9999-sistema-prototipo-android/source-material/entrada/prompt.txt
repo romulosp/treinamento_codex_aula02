@@ -1,0 +1,203 @@
+Gostaria de fazer um plano para migrar esses componente que estão no diretório 
+D:\desenvolvimento\ia\estudo\sistema-prototipo-android verificar todas as pastas e 
+subpasta desse diretório tem uns componente e uns skins
+
+D:\desenvolvimento\ia\estudo\sistema-prototipo-android>dir
+ O volume na unidade D não tem nome.
+ O Número de Série do Volume é CA69-F3C8
+
+ Pasta de D:\desenvolvimento\ia\estudo\sistema-prototipo-android
+
+19/09/2026  08:32    <DIR>          .
+19/09/2026  08:32    <DIR>          ..
+19/09/2026  08:18    <DIR>          componentes
+19/09/2026  08:32                 0 prompt.txt
+12/08/2026  12:44    <DIR>          sistema-prototipo-fontes-arial
+12/08/2026  12:44    <DIR>          sistema-prototipo-imagens-1
+12/08/2026  12:44    <DIR>          sistema-prototipo-imagens-2
+12/08/2026  12:44    <DIR>          sistema-prototipo-imagens-biometria
+12/08/2026  12:44    <DIR>          sitema-prototipo-fontes
+19/09/2026  08:12           134.348 tela1.jpg
+               2 arquivo(s)        134.348 bytes
+               8 pasta(s)   529.593.757.696 bytes disponíveis
+
+D:\desenvolvimento\ia\estudo\sistema-prototipo-android>
+
+dentro das pastas 
+
+  sistema-prototipo-imagens-1
+  sistema-prototipo-imagens-2
+  sistema-prototipo-imagens-biometria
+  
+ Tem as imagem do sistema prototipo para serem utilizadas dentro do app 
+ 
+sitema-prototipo-fontes
+sistema-prototipo-fontes-arial
+
+Tem a fonte para utilização na aplicação 
+
+COMPONENTES 
+
+D:\desenvolvimento\ia\estudo\sistema-prototipo-android\componentes\src\conf
+
+arquivos de configuração definição de skin para componente, os componentes serem custumizado com base 
+na configuração deste arquivo aqui associa a imagem a um componente, verificar o código para entender 
+
+D:\desenvolvimento\ia\estudo\sistema-prototipo-android\componentes\src\java
+
+Microsoft Windows [versão 10.0.19045.6466]
+(c) Microsoft Corporation. Todos os direitos reservados.
+
+D:\desenvolvimento\ia\estudo\sistema-prototipo-android\componentes\src\java>dir
+ O volume na unidade D não tem nome.
+ O Número de Série do Volume é CA69-F3C8
+
+ Pasta de D:\desenvolvimento\ia\estudo\sistema-prototipo-android\componentes\src\java
+
+19/09/2026  08:19    <DIR>          .
+19/09/2026  08:19    <DIR>          ..
+12/08/2026  12:34    <DIR>          br
+12/08/2026  12:35    <DIR>          menu
+12/08/2026  12:35    <DIR>          skin
+               0 arquivo(s)              0 bytes
+               5 pasta(s)   529.593.753.600 bytes disponíveis
+
+D:\desenvolvimento\ia\estudo\sistema-prototipo-android\componentes\src\java>
+
+
+D:\desenvolvimento\ia\estudo\sistema-prototipo-android\componentes\src\java\skin
+
+Menu que o nosso aplicativo irá ter depois do logon ( tela principal)
+D:\desenvolvimento\ia\estudo\sistema-prototipo-android\componentes\src\java\menu
+
+CONSTRUÇÃO DOS SKINS DO COMPONENTES 
+
+D:\desenvolvimento\ia\estudo\sistema-prototipo-android\componentes\src\java\br\gov\caixa\sispl\infra\skin
+
+
+Microsoft Windows [versão 10.0.19045.6466]
+(c) Microsoft Corporation. Todos os direitos reservados.
+
+D:\desenvolvimento\ia\estudo\sistema-prototipo-android\componentes\src\java\br\gov\caixa\sispl\infra\skin>DIR
+ O volume na unidade D não tem nome.
+ O Número de Série do Volume é CA69-F3C8
+
+ Pasta de D:\desenvolvimento\ia\estudo\sistema-prototipo-android\componentes\src\java\br\gov\caixa\sispl\infra\skin
+
+12/08/2026  12:35    <DIR>          .
+12/08/2026  12:35    <DIR>          ..
+12/08/2026  12:35    <DIR>          builder
+12/08/2026  12:35    <DIR>          component
+12/08/2026  12:35    <DIR>          exception
+12/08/2026  12:35    <DIR>          reader
+12/08/2026  12:35             1.032 SkinConfig.java
+12/08/2026  12:35               580 SkinPainter.java
+12/08/2026  12:35             2.534 SkinRender.java
+12/08/2026  12:35    <DIR>          util
+               3 arquivo(s)          4.146 bytes
+               7 pasta(s)   529.593.753.600 bytes disponíveis
+
+D:\desenvolvimento\ia\estudo\sistema-prototipo-android\componentes\src\java\br\gov\caixa\sispl\infra\skin>
+
+iremos levar isso tudo para kotlin para nosso aplicativo gerado com nossa skill 
+
+D:\desenvolvimento\ia\estudo\sistema-prototipo-android\componentes\src\java\br\gov\caixa\sispl\infra\ui
+
+
+Microsoft Windows [versão 10.0.19045.6466]
+(c) Microsoft Corporation. Todos os direitos reservados.
+
+D:\desenvolvimento\ia\estudo\sistema-prototipo-android\componentes\src\java\br\gov\caixa\sispl\infra\ui>dir
+ O volume na unidade D não tem nome.
+ O Número de Série do Volume é CA69-F3C8
+
+ Pasta de D:\desenvolvimento\ia\estudo\sistema-prototipo-android\componentes\src\java\br\gov\caixa\sispl\infra\ui
+
+19/09/2026  08:22    <DIR>          .
+19/09/2026  08:22    <DIR>          ..
+12/08/2026  12:35             1.489 AtualizaData.java
+12/08/2026  12:35             1.791 Data.java
+12/08/2026  12:35             7.671 DefaultUIManager.java
+19/09/2026  08:21    <DIR>          dlg
+12/08/2026  12:35    <DIR>          document
+12/08/2026  12:35             3.387 EFLButton.java
+12/08/2026  12:35             1.198 EFLButtonGroup.java
+12/08/2026  12:35             1.399 EFLComboBox.java
+12/08/2026  12:35               172 EFLComboBoxUf.java
+12/08/2026  12:35            16.483 EFLFrame.java
+12/08/2026  12:35            28.508 EFLInternalReport.java
+12/08/2026  12:35             2.776 EFLLabel.java
+12/08/2026  12:35             1.363 EFLPanel.java
+12/08/2026  12:35             3.755 EFLPanel2.java
+12/08/2026  12:35             5.893 EFLProgressBar.java
+12/08/2026  12:35            11.283 EFLReport.java
+12/08/2026  12:35            10.348 EFLReport2.java
+12/08/2026  12:35            11.387 EFLReport3.java
+12/08/2026  12:35            12.747 EFLReportEvent.java
+12/08/2026  12:35             1.001 EFLReportEvent2.java
+12/08/2026  12:35               248 EFLReportEventListener.java
+12/08/2026  12:35             8.165 EFLReportNotificacao.java
+12/08/2026  12:35             4.032 EFLReportSelecaoMultipla.java
+12/08/2026  12:35             1.735 EFLScrollBarUI.java
+12/08/2026  12:35             4.478 EFLScrollPane.java
+12/08/2026  12:35             4.336 EFLScrollPane2.java
+12/08/2026  12:35             6.137 EFLTable.java
+12/08/2026  12:35             5.636 EFLTextArea.java
+12/08/2026  12:35            10.902 EFLTextField.java
+12/08/2026  12:35             5.938 EFLTextFieldAdapter.java
+12/08/2026  12:35             5.453 EFLToggleButton.java
+12/08/2026  12:35             3.682 EFLTwoLabelButton.java
+12/08/2026  12:35             1.349 EFLValorSurpresaSuperSete.java
+12/08/2026  12:35            12.162 EFLVirtualKeyboard.java
+12/08/2026  12:35             1.372 EFLVirtualKeyboardCalculator.java
+12/08/2026  12:35             6.750 EFLVirtualKeyboardNumeric.java
+12/08/2026  12:35             2.965 EventoCalculadora.java
+12/08/2026  12:35             6.576 FabricaDeComponentesGraficos.java
+12/08/2026  12:35             4.855 FabricaUI.java
+12/08/2026  12:35               452 IPortadorNaoJogo.java
+12/08/2026  12:35             1.975 MecanismoNotificacao.java
+12/08/2026  14:26             4.440 MenuBotaoDesabilitadoEnum.java
+12/08/2026  12:35             4.789 MonitorLabel.java
+12/08/2026  12:35             3.344 MonitorPanel.java
+12/08/2026  12:35    <DIR>          plaf
+19/09/2026  08:21    <DIR>          pnl
+12/08/2026  12:35             7.315 PnlSenhaUsuarioEFL.java
+12/08/2026  12:35             1.405 PortadorNaoJogoAtendimentoImpl.java
+12/08/2026  12:35             2.244 RegistroPosicaoPnlCrononometro.java
+12/08/2026  12:35             4.211 SwingWorker.java
+12/08/2026  12:35             1.721 SwingWorkerActionListener.java
+12/08/2026  12:35               106 TypeCase.java
+12/08/2026  12:35            22.938 UIAbstractControle.java
+12/08/2026  12:35             1.292 UIEFL.java
+12/08/2026  12:35               804 UIException.java
+12/08/2026  12:35            32.753 UIIniciaAtendimentoEFL.java
+12/08/2026  12:35               566 UIManager.java
+17/08/2026  12:12            40.231 UIMenuControle.java
+              54 arquivo(s)        350.008 bytes
+               6 pasta(s)   529.593.753.600 bytes disponíveis
+
+D:\desenvolvimento\ia\estudo\sistema-prototipo-android\componentes\src\java\br\gov\caixa\sispl\infra\ui>
+
+as classes do  componentes que seram individuais terá uma pasta para cada componente que sera montado 
+
+
+
+com base nisso gostaria que gerasse as spec pode gerar várias spec para deixar organizado sem criar um arquivo de 10000 linhas 
+
+um exemplo que poderá ser adotado 
+
+
+spec-componente-button.md
+
+spec-componente-text-password.md
+
+não levar nenhum termo sispl ou efl na hora que tiver criando a specs
+
+
+para esse projeto iremos utilizar a skill android-native-engineering  ja esta dentro desse projeto 
+
+D:\desenvolvimento\ia\aula02\.agents\skills\android-native-engineering
+
+agora com todas essas informações crie uma change nesse projeto atual com tudo isso 
+
+nome da change 9999-sistema-prototipo-android
