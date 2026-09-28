@@ -13,11 +13,27 @@ Este módulo contém a biblioteca serial ABECS e o adaptador RESTful em `interna
 - `PINPAD_TIMEOUT`: opcional em segundos, padrão `30`.
 - `PINPAD_HTTP_HOST`: host do servidor RESTful (padrão `127.0.0.1`).
 - `PINPAD_HTTP_PORT` ou `PORT`: porta do servidor RESTful (padrão `8080`).
+- `PINPAD_BRIDGE_PORT`: porta TCP local do Transport Bridge (padrão `39100`).
+- `PINPAD_BRIDGE_HOST`: host do Bridge para o consumidor mobile (padrão
+  `localhost`; no Android Emulator prefira `adb reverse` e use `10.0.2.2`
+  somente como override explícito).
 - `PINPAD_LOG_FILE`: habilita o rastro serial SPE/PP/RSP no arquivo indicado.
   Caminhos relativos são resolvidos contra a raiz deste módulo, nunca contra o
   diretório de trabalho. `start_aplication.bat` e o `executar projeto.bat` da
   raiz criam `logs/` e definem o caminho absoluto
   `<raiz-do-módulo>/logs/LogPinpadAbecs.txt` quando a variável estiver vazia.
+
+O comando `cmd/libpinpadabecsgo-bridge`, usado pelo `diagnosticopinpad`,
+configura o mesmo tracer e o mesmo arquivo `logs/LogPinpadAbecs.txt` antes de
+aceitar conexões Android. O Android não cria uma segunda cópia do rastro ABECS
+nem acessa diretamente o filesystem do Windows.
+
+Para testar o Bridge com um pinpad físico Windows, edite `PORTA_PINPAD` se
+necessário e execute [`testar_bridge_pinpad.bat`](testar_bridge_pinpad.bat) na
+raiz deste módulo. O BAT define baudrate `19200`, timeout `30`, remove o modo
+`scripted` e inicia `go run .\cmd\libpinpadabecsgo-bridge`. Para Emulator ou
+teste sem hardware, use as instruções específicas de `PINPAD_BRIDGE_TRANSPORT`
+e `adb reverse`; não use este BAT nesses cenários.
 
 Antes de mostrar o menu ou iniciar o servidor, o executável imprime
 `Log serial ativo: <caminho-absoluto>`. Esse é o único arquivo que deve ser
@@ -96,3 +112,25 @@ go test -coverprofile="coverage.out" ./...
 go tool cover -func="coverage.out"
 go vet ./...
 ```
+
+## Transport Bridge local
+
+O Bridge pode ser iniciado em foreground com:
+
+```text
+go run ./cmd/libpinpadabecsgo-bridge
+```
+
+Antes de iniciar o Bridge físico, configure a porta do pinpad no processo
+Windows:
+
+```powershell
+$env:PORTA_PINPAD = "COM7"
+go run ./cmd/libpinpadabecsgo-bridge
+```
+
+O comando lê `PORTA_PINPAD` por `config.Load()` e usa o mesmo valor efetivo no
+adaptador serial e no ownership. Ele escuta somente em `127.0.0.1:39100`,
+adquire ownership exclusivo da porta serial configurada e transporta bytes
+opacos para uma sessão Emulator. O
+Bridge não interpreta comandos ABECS e não substitui a API REST.

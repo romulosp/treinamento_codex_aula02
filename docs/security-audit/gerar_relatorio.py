@@ -155,11 +155,94 @@ def build_change_066_pdf():
     return output
 
 
+def build_change_069_pdf():
+    """Produz o relatorio atual da Change 069 sem reutilizar auditorias antigas."""
+    output = OUTPUT.with_name("relatorio-069-diagnosticopinpad-functional-lab.pdf")
+    styles = build_styles()
+    document = BaseDocTemplate(
+        str(output), pagesize=A4, leftMargin=2 * cm, rightMargin=2 * cm,
+        topMargin=1.7 * cm, bottomMargin=1.8 * cm,
+        title="Auditoria de Seguranca - 069-diagnosticopinpad-functional-lab", author="Codex",
+    )
+
+    def header_footer_069(canvas, doc):
+        canvas.saveState()
+        width, height = A4
+        if doc.page > 1:
+            canvas.setStrokeColor(colors.HexColor("#C9C0AF"))
+            canvas.line(2 * cm, height - 1.25 * cm, width - 2 * cm, height - 1.25 * cm)
+            canvas.line(2 * cm, 1.3 * cm, width - 2 * cm, 1.3 * cm)
+            canvas.setFont("Helvetica", 7.5)
+            canvas.setFillColor(colors.HexColor("#52615D"))
+            canvas.drawString(2 * cm, height - 0.95 * cm, "Auditoria de Seguranca - 069-diagnosticopinpad-functional-lab")
+            canvas.drawRightString(width - 2 * cm, 1.02 * cm, f"Pagina {doc.page}")
+        canvas.restoreState()
+
+    document.addPageTemplates([PageTemplate(id="change-069", frames=Frame(document.leftMargin, document.bottomMargin, document.width, document.height), onPage=header_footer_069)])
+    paragraph = lambda text, kind="body": Paragraph(text, styles[kind])
+    rows = [
+        [paragraph("Categoria", "small"), paragraph("Conclusao", "small")],
+        [paragraph("Autenticacao e autorizacao"), paragraph("Limitacao aceita somente para laboratorio local; o Bridge deve permanecer em loopback e nao deve ser exposto em rede.")],
+        [paragraph("Dados sensiveis"), paragraph("Conforme na inspecao estatica: summaries Go usam allowlist e nao expoem PAN, trilhas, PIN block, KSN, chaves, EMV bruto ou bytes raw.")],
+        [paragraph("Entrada"), paragraph("Conforme: Android valida formatos basicos e o core Go mantem validacoes de protocolo, hex, timeout e nomes.")],
+        [paragraph("Segredos e logs"), paragraph("Nenhum segredo real encontrado ou incluido nas evidencias; parametros sensiveis nao sao persistidos nem registrados pelo app.")],
+        [paragraph("Hardware"), paragraph("Limitacao: EMV, PIN, midia e serial fisica dependem do pinpad real e nao foram declarados como validados pelo Emulator.")],
+    ]
+    table = Table(rows, colWidths=[5.1 * cm, 11.7 * cm], repeatRows=1)
+    table.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8E1D5")), ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#C9C0AF")), ("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 7), ("RIGHTPADDING", (0, 0), (-1, -1), 7), ("TOPPADDING", (0, 0), (-1, -1), 6), ("BOTTOMPADDING", (0, 0), (-1, -1), 6)]))
+    story = [
+        Spacer(1, 4 * cm), paragraph("Relatorio de Auditoria de Seguranca", "title"), Spacer(1, 0.35 * cm),
+        paragraph("069-diagnosticopinpad-functional-lab", "subtitle"), Spacer(1, 0.25 * cm),
+        paragraph("Data: 27 de setembro de 2026", "subtitle"), Spacer(1, 0.8 * cm),
+        paragraph("Escopo: fachada gomobile Go, aplicativo Android Compose, Bridge Windows, configuracao PORTA_PINPAD, logs e dados sensiveis do pinpad.", "subtitle"),
+        Spacer(1, 1.2 * cm), paragraph("Resultado: nenhum achado de seguranca confirmado em aberto. Foi registrada uma limitacao operacional P2 para o listener local sem autenticacao, restrito ao cenario de desenvolvimento."),
+        PageBreak(), paragraph("Resumo executivo", "h1"),
+        paragraph("A auditoria examinou a fronteira Android-AAR-Bridge, os metodos nomeados do binding, os formularios Compose, os summaries de GCX, GTK, GOX, FCX e GPN, a configuracao por ambiente e o logging. Nao foram encontrados segredos reais, comandos raw no Kotlin ou serializacao de payloads sensiveis na UI."),
+        paragraph("Categorias avaliadas", "h1"), table,
+        PageBreak(), paragraph("Achados e recomendacoes", "h1"),
+        paragraph("SEC-069-001 - Bridge local sem autenticacao", "h2"),
+        paragraph("Severidade P2 no contexto de desenvolvimento. O listener deve continuar limitado a 127.0.0.1. Antes de uso fora da maquina local, criar change especifica para autenticacao e transporte protegido. Criterio: nenhuma configuracao de producao deve expor listener nao autenticado fora de loopback."),
+        paragraph("Metodologia e evidencias", "h1"),
+        paragraph("Foram executados go test ./..., go vet ./..., go build do Bridge, validador estrutural Android, testes JVM, lint e assembleDebug. Foi realizada busca estatica por segredos, APIs perigosas, payloads sensiveis e superficies de rede. Valores de configuracao e dados de cartao nao foram incluidos neste relatorio."),
+    ]
+    document.build(story)
+    return output
+
+
+def build_change_070_pdf():
+    """Produz o relatorio atual da Change 070 sem reutilizar auditorias antigas."""
+    output = OUTPUT.with_name("relatorio-070-bridge-log-android.pdf")
+    styles = build_styles()
+    document = BaseDocTemplate(
+        str(output), pagesize=A4, leftMargin=2 * cm, rightMargin=2 * cm,
+        topMargin=1.7 * cm, bottomMargin=1.8 * cm,
+        title="Auditoria de Seguranca - 070-bridge-log-android", author="Codex",
+    )
+    document.addPageTemplates([PageTemplate(id="change-070", frames=Frame(document.leftMargin, document.bottomMargin, document.width, document.height))])
+    paragraph = lambda text, kind="body": Paragraph(text, styles[kind])
+    story = [
+        Spacer(1, 4 * cm), paragraph("Relatorio de Auditoria de Seguranca", "title"),
+        paragraph("070-bridge-log-android", "subtitle"), paragraph("Data: 27 de setembro de 2026", "subtitle"),
+        Spacer(1, 1 * cm), paragraph("Resultado: nenhum achado de seguranca confirmado. A mudanca centraliza o mesmo tracer e o mesmo arquivo LogPinpadAbecs.txt no Bridge Windows."),
+        PageBreak(), paragraph("Escopo e controles", "h1"),
+        paragraph("Foram examinados o entrypoint do Bridge, os transportes fisico e scripted, a resolucao de PINPAD_LOG_FILE, a criacao do diretorio e os testes. O Android nao acessa o filesystem Windows e nenhum protocolo ou comando ABECS foi alterado."),
+        paragraph("Conforme", "h2"), paragraph("O tracer existente e suas politicas de redaction sao reutilizados. O destino padrao e logs/LogPinpadAbecs.txt na raiz do modulo; PINPAD_LOG_FILE permanece override explicito. Falha de configuracao impede o startup."),
+        paragraph("Limitacao", "h2"), paragraph("O Bridge continua local e restrito a loopback. Nao deve ser exposto em rede sem uma change propria de autenticacao e transporte protegido."),
+        paragraph("Evidencias", "h1"), paragraph("go test ./...; go vet ./...; go build ./cmd/libpinpadabecsgo-bridge; testes unitarios de destino e criacao do arquivo; revisao estatica sem segredos reais."),
+    ]
+    document.build(story)
+    return output
+
+
 if __name__ == "__main__":
     import sys
     if "--change-011" in sys.argv:
         print(build_correction_pdf())
     elif "--change-066" in sys.argv:
         print(build_change_066_pdf())
+    elif "--change-069" in sys.argv:
+        print(build_change_069_pdf())
+    elif "--change-070" in sys.argv:
+        print(build_change_070_pdf())
     else:
         print(build_pdf())

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -12,6 +13,7 @@ import (
 func Load() (model.PinpadConfig, error) {
 	cfg := model.DefaultConfig()
 	if value, ok := os.LookupEnv("PORTA_PINPAD"); ok {
+		value = strings.TrimSpace(value)
 		if value == "" {
 			return cfg, fmt.Errorf("invalid PORTA_PINPAD")
 		}

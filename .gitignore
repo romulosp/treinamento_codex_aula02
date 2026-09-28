@@ -22,6 +22,7 @@ tmp/pdfs/gcx-pages/
 
 # Arquivos de IDE e sistema operacional.
 .idea/
+.tmp/
 .vscode/
 *.iml
 Thumbs.db
@@ -38,6 +39,18 @@ apps/backend/**
 apps/frontend/web/**
 apps/frontend/smartphone/**
 apps/frontend/desktop/**
+
+# Exceção: o aplicativo Android de diagnóstico da Change 068 é fonte do projeto.
+!apps/frontend/smartphone/
+!apps/frontend/smartphone/diagnosticopinpad/
+!apps/frontend/smartphone/diagnosticopinpad/**
+apps/frontend/smartphone/diagnosticopinpad/.gradle/
+apps/frontend/smartphone/diagnosticopinpad/**/build/
+apps/frontend/smartphone/diagnosticopinpad/.idea/
+apps/frontend/smartphone/diagnosticopinpad/gradle/gradle-daemon-jvm.properties
+apps/frontend/smartphone/diagnosticopinpad/local.properties
+apps/frontend/smartphone/diagnosticopinpad/app/libs/*.aar
+apps/frontend/smartphone/diagnosticopinpad/app/libs/*.jar
 
 # Exceção: permitir versionamento do módulo Go
 !apps/

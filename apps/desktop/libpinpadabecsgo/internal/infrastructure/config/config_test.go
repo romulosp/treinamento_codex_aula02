@@ -23,6 +23,10 @@ func TestLoadUsesDefaultAndEnvironmentPrecedence(t *testing.T) {
 	if _, err := Load(); err == nil {
 		t.Fatal("expected empty PORTA_PINPAD error")
 	}
+	t.Setenv("PORTA_PINPAD", "   ")
+	if _, err := Load(); err == nil {
+		t.Fatal("expected whitespace-only PORTA_PINPAD error")
+	}
 	t.Setenv("PORTA_PINPAD", "COM9")
 	cfg, err = Load()
 	if err != nil || cfg.Port != "COM9" {

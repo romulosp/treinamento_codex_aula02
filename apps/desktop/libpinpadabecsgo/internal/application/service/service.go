@@ -3,6 +3,7 @@
 package service
 
 import (
+	"br.com.romulopenha/lib-pinpad-abecs-go/internal/application/port"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/command"
 	domainerror "br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/error"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/model"
@@ -23,13 +24,9 @@ import (
 )
 
 // SerialPort define o transporte serial que a fachada usa exclusivamente.
-type SerialPort interface {
-	Open() error
-	Close() error
-	Read(context.Context) ([]byte, error)
-	Write([]byte) error
-	IsOpen() bool
-}
+// SerialPort permanece como alias de compatibilidade interna para a porta
+// neutra de transporte. O nome antigo não deve ser usado em novas APIs.
+type SerialPort = port.Transport
 
 type traceCommandPort interface {
 	SetTraceCommand(command.Type)

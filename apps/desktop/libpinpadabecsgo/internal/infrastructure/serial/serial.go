@@ -3,6 +3,7 @@
 package serial
 
 import (
+	"br.com.romulopenha/lib-pinpad-abecs-go/internal/application/port"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/command"
 	domainerror "br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/error"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/infrastructure/logging"
@@ -15,13 +16,8 @@ import (
 )
 
 // SerialPort abstrai leitura cancelável, escrita e ciclo de vida da porta.
-type SerialPort interface {
-	Open() error
-	Close() error
-	Read(context.Context) ([]byte, error)
-	Write([]byte) error
-	IsOpen() bool
-}
+// SerialPort é alias de compatibilidade para a porta neutra de aplicação.
+type SerialPort = port.Transport
 
 var _ SerialPort = (*Adapter)(nil)
 
