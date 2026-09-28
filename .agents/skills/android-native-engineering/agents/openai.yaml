@@ -1,0 +1,4 @@
+﻿interface:
+  display_name: "Android Native Engineering"
+  short_description: "Governa engenharia Android nativa por SPEC"
+  default_prompt: "Use $android-native-engineering para planejar e validar esta mudança Android nativa."

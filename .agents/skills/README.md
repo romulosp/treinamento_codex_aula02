@@ -1,5 +1,9 @@
 # Skills do laboratório
 
+As skills Kotlin/Compose são subordinadas a
+`.agents/skills/android-native-engineering/kotlin/`; consulte `INDEX.md` nessa
+pasta. A skill-base prevalece sobre as especializações.
+
 ## Processo Spec Driven
 
 | Fase | Skill |

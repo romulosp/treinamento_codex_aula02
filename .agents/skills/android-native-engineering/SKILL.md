@@ -27,6 +27,7 @@ Leia [references/spec-driven-workflow.md](references/spec-driven-workflow.md) ao
 - Não registre tokens, credenciais, PAN, localização precisa ou dados pessoais. Valide componentes exportados, intents, deep links, permissões, backup, armazenamento e rede conforme a superfície real.
 - Não altere arquitetura aprovada sem ADR ou revisão da SPEC.
 - A incorporação de uma skill externa não aprova automaticamente suas recomendações; confronte cada uma com a SPEC da aplicação.
+- Trate KDoc como parte do contrato: documente toda declaração Kotlin pública/protegida criada ou alterada e contratos internos/privados não óbvios; atualize a documentação junto com o comportamento.
 
 ## Execução e evidência
 

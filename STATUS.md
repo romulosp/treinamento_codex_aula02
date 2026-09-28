@@ -8,6 +8,7 @@ Change 069-diagnosticopinpad-functional-lab: ARQUIVADA em 2026-09-28; baseline v
 Change 068-diagnosticopinpad: ARQUIVADA em 2026-09-28; baseline mínima validada pelas Changes 069/072 no commit `051d24a`.
 Change 067-android-emulator-transport-bridge: ARQUIVADA em 2026-09-28; gates móveis e físicos encerrados por evidência sucessora no commit `a3370b6`.
 Change 066-lib-pinpad-abecs-go: ARQUIVADA em 2026-09-28; comandos físicos confirmados manualmente, testes automatizados aprovados e melhorias posteriores registradas no commit `9cb12ac`.
+Change 998-importar-skill-kotlin: ARQUIVADA em 2026-09-19; skills Kotlin/Compose consolidadas sob android-native-engineering/kotlin, com hashes e validação estrutural aprovados no commit f3c89ed.
 
 Change 011-corrigir-upload-postgresql: ARQUIVADA em 2026-09-06; entrega aprovada no commit e0f5713, especificação vigente consolidada e 14 testes aprovados após restauração.
 
@@ -19,6 +20,7 @@ Change 003-concluir-execucao-produto-base: ARQUIVADA em 2026-09-06; verificaçõ
 
 | Mudança | Fase atual | Última atualização |
 | --- | --- | --- |
+| `2026-09-18-067-android-native-engineering` | `ARQUIVADA` | 2026-09-19 |
 | `001-criar-projeto-java` | `ARQUIVADA` | 2026-08-27 |
 | `002-consolidar-governanca-spec-driven` | `ARQUIVADA` | 2026-08-27 |
 | `003-gerenciar-categorias` | `ARQUIVADA` | 2026-08-26 |
