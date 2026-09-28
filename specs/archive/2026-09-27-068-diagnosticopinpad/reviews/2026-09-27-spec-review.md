@@ -1,7 +1,7 @@
 # Revisão da SPEC — 068 diagnosticopinpad
 
-Data: 2026-09-27  
-Revisor: Codex  
+Data: 2026-09-27
+Revisor: Codex
 Skills: `spec-review`, `android-native-engineering`
 
 ## Escopo revisado

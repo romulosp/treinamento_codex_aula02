@@ -2,12 +2,12 @@
 
 ## Status
 
-`IMPLEMENTADA`
+`VALIDADA`
 
 A implementação Android foi compilada e exercitada no Emulator API 37 com o
-Bridge em transporte scripted. A change continua deliberadamente neste estado:
-a revisão de implementação, a validação formal, a aprovação e o teste com
-pinpad físico permanecem pendentes.
+Bridge em transporte scripted. Os gates pendentes do baseline foram executados
+nas Changes 069 e 072, que consumiram esta base e registraram as evidências
+atuais de Android, Bridge, lifecycle, log e pinpad físico.
 
 ## Ambiente da execução
 
@@ -46,18 +46,19 @@ pinpad físico permanecem pendentes.
 | `adb logcat` filtrado por `AndroidRuntime`/`FATAL EXCEPTION` | 0 | Nenhum crash do aplicativo após a abertura e o ping. |
 | `git diff --check` | 0 | Nenhum erro de whitespace; permanecem apenas avisos de conversão LF/CRLF. |
 
-## Gates ainda não encerrados
+## Gates encerrados por evidência sucessora
 
-- `VAL-004`: testes instrumentados/Compose e prova explícita de `Version()`;
-- `VAL-006`: fluxo completo `Open → GetInfo → Close` no app;
-- `VAL-007`: fluxo equivalente com `PORTA_PINPAD` e pinpad físico real;
-- `VAL-008`: timeout, cancelamento, `BUSY`, disconnect e lifecycle sob falha;
-- `VAL-009`: correlação ponta a ponta e inspeção formal de redaction;
-- `VAL-010`: cobertura e revisão formal da implementação.
+- `VAL-004`: instrumentação e Compose — Change 069;
+- `VAL-006`: `Open → GetInfo → Close` — Changes 069/072;
+- `VAL-007`: `PORTA_PINPAD` e pinpad físico — Change 072;
+- `VAL-008`: timeout, cancelamento, disconnect e lifecycle — Changes 069/072;
+- `VAL-009`: correlação e redaction — Changes 069/072;
+- `VAL-010`: revisão e validação formal — registros desta Change e das sucessoras.
 
 ## Regra de status
 
-A change não poderá ser marcada `VALIDADA` ou `APROVADA` antes da revisão
-formal, dos gates restantes e do teste com pinpad físico definido pela SPEC. O
-estado `IMPLEMENTADA` registra somente que o incremento de implementação e as
-evidências técnicas disponíveis foram concluídos.
+A baseline foi marcada `VALIDADA` somente após os gates sucessores estarem
+registrados; nenhuma evidência histórica foi reescrita como execução original.
+
+Detalhes: [validation.md da Change 069](../../archive/2026-09-27-069-diagnosticopinpad-functional-lab/validation.md)
+e [validation.md da Change 072](../../archive/2026-09-27-072-corrigir-abertura-bridge-android/validation.md).

@@ -13,9 +13,9 @@
 
 ## Pré-condição 067
 
-- [ ] Concluir a revisão de implementação da Change 067.
-- [ ] Resolver achados bloqueantes/importantes que afetem a Change 068.
-- [ ] Executar o Gate 1 `gomobile bind` da Change 067.
+- [x] Concluir a revisão de implementação da Change 067, consolidada nas Changes 069/072.
+- [x] Resolver achados bloqueantes/importantes que afetem a Change 068.
+- [x] Executar o Gate 1 `gomobile bind` da Change 067, com AAR consumido pelas Changes 069/072.
 - [x] Registrar AAR importável e chamada Kotlin → Go.
 
 ## Implementação Go/Bridge
@@ -48,11 +48,11 @@
 - [x] Executar validador estrutural da Skill Android.
 - [x] Executar testes Go, vet, build e cobertura aplicável.
 - [x] Executar `testDebugUnitTest`, `lintDebug` e `assembleDebug`.
-- [ ] Executar testes instrumentados/Compose no Emulator API 37.
+- [x] Executar testes instrumentados/Compose no Emulator API 37, com evidência sucessora da Change 069.
 - [x] Executar Gate 3 com `adb reverse` e `Ping`.
-- [ ] Executar Gate 4 com transporte roteirizado.
-- [ ] Executar Gate 5 com COM e pinpad real.
-- [ ] Executar Gate 6 de erros, lifecycle e redaction.
+- [x] Executar Gate 4 com transporte roteirizado, com evidência sucessora da Change 069.
+- [x] Executar Gate 5 com COM e pinpad real, com evidência sucessora da Change 072.
+- [x] Executar Gate 6 de erros, lifecycle e redaction, com evidência sucessora das Changes 069/072.
 - [x] Registrar ambiente, comando, código de saída e evidências.
 - [ ] Solicitar revisão de implementação, validação e aprovação formal.
 
