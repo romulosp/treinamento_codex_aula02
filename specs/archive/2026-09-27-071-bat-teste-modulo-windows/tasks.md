@@ -15,11 +15,11 @@
 ## Encerramento
 
 - [x] Registrar evidências técnicas.
-- [ ] Revisar, aprovar e arquivar a change em commit separado.
+- [x] Revisar, aprovar e arquivar a change em commit separado.
 
 ## Retificação
 
 Itens concluídos acima referem-se à primeira implementação. Preservação de
 PORTA_PINPAD, readiness, reverse e exit code corrigidos serão implementados e
-testados pelas [tasks 072](../2026-09-27-072-corrigir-abertura-bridge-android/tasks.md).
+testados pelas [tasks 072](../../archive/2026-09-27-072-corrigir-abertura-bridge-android/tasks.md).
 Não considerar esses itens corretivos concluídos pelo checklist histórico.

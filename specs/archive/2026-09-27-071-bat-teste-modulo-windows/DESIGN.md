@@ -15,5 +15,5 @@ O README do módulo deverá apontar para o BAT e diferenciar:
 O BAT permanece launcher host em foreground, mas a evolução usa variável
 herdada e pode delegar preparação/verificação do reverse a helper PowerShell.
 Readiness, seleção de emulador e preservação do exit code seguem o
-[DESIGN 072](../2026-09-27-072-corrigir-abertura-bridge-android/DESIGN.md).
+[DESIGN 072](../../archive/2026-09-27-072-corrigir-abertura-bridge-android/DESIGN.md).
 O desenho original autocontido não exige manter sobrescrita da configuração.

@@ -17,9 +17,9 @@ A atribuição fixa `set PORTA_PINPAD=COM14` da primeira versão é substituída
 pelo consumo da variável herdada do Windows. COM14 é exemplo do ambiente do
 operador. Ausência/vazio no launcher físico exige mensagem e código não zero.
 O BAT preserva valores explícitos válidos e aplica defaults somente conforme
-[RF-072-01](../2026-09-27-072-corrigir-abertura-bridge-android/spec.md).
+[RF-072-01](../../archive/2026-09-27-072-corrigir-abertura-bridge-android/spec.md).
 
-A [Change 072](../2026-09-27-072-corrigir-abertura-bridge-android/proposal.md)
+A [Change 072](../../archive/2026-09-27-072-corrigir-abertura-bridge-android/proposal.md)
 governa testes de launcher, preparação ADB, readiness e preservação do exit
 code. Esta retificação documental não declara que o BAT atual já foi corrigido.
 O status acima registra o gate original da 071; a evolução passa pelos gates

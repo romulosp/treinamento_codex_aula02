@@ -38,7 +38,7 @@ do ambiente.
 ## Retificação rastreada
 
 A primeira implementação fixou COM14. A correção e seus gates pertencem à
-[Change 072](../2026-09-27-072-corrigir-abertura-bridge-android/proposal.md),
+[Change 072](../../archive/2026-09-27-072-corrigir-abertura-bridge-android/proposal.md),
 incluindo reverse opcional para o app Android que usa esse Bridge Windows.
 O script continua executado no host, mesmo quando o cliente é o Emulator.
 Os resultados anteriores não comprovam o contrato retificado.
