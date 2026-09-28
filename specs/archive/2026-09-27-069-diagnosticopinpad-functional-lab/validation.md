@@ -103,14 +103,14 @@ executados; não foram convertidos em sucesso simulado.
 
 Antes da aprovação formal foi identificado que o caminho Android → Bridge não
 configura o mesmo `LogPinpadAbecs.txt` usado pelo menu desktop. A Change 069
-não foi aprovada nem arquivada; a correção foi isolada na Change 070 para
-preservar o escopo e o histórico desta entrega.
+não foi aprovada naquele momento; a correção foi isolada nas Changes 070 e 072
+para preservar o escopo e o histórico desta entrega. As correções sucessoras
+foram concluídas, permitindo o encerramento desta baseline.
 
 ## Regressão reportada após 070/071
 
 O usuário relatou falha de Abrir, falso estado OPEN e log só com ativação.
 Diagnóstico e contrato corretivo estão na
-[Change 072](../2026-09-27-072-corrigir-abertura-bridge-android/diagnostico.md).
-As evidências acima são históricas e não comprovam a correção nem o fluxo
-físico atual. Aprovação/encerramento da entrega afetada permanece pendente
-até a execução dos gates corretivos, incluindo CA-072-13.
+[Change 072](../../archive/2026-09-27-072-corrigir-abertura-bridge-android/diagnostico.md).
+As evidências acima são históricas do baseline; os gates corretivos e o fluxo
+físico atual foram executados e aprovados na Change 072.

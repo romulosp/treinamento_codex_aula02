@@ -38,4 +38,4 @@
 - [x] Registrar comandos, ambiente, códigos e evidências em `validation.md`.
 - [x] Registrar revisão da implementação com veredito `IMPLEMENTACAO_APROVADA`.
 - [x] Registrar validação independente com veredito `VALIDADA`.
-- [ ] Registrar aprovação formal e encerrar com commit rastreável.
+- [x] Registrar aprovação formal e encerrar com commit rastreável.

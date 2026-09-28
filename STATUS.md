@@ -4,6 +4,7 @@ Change 073-remover-acoes-duplicadas-catalogo: ARQUIVADA em 2026-09-28; commit de
 Change 072-corrigir-abertura-bridge-android: ARQUIVADA em 2026-09-28; fluxo físico, log compartilhado e confirmação visual concluídos no commit `23d15eb`.
 Change 071-bat-teste-modulo-windows: ARQUIVADA em 2026-09-28; validação concluída por evidência da Change 072 no commit `627998b`.
 Change 070-bridge-log-android: ARQUIVADA em 2026-09-28; validação end-to-end concluída por evidência da Change 072 no commit `c24a917`.
+Change 069-diagnosticopinpad-functional-lab: ARQUIVADA em 2026-09-28; baseline validada e correções sucessoras encerradas no commit `7a66a24`.
 
 Change 011-corrigir-upload-postgresql: ARQUIVADA em 2026-09-06; entrega aprovada no commit e0f5713, especificação vigente consolidada e 14 testes aprovados após restauração.
 
