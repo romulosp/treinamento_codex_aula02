@@ -8,6 +8,8 @@ Autor: Rômulo Penha
 
 Decisão técnica registrada em
 [reviews/2026-09-27-spec-review.md](reviews/2026-09-27-spec-review.md).
+Revisão da porta por ambiente:
+[reviews/2026-09-28-spec-review-porta-ambiente.md](reviews/2026-09-28-spec-review-porta-ambiente.md).
 
 ## Objetivo
 
@@ -19,9 +21,10 @@ rastro persistido no destino compartilhado.
 
 ## Baseline e motivação
 
-As imagens fornecidas mostram COM14 no Gerenciador de Dispositivos e
-`PORTA_PINPAD=COM14` nas variáveis de usuário. Isso comprova configuração e
-enumeração, mas não abertura, disponibilidade exclusiva ou sucesso do OPN.
+As imagens iniciais mostravam uma porta diferente da enumeração observada em
+28/09/2026. A variável de usuário `PORTA_PINPAD` foi atualizada pelo operador.
+Isso reforça que o valor lido do ambiente no início de cada execução, e não uma
+COM fixada na SPEC, no launcher ou no teste físico, é a fonte de verdade.
 
 A inspeção confirmou sobrescrita da variável no BAT, atribuição incondicional
 de `OPEN` no ViewModel, erro renderizado abaixo do catálogo e erros de sessão
@@ -62,7 +65,7 @@ anteriores como sucesso físico.
 Os critérios CA-072-01 a CA-072-15 estão em `spec.md`, com procedimentos e
 gates em `validation.md`. Dependências: Windows, Go do módulo, ADB/emulador
 para os cenários Android, AAR e APK reproduzíveis e pinpad físico para o gate
-final. Testes scripted não substituem o gate COM14.
+final. Testes scripted não substituem o gate da porta física efetiva.
 
 Não há aprovação de implementação, validação física ou encerramento implícita
 na revisão desta proposta.

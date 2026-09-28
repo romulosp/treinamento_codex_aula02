@@ -26,11 +26,13 @@ var (
 
 // Client é a fachada mínima usada pelo aplicativo Android futuro.
 type Client struct {
-	mu          sync.Mutex
-	operationMu sync.Mutex
-	transport   *emulator.Transport
-	service     *service.Service
-	operations  map[string]context.CancelFunc
+	mu            sync.Mutex
+	operationGate chan struct{}
+	closing       bool
+	transport     *emulator.Transport
+	service       *service.Service
+	operations    map[string]context.CancelFunc
+	timeout       time.Duration
 }
 
 // Version devolve a versão lógica e a proveniência do artefato bindado.
@@ -43,15 +45,17 @@ func Version() string {
 // NewClient cria uma fachada com host, porta e timeout simples para binding.
 func NewClient(host string, port int, timeoutMillis int64) (client *Client, err error) {
 	defer recoverBinding(&err)
-	if timeoutMillis <= 0 {
+	if timeoutMillis <= 0 || timeoutMillis > 120000 {
 		return nil, fmt.Errorf("timeout must be positive")
 	}
 	transport, err := emulator.New(emulator.Config{Host: host, Port: port, Timeout: time.Duration(timeoutMillis) * time.Millisecond})
 	if err != nil {
 		return nil, err
 	}
-	client = &Client{transport: transport, operations: make(map[string]context.CancelFunc)}
-	client.service = service.New(model.DefaultConfig(), transport)
+	client = &Client{transport: transport, operations: make(map[string]context.CancelFunc), timeout: time.Duration(timeoutMillis) * time.Millisecond}
+	cfg := model.DefaultConfig()
+	cfg.Timeout = client.timeout
+	client.service = service.New(cfg, transport)
 	client.service.SetQRCodeGenerator(mobileQRCodeGenerator{})
 	return client, nil
 }
@@ -59,24 +63,53 @@ func NewClient(host string, port int, timeoutMillis int64) (client *Client, err 
 // Open abre o transporte e a sessão ABECS associada ao operationID.
 func (c *Client) Open(operationID string) (err error) {
 	defer recoverBinding(&err)
-	return c.run(operationID, func(ctx context.Context) error { return c.service.Open(ctx) })
+	return c.run(operationID, func(ctx context.Context) error {
+		if !c.transport.IsOpen() {
+			if c.service.GetState() != model.StateClosed {
+				_ = c.service.Close(ctx)
+			}
+			if err := c.transport.Ping(ctx, operationID); err != nil {
+				return publicFailure("preflight", err)
+			}
+		}
+		if err := c.service.Open(ctx); err != nil {
+			return publicFailure("open", err)
+		}
+		return nil
+	})
 }
 
 // Close cancela operações, fecha o serviço e libera a sessão do Bridge.
 func (c *Client) Close(operationID string) (err error) {
 	defer recoverBinding(&err)
 	if c == nil {
-		return fmt.Errorf("client is nil")
+		return publicFailure("command", ErrBinding)
 	}
-	c.cancelAll()
-	c.operationMu.Lock()
-	defer c.operationMu.Unlock()
+	ctx, cancel := context.WithTimeout(context.Background(), c.operationTimeout())
+	defer cancel()
+	c.mu.Lock()
+	if c.closing {
+		c.mu.Unlock()
+		return publicFailure("command", emulator.ErrBusy)
+	}
+	c.closing = true
+	gate := c.gateLocked()
+	for _, stop := range c.operations {
+		stop()
+	}
+	c.mu.Unlock()
+	defer func() { c.mu.Lock(); c.closing = false; c.mu.Unlock() }()
+	select {
+	case gate <- struct{}{}:
+		defer func() { <-gate }()
+	case <-ctx.Done():
+		return publicFailure("command", errors.Join(ctx.Err(), c.transport.Close()))
+	}
+	var serviceErr error
 	if c.service != nil {
-		if err = c.service.Close(context.Background()); err != nil {
-			return err
-		}
+		serviceErr = c.service.Close(ctx)
 	}
-	return c.transport.Close()
+	return publicFailure("command", errors.Join(serviceErr, c.transport.Close()))
 }
 
 // Ping verifica a sessão com o Bridge sem enviar um comando ABECS.
@@ -157,6 +190,9 @@ func (c *Client) GetState() (state string) {
 	if c == nil || c.service == nil {
 		return string(model.StateClosed)
 	}
+	if !c.transport.IsOpen() {
+		return string(model.StateClosed)
+	}
 	return string(c.service.GetState())
 }
 
@@ -180,43 +216,59 @@ func (c *Client) run(operationID string, operation func(context.Context) error) 
 	if operationID == "" {
 		return fmt.Errorf("operation id is required")
 	}
-	c.operationMu.Lock()
-	defer c.operationMu.Unlock()
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), c.operationTimeout())
+	defer cancel()
 	c.mu.Lock()
+	if c.closing {
+		c.mu.Unlock()
+		return publicFailure("command", emulator.ErrBusy)
+	}
 	if _, exists := c.operations[operationID]; exists {
 		c.mu.Unlock()
-		cancel()
-		return fmt.Errorf("operation already exists")
+		return publicFailure("command", emulator.ErrBusy)
 	}
 	c.operations[operationID] = cancel
+	gate := c.gateLocked()
 	c.mu.Unlock()
+	defer func() { c.mu.Lock(); delete(c.operations, operationID); c.mu.Unlock() }()
+	// O orçamento inclui a fila. Cancel/Close alcançam também chamadas pendentes.
+	select {
+	case gate <- struct{}{}:
+		defer func() { <-gate }()
+	case <-ctx.Done():
+		return publicFailure("command", ctx.Err())
+	}
+	if err := ctx.Err(); err != nil {
+		return publicFailure("command", err)
+	}
 	c.transport.SetCorrelationID(operationID)
+	c.transport.SetOperationContext(ctx)
 	defer func() {
 		cancel()
 		c.transport.SetCorrelationID("")
-		c.mu.Lock()
-		delete(c.operations, operationID)
-		c.mu.Unlock()
+		c.transport.SetOperationContext(nil)
 	}()
-	return operation(ctx)
+	return publicFailure("command", operation(ctx))
 }
 
-func (c *Client) cancelAll() {
-	c.mu.Lock()
-	cancels := make([]context.CancelFunc, 0, len(c.operations))
-	for _, cancel := range c.operations {
-		cancels = append(cancels, cancel)
+// gateLocked inicializa a admissão serializada sob mu; não bloqueia o cancelamento.
+func (c *Client) gateLocked() chan struct{} {
+	if c.operationGate == nil {
+		c.operationGate = make(chan struct{}, 1)
 	}
-	c.mu.Unlock()
-	for _, cancel := range cancels {
-		cancel()
+	return c.operationGate
+}
+
+func (c *Client) operationTimeout() time.Duration {
+	if c.timeout > 0 {
+		return c.timeout
 	}
+	return 30 * time.Second
 }
 
 func recoverBinding(target *error) {
 	if recovered := recover(); recovered != nil {
-		*target = fmt.Errorf("%w: %v", ErrBinding, recovered)
+		*target = publicFailure("binding", ErrBinding)
 	}
 }
 

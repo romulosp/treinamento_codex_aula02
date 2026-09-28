@@ -70,6 +70,7 @@ class JsonLineLogger(context: Context) : AppLogger {
             "state",
             "durationMillis",
             "errorCode",
+            "phase",
             "bytesTx",
             "bytesRx",
             "source",

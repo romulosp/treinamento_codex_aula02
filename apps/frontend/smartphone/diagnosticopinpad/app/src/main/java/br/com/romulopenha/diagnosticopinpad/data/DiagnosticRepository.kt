@@ -13,6 +13,7 @@ data class EndpointConfig(
     /** Valida os limites antes de atravessar a fronteira gomobile. */
     fun validate(): String? = when {
         host.isBlank() -> "Host obrigatório"
+        host !in setOf("localhost", "127.0.0.1", "10.0.2.2") -> "Use localhost ou override local do Emulator"
         port !in 1..65535 -> "Porta deve estar entre 1 e 65535"
         timeoutMillis !in 100..120000 -> "Timeout deve estar entre 100 e 120000 ms"
         else -> null
@@ -28,14 +29,16 @@ interface DiagnosticRepository : CatalogRepository {
     suspend fun close(operationId: String = "")
     suspend fun cancel(operationId: String)
     fun state(): String
+    /** Consulta local não confirma sessão de um endpoint diferente. */
+    fun stateFor(config: EndpointConfig): String = state()
 }
 
 /** Adapter fino entre o ViewModel e a fachada Go gerada no AAR. */
 class GoMobileRepository(
     private val logger: AppLogger,
 ) : DiagnosticRepository {
-    private var client: Client? = null
-    private var endpoint: EndpointConfig? = null
+    @Volatile private var client: Client? = null
+    @Volatile private var endpoint: EndpointConfig? = null
 
     override suspend fun version(): String = Mobile.version()
 
@@ -51,9 +54,10 @@ class GoMobileRepository(
         requireClient().getInfoJSON(operationId)
 
     override suspend fun close(operationId: String) {
-        client?.close(operationId)
+        val previous = client
         client = null
         endpoint = null
+        previous?.close(operationId)
     }
 
     override suspend fun cancel(operationId: String) {
@@ -61,6 +65,9 @@ class GoMobileRepository(
     }
 
     override fun state(): String = client?.getState() ?: "CLOSED"
+
+    override fun stateFor(config: EndpointConfig): String =
+        if (endpoint == config) state() else "CLOSED"
 
     /** Executa uma ação nomeada do catálogo e devolve somente texto sanitizado. */
     override suspend fun executeCatalog(

@@ -23,14 +23,15 @@ var _ SerialPort = (*Adapter)(nil)
 
 // Adapter conecta uma porta física go.bug.st/serial ao contrato do domínio.
 type Adapter struct {
-	mu      sync.RWMutex
-	name    string
-	baud    int
-	timeout time.Duration
-	port    bugserial.Port
-	tracer  *logging.Tracer
-	command command.Type
-	redact  bool
+	mu          sync.RWMutex
+	name        string
+	baud        int
+	timeout     time.Duration
+	port        bugserial.Port
+	tracer      *logging.Tracer
+	command     command.Type
+	redact      bool
+	opaqueTrace bool
 }
 
 // New cria um adaptador serial ainda fechado para a porta e baud rate informados.
@@ -47,6 +48,14 @@ func (a *Adapter) SetTracer(tracer *logging.Tracer) {
 		tracer = logging.NewTracer()
 	}
 	a.tracer = tracer
+}
+
+// SetOpaqueTrace impõe redação integral para o Bridge, que não conhece o
+// comando ativo. Fragmentos recebidos não são classificados por heurística.
+func (a *Adapter) SetOpaqueTrace(enabled bool) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.opaqueTrace = enabled
 }
 
 // SetTraceCommand informa o comando cuja resposta será lida em seguida. Esse
@@ -77,7 +86,7 @@ func (a *Adapter) Open() error {
 	p, err := bugserial.Open(a.name, &bugserial.Mode{BaudRate: a.baud, DataBits: 8, Parity: bugserial.NoParity, StopBits: bugserial.OneStopBit})
 	if err != nil {
 		wrapped := fmt.Errorf("open serial port: %w", err)
-		return errors.Join(wrapped, a.tracer.RecordOpenFailure(a.name, a.baud, wrapped))
+		return errors.Join(wrapped, a.tracer.RecordOpenFailure(a.name, a.baud, traceFailure(wrapped, a.opaqueTrace)))
 	}
 	readTimeout := a.timeout
 	if readTimeout > 100*time.Millisecond {
@@ -85,7 +94,7 @@ func (a *Adapter) Open() error {
 	}
 	if err := p.SetReadTimeout(readTimeout); err != nil {
 		wrapped := fmt.Errorf("set serial timeout: %w", err)
-		return errors.Join(wrapped, p.Close(), a.tracer.RecordOpenFailure(a.name, a.baud, wrapped))
+		return errors.Join(wrapped, p.Close(), a.tracer.RecordOpenFailure(a.name, a.baud, traceFailure(wrapped, a.opaqueTrace)))
 	}
 	a.port = p
 	if traceErr := a.tracer.RecordOpen(a.name, a.baud); traceErr != nil {
@@ -104,7 +113,7 @@ func (a *Adapter) Close() error {
 	}
 	err := a.port.Close()
 	a.port = nil
-	traceErr := a.tracer.RecordClose(err)
+	traceErr := a.tracer.RecordClose(traceFailure(err, a.opaqueTrace))
 	return errors.Join(wrapSerialError("close serial port", err), wrapSerialError("record serial close trace", traceErr))
 }
 
@@ -123,11 +132,12 @@ func (a *Adapter) Read(ctx context.Context) ([]byte, error) {
 	p := a.port
 	tracer := a.tracer
 	kind := a.command
-	redact := a.redact
+	redact := a.redact || a.opaqueTrace
+	opaque := a.opaqueTrace
 	a.mu.RUnlock()
 	if p == nil {
 		err := fmt.Errorf("serial port is closed")
-		return nil, errors.Join(err, tracer.RecordError(a.name, "read", err))
+		return nil, errors.Join(err, tracer.RecordError(a.name, "read", traceFailure(err, opaque)))
 	}
 	dst := make([]byte, 256)
 	for {
@@ -140,7 +150,7 @@ func (a *Adapter) Read(ctx context.Context) ([]byte, error) {
 				return nil, ctx.Err()
 			}
 			wrapped := fmt.Errorf("read serial port: %w", err)
-			return nil, errors.Join(wrapped, tracer.RecordError(a.name, "read", wrapped))
+			return nil, errors.Join(wrapped, tracer.RecordError(a.name, "read", traceFailure(wrapped, opaque)))
 		}
 		if n > 0 {
 			result := append([]byte(nil), dst[:n]...)
@@ -162,20 +172,21 @@ func (a *Adapter) Write(data []byte) error {
 	p := a.port
 	tracer := a.tracer
 	kind := a.command
-	redact := a.redact
+	redact := a.redact || a.opaqueTrace
+	opaque := a.opaqueTrace
 	a.mu.RUnlock()
 	if p == nil {
 		err := fmt.Errorf("serial port is closed")
-		return errors.Join(err, tracer.RecordError(a.name, "write", err))
+		return errors.Join(err, tracer.RecordError(a.name, "write", traceFailure(err, opaque)))
 	}
 	n, err := p.Write(data)
 	if err != nil {
 		wrapped := fmt.Errorf("write serial port: %w", err)
-		return errors.Join(wrapped, tracer.RecordError(a.name, "write", wrapped))
+		return errors.Join(wrapped, tracer.RecordError(a.name, "write", traceFailure(wrapped, opaque)))
 	}
 	if n != len(data) {
 		err := fmt.Errorf("short serial write: %d/%d", n, len(data))
-		return errors.Join(err, tracer.RecordError(a.name, "write", err))
+		return errors.Join(err, tracer.RecordError(a.name, "write", traceFailure(err, opaque)))
 	}
 	if traceErr := tracer.RecordSPEFromPolicy(kind, data, "serial.Adapter.Write", redact); traceErr != nil {
 		return fmt.Errorf("record serial write trace: %w", traceErr)
@@ -191,6 +202,15 @@ func wrapSerialError(operation string, err error) error {
 		return nil
 	}
 	return fmt.Errorf("%s: %w", operation, err)
+}
+
+// traceFailure evita texto arbitrário de driver no rastro opaco. A causa real
+// permanece no retorno Go e o supervisor registra apenas sua categoria/errno.
+func traceFailure(err error, opaque bool) error {
+	if err == nil || !opaque {
+		return err
+	}
+	return errors.New("SERIAL_UNAVAILABLE")
 }
 
 // FakePort implementa a porta serial de forma determinística para testes.

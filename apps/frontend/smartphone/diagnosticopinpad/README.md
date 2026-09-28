@@ -42,17 +42,56 @@ proveniência em `build/mobile-aar-provenance.json`.
 
 ## Teste no Emulator
 
+O fluxo abaixo documenta o contrato corrigido da
+[Change 072](../../../../specs/changes/2026-09-27-072-corrigir-abertura-bridge-android/spec.md)
+e seu [DESIGN](../../../../specs/changes/2026-09-27-072-corrigir-abertura-bridge-android/DESIGN.md).
+Não representa declaração de implementação concluída ou de validação física.
+
+No host Windows, selecione explicitamente o emulador quando houver mais de um
+online e prepare o reverse da porta TCP efetiva. Exemplo manual no diretório
+do app:
+
 ```powershell
 $sdk = "D:\desenvolvimento\ferramentas_android\Sdk"
 $env:Path = "$sdk\platform-tools;$env:Path"
-adb reverse tcp:39100 tcp:39100
+$env:ANDROID_SERIAL = "emulator-5554"
+adb -s $env:ANDROID_SERIAL reverse tcp:39100 tcp:39100
+adb -s $env:ANDROID_SERIAL reverse --list
 .\gradlew.bat :app:installDebug
-adb shell am start -n br.com.romulopenha.diagnosticopinpad/.MainActivity
+adb -s $env:ANDROID_SERIAL shell am start -n br.com.romulopenha.diagnosticopinpad/.MainActivity
 ```
 
-Com `adb reverse`, mantenha `localhost` no campo Host. Sem reverse, use
-`10.0.2.2`. A porta informada no Android (`39100`) é a porta TCP do Bridge, não
-é a porta COM.
+A saída de `reverse --list` deve conter o mapeamento solicitado para o serial
+selecionado. Se `PINPAD_BRIDGE_PORT` for diferente de `39100`, use essa porta
+nos dois lados do reverse e no campo Porta do app. Com reverse, mantenha
+`localhost` no campo Host; `10.0.2.2` é somente override explícito do operador.
+A porta Android é TCP, não COM. Reverse verificado não comprova listener,
+disponibilidade da serial ou sessão ABECS aberta.
+
+O helper previsto no módulo Go será `preparar_emulador.ps1`, em vez de
+`prepare-emulator.ps1`; sua implementação será feita separadamente. Após
+disponibilizá-lo, execute no diretório `apps/desktop/libpinpadabecsgo`:
+
+```powershell
+.\preparar_emulador.ps1 -EmulatorSerial "emulator-5554" -BridgePort 39100
+# Alternativa: seleção por ambiente.
+$env:ANDROID_SERIAL = "emulator-5554"
+.\preparar_emulador.ps1 -BridgePort 39100
+```
+
+O launcher deve localizar ADB no PATH ou SDK configurado, preparar e verificar
+o reverse e mostrar o serial usado. Um único emulador online pode ser
+selecionado automaticamente; vários exigem `ANDROID_SERIAL` ou
+`-EmulatorSerial`. Dispositivos físicos não são selecionados automaticamente.
+ADB ausente, emulador ausente/offline ou seleção ambígua devem informar
+`emulator_not_prepared` e comando corretivo, mas o Bridge host pode iniciar
+para uso Windows. Reverse é opcional nesse uso somente host.
+
+Repita a preparação após reiniciar o emulador. O helper deve limitar-se ao
+mapeamento da porta solicitada, sem remover outros reverses, instalar
+artefatos ou alterar a política de execução persistente. O app não executa
+ADB; conexão recusada isolada não permite distinguir reverse ausente de
+Bridge host parado.
 
 Para um teste sem hardware, no Windows Host execute no módulo Go:
 
@@ -61,19 +100,102 @@ $env:PINPAD_BRIDGE_TRANSPORT = "scripted"
 go run .\cmd\libpinpadabecsgo-bridge
 ```
 
-Esse transcript cobre os fluxos básicos sem fingir sucesso para operações que
-dependem de ABECS real. Para o pinpad físico, o Bridge deve ser iniciado assim:
+O modo `scripted` serve aos cenários sem hardware e não comprova comunicação
+física. Para pinpad físico, configure a COM no processo e execute o BAT no
+módulo Go:
 
 ```powershell
-$env:PORTA_PINPAD = "COM14"
-$env:PINPAD_BAUDRATE = "19200"
-$env:PINPAD_TIMEOUT = "30"
-Remove-Item Env:PINPAD_BRIDGE_TRANSPORT -ErrorAction SilentlyContinue
-go run .\cmd\libpinpadabecsgo-bridge
+$env:PORTA_PINPAD = "<COM_DO_PINPAD>"
+.\testar_bridge_pinpad.bat
 ```
 
 `PORTA_PINPAD` é consumida exclusivamente pelo processo Windows do Bridge. O
-Android recebe apenas o endpoint TCP.
+Android recebe apenas o endpoint TCP. O BAT deve herdar essa variável sem
+atribuir COM fixa; não edite o BAT para escolher a porta. Ausência, vazio ou
+somente espaços devem falhar com código não zero antes de abrir serial.
+Valores válidos existentes de baudrate, timeout, porta Bridge e log devem ser
+preservados. Somente quando ausentes, os defaults do launcher são `19200`,
+`30` segundos, `39100` e `<raiz-do-módulo>/logs/LogPinpadAbecs.txt`.
+`PINPAD_BRIDGE_TRANSPORT` deve ser removida apenas no `setlocal` do BAT para
+selecionar `physical`, sem alterar variáveis persistentes.
+
+Console e log devem mostrar configuração efetiva, origem `environment` ou
+`default`, unidades e modo, dentro da allowlist da SPEC. Terminais/IDEs já
+abertos podem ter ambiente antigo; reabra-os após mudanças persistentes e
+reinicie o Bridge para carregar nova configuração. O entrypoint direto mantém
+a precedência de `config.Load()`, inclusive seu fallback quando a COM estiver
+ausente; a exigência de COM herdada pertence ao BAT físico.
+
+A indicação Go `bridge_listening` corresponde ao evento do log somente
+após bind bem-sucedido em `127.0.0.1`, com porta, PID, transporte, COM e log
+ativo. Arquivo criado, configuração impressa e `go run` iniciado não provam
+listener. Falha de compilação, configuração, log ou porta ocupada deve ser
+visível; o BAT executa em foreground e deve exibir/devolver o código real
+após `pause`, sem matar outro processo ou trocar de porta automaticamente.
+
+## Sessão e erros — contrato 072
+
+Abrir com cliente fechado deve executar um Ping controlado do protocolo Bridge
+dentro do mesmo prazo total da ação. Ping não adquire COM nem envia ABECS; se
+falhar, Abrir não tenta serial e deve orientar a conferir listener, host/porta
+e reverse. Não há retry, troca de endpoint ou fallback scripted automático
+para operação física.
+
+Estado da ação, conectividade Bridge e sessão confirmada pelo Go devem ser
+separados:
+
+| Resultado | Sessão e comandos físicos |
+|---|---|
+| `PONG` com cliente fechado | Bridge alcançável; sessão continua `CLOSED` |
+| Version ou consulta Estado `CLOSED` | Não abre sessão nem habilita DSP/GIX |
+| `Service.Open` concluído, incluindo OPN | Sessão `OPEN`; habilita ações dependentes |
+| Abrir falha | Não apresenta `OPEN`; permite nova tentativa explícita |
+| Operação falha com sessão ainda válida | Ação em erro; sessão segue o estado real Go |
+| Disconnect ou timeout que invalida sessão | Fechada/desconhecida; bloqueia comandos físicos |
+| Fechar ou trocar endpoint | Fecha o cliente; nova abertura deve ser explícita |
+
+Botões rápidos e catálogo devem obedecer à mesma sessão confirmada. Cancelar
+e Fechar devem continuar permitindo liberação de recursos em falha. Recriar o
+processo começa com sessão fechada; consulta local de estado não comprova
+saúde remota.
+
+A UI deve mostrar código, fase, mensagem segura, duração e ID final da última
+operação na área de estado acima do catálogo. Se o erro ocorrer fora da área
+visível, deve haver aviso acessível ou rolagem até ele, sem depender apenas de
+cor. A mensagem deve persistir após fechar diálogo/teclado; nova ação limpa o
+resultado anterior. O ID final deve permanecer separado da operação ativa
+para correlação com o log.
+
+As categorias públicas incluem `BRIDGE_UNREACHABLE`, `TIMEOUT`, `PROTOCOL_ERROR`,
+`BUSY`, `OWNERSHIP_ERROR`, `SERIAL_UNAVAILABLE`, `CANCELED`, `DISCONNECTED`,
+`PINPAD_ERROR`, `PINPAD_CLOSED` e `BINDING_ERROR`. Erros devem preservar código
+e correlationId, com mensagem sanitizada e limitada, sem payload ABECS,
+stack trace, caminho interno ou erro arbitrário de driver. Falha secundária
+de limpeza não deve substituir a causa original.
+
+## Log compartilhado — contrato 072
+
+O único rastro Windows deve permanecer em `PINPAD_LOG_FILE`, por default do
+launcher `<raiz-do-módulo>/logs/LogPinpadAbecs.txt`, em append. O mesmo tracer
+deve registrar eventos reais de startup/listener, conexão, HELLO/Ping,
+ownership, falhas de serial/sessão, liberação e shutdown, além de Open, TX/RX
+redigidos e Close. `ping_ok` e `ownership_failed` devem alimentar o arquivo
+mesmo sem abrir serial; não se fabricam bytes ou linhas de sucesso ABECS.
+
+Eventos devem incluir timestamp, fase, resultado/código, porta/modo e
+sessionId/correlationId quando disponíveis. Como o Bridge trata bytes opacos,
+eventos usam contagens, sem parser de negócio. O rastro deve aplicar redação
+conservadora também a chunks fragmentados/agregados; payload desconhecido
+deve ser omitido e descrito somente por contagem quando necessário. PAN,
+trilhas, PIN block, KSN, chaves, EMV sensível e parâmetros de formulários não
+devem aparecer em eventos ou erros.
+
+O logger privado Android guarda somente metadados; não cria outro rastro
+Windows. Sem Bridge em execução, o erro fica na UI/log privado Android, pois
+não há processo host para alimentar o arquivo. Falha ao abrir o log deve
+aparecer no stderr/console com código não zero; falha posterior de persistência
+deve ser visível e invalidar a sessão afetada quando o rastro obrigatório não
+puder ser mantido.
 
 ## Gates
 
@@ -84,6 +206,9 @@ python .agents/skills/android-native-engineering/scripts/validate_android_projec
 .\gradlew.bat :app:assembleDebug
 ```
 
-Para hardware, execute uma operação por vez e registre o resultado no
-`validation.md` da Change 069. Não use valores reais de cartão ou chaves em
-capturas, logs ou documentação.
+Para validar a correção 072, execute uma operação por vez e registre evidências
+no `validation.md` dessa Change. CA-072-13 exige pinpad físico, fluxo
+Abrir → GIX → DSP → Fechar e reabertura, log e confirmação visual. Sem essa
+evidência, a correção física permanece não comprovada; scripted não substitui
+esse gate. Os comandos acima são procedimentos, não resultados de execução.
+Não use valores reais de cartão ou chaves em capturas, logs ou documentação.

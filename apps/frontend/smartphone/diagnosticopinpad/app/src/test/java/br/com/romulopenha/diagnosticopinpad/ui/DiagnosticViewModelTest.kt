@@ -33,7 +33,7 @@ class DiagnosticViewModelTest {
     }
 
     @Test
-    fun `ping publica pong e estado aberto`() = runTest {
+    fun `ping publica pong sem abrir sessao`() = runTest {
         val repository = FakeRepository()
         val viewModel = DiagnosticViewModel(repository, NoopLogger, dispatcher)
 
@@ -41,7 +41,9 @@ class DiagnosticViewModelTest {
         advanceUntilIdle()
 
         assertEquals("PONG", viewModel.uiState.value.result)
-        assertEquals(DiagnosticStatus.OPEN, viewModel.uiState.value.status)
+        assertEquals(DiagnosticStatus.CLOSED, viewModel.uiState.value.status)
+        assertEquals("CLOSED", viewModel.uiState.value.sessionState)
+        assertEquals(true, viewModel.uiState.value.bridgeReachable)
         assertEquals(1, repository.pingCalls)
     }
 
@@ -69,6 +71,68 @@ class DiagnosticViewModelTest {
         assertEquals("CLOSED", viewModel.uiState.value.result)
         assertEquals(CatalogAction.STATE.title, viewModel.uiState.value.action)
         assertEquals(1, repository.catalogCalls)
+        assertEquals("CLOSED", viewModel.uiState.value.sessionState)
+        assertEquals(DiagnosticStatus.CLOSED, viewModel.uiState.value.status)
+    }
+
+    @Test
+    fun `abrir so habilita sessao quando repository confirma`() = runTest {
+        val repository = FakeRepository()
+        val vm = DiagnosticViewModel(repository, NoopLogger, dispatcher)
+        vm.open()
+        advanceUntilIdle()
+        assertEquals("OPEN", vm.uiState.value.sessionState)
+        assertEquals(DiagnosticStatus.OPEN, vm.uiState.value.status)
+        vm.close()
+        advanceUntilIdle()
+        assertEquals("CLOSED", vm.uiState.value.sessionState)
+    }
+
+    @Test
+    fun `erro de abrir preserva codigo fase id e limpa resultado antigo`() = runTest {
+        val repository = FakeRepository().apply { openError = IllegalStateException("SERIAL_UNAVAILABLE:serial_open") }
+        val vm = DiagnosticViewModel(repository, NoopLogger, dispatcher)
+        vm.checkVersion(); advanceUntilIdle()
+        vm.open(); advanceUntilIdle()
+        assertEquals(DiagnosticStatus.ERROR, vm.uiState.value.status)
+        assertEquals("CLOSED", vm.uiState.value.sessionState)
+        assertEquals("SERIAL_UNAVAILABLE", vm.uiState.value.errorCode)
+        assertEquals("serial_open", vm.uiState.value.errorPhase)
+        assertEquals("", vm.uiState.value.result)
+        org.junit.Assert.assertNotNull(vm.uiState.value.lastOperationId)
+        org.junit.Assert.assertNotNull(vm.uiState.value.durationMillis)
+    }
+
+    @Test
+    fun `catalogo DSP nao atravessa fronteira com sessao fechada`() = runTest {
+        val repository = FakeRepository()
+        val vm = DiagnosticViewModel(repository, NoopLogger, dispatcher)
+        vm.executeCatalog(CatalogAction.DSP, CatalogInput(mapOf("line1" to "TESTE", "line2" to "TESTE")))
+        advanceUntilIdle()
+        assertEquals(0, repository.catalogCalls)
+        assertEquals("PINPAD_CLOSED", vm.uiState.value.errorCode)
+    }
+
+    @Test
+    fun `version e consulta local nao alteram sessao fechada`() = runTest {
+        val vm = DiagnosticViewModel(FakeRepository(), NoopLogger, dispatcher)
+        vm.checkVersion(); advanceUntilIdle()
+        assertEquals("CLOSED", vm.uiState.value.sessionState)
+        vm.executeCatalog(CatalogAction.STATE); advanceUntilIdle()
+        assertEquals("CLOSED", vm.uiState.value.sessionState)
+    }
+
+    @Test
+    fun `editar endpoint libera cliente anterior antes da proxima acao`() = runTest {
+        val repository = FakeRepository()
+        val vm = DiagnosticViewModel(repository, NoopLogger, dispatcher)
+        vm.open(); advanceUntilIdle()
+        vm.updatePort("39101")
+        assertEquals("CLOSED", vm.uiState.value.sessionState)
+        vm.checkVersion(); advanceUntilIdle()
+        assertEquals(1, repository.closeCalls)
+        assertEquals("CLOSED", repository.session)
+        assertEquals("CLOSED", vm.uiState.value.sessionState)
     }
 }
 
@@ -84,6 +148,9 @@ private object NoopLogger : AppLogger {
 private class FakeRepository : DiagnosticRepository {
     var pingCalls = 0
     var catalogCalls = 0
+    var closeCalls = 0
+    var session = "CLOSED"
+    var openError: Throwable? = null
 
     override suspend fun version(): String = "test"
 
@@ -91,15 +158,18 @@ private class FakeRepository : DiagnosticRepository {
         pingCalls += 1
     }
 
-    override suspend fun open(config: EndpointConfig, operationId: String) = Unit
+    override suspend fun open(config: EndpointConfig, operationId: String) {
+        openError?.let { throw it }
+        session = "OPEN"
+    }
 
     override suspend fun getInfoJson(operationId: String): String = "{}"
 
-    override suspend fun close(operationId: String) = Unit
+    override suspend fun close(operationId: String) { closeCalls += 1; session = "CLOSED" }
 
     override suspend fun cancel(operationId: String) = Unit
 
-    override fun state(): String = "CLOSED"
+    override fun state(): String = session
 
     override suspend fun executeCatalog(
         config: EndpointConfig,

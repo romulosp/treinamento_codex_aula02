@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
@@ -22,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
@@ -72,10 +74,15 @@ fun DiagnosticScreenContent(
     onExit: () -> Unit,
 ) {
     var dialogAction by remember { mutableStateOf<CatalogAction?>(null) }
+    val listState = rememberLazyListState()
+    LaunchedEffect(state.error, state.lastOperationId) {
+        if (state.error != null) listState.animateScrollToItem(3)
+    }
     val busy = state.status == DiagnosticStatus.CONNECTING ||
         state.status == DiagnosticStatus.RUNNING ||
         state.status == DiagnosticStatus.CANCELING
     LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -116,11 +123,18 @@ fun DiagnosticScreenContent(
         item {
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(12.dp)) {
-                    Text("Estado: ${state.status}", style = MaterialTheme.typography.titleMedium)
+                    Text("Sessão: ${state.sessionState}", style = MaterialTheme.typography.titleMedium)
+                    Text("Operação: ${state.status}")
+                    Text("Bridge: ${when(state.bridgeReachable) { true -> "alcançável"; false -> "inacessível"; null -> "não verificado" }}")
                     if (state.action.isNotBlank()) Text("Ação: ${state.action}")
-                    state.operationId?.let { Text("Operação: $it") }
+                    state.lastOperationId?.let { Text("ID: $it") }
                     state.durationMillis?.let { Text("Duração: ${it} ms") }
                     state.version.takeIf { it.isNotBlank() }?.let { Text("Binding: $it") }
+                    state.error?.let { error ->
+                        Text("Erro: ${state.errorCode ?: "VALIDATION_ERROR"} (${state.errorPhase ?: "configuration"})",
+                            color = MaterialTheme.colorScheme.error)
+                        Text(error, modifier = Modifier.semantics { contentDescription = "Erro do diagnóstico: $error" })
+                    }
                 }
             }
         }
@@ -141,7 +155,7 @@ fun DiagnosticScreenContent(
                 }
                 Button(
                     onClick = onInfo,
-                    enabled = !busy && state.status == DiagnosticStatus.OPEN,
+                    enabled = !busy && state.sessionState == "OPEN",
                     modifier = Modifier.weight(1f),
                 ) {
                     Text("GetInfo")
@@ -150,7 +164,7 @@ fun DiagnosticScreenContent(
         }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                OutlinedButton(onClick = onClose, enabled = !busy, modifier = Modifier.weight(1f)) {
+                OutlinedButton(onClick = onClose, modifier = Modifier.weight(1f)) {
                     Text("Fechar")
                 }
                 OutlinedButton(onClick = onCancel, enabled = busy, modifier = Modifier.weight(1f)) {
@@ -162,12 +176,13 @@ fun DiagnosticScreenContent(
             Text("Catálogo funcional", style = MaterialTheme.typography.titleLarge)
             Text("As ações abaixo correspondem ao menu local da biblioteca Go.")
         }
-        CatalogAction.values().groupBy { it.group }.forEach { (group, actions) ->
+        CatalogAction.values().filter { it.visibleInCatalog }.groupBy { it.group }.forEach { (group, actions) ->
             item {
                 Text(group, style = MaterialTheme.typography.titleMedium)
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     actions.forEach { catalogAction ->
-                        val enabled = !busy && catalogAction.enabled
+                        val enabled = !busy && catalogAction.enabled &&
+                            (!DiagnosticViewModel.requiresSession(catalogAction) || state.sessionState == "OPEN")
                         Button(
                             onClick = {
                                 when {
@@ -194,13 +209,6 @@ fun DiagnosticScreenContent(
         }
         item {
             Spacer(modifier = Modifier.height(4.dp))
-            state.error?.let {
-                Text(
-                    text = "Erro: $it",
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.semantics { contentDescription = "Erro do diagnóstico: $it" },
-                )
-            }
             if (state.result.isNotBlank()) {
                 Text("Resultado", style = MaterialTheme.typography.titleMedium)
                 Text(

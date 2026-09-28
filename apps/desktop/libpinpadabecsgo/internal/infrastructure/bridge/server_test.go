@@ -68,6 +68,9 @@ func TestBridgeForwardsDataToFakeSerial(t *testing.T) {
 	if err := bridgeprotocol.WriteFrame(ctx, client, bridgeprotocol.Frame{MessageType: bridgeprotocol.Release}); err != nil {
 		t.Fatal(err)
 	}
+	if ack, err := bridgeprotocol.ReadFrame(ctx, client); err != nil || ack.MessageType != bridgeprotocol.Close {
+		t.Fatalf("close ack: %v %v", ack, err)
+	}
 	if err := <-done; err != nil {
 		t.Fatal(err)
 	}

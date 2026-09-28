@@ -1,8 +1,12 @@
 package serial
 
 import (
+	"bytes"
 	"context"
 	"testing"
+
+	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/command"
+	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/protocol"
 )
 
 func TestDiagnosticScriptedTransportReplaysTranscript(t *testing.T) {
@@ -22,6 +26,32 @@ func TestDiagnosticScriptedTransportReplaysTranscript(t *testing.T) {
 	}
 	if !transport.Completed() {
 		t.Fatal("expected scripted transcript to complete")
+	}
+}
+
+func TestDiagnosticScriptedTransportUsesConfiguredPortInDSP(t *testing.T) {
+	tests := []struct {
+		name     string
+		port     string
+		wantLine string
+	}{
+		{name: "porta efetiva sem fixar COM", port: " COM10 ", wantLine: "HOST COM10"},
+		{name: "ambiente ausente", port: "   ", wantLine: "HOST AMBIENTE"},
+		{name: "valor maior que o display", port: "PORTA-MUITO-LONGA", wantLine: "HOST CONFIG"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			transport := NewDiagnosticScriptedTransportForPort(tt.port)
+			wantDSP, err := command.BuildDSPCommand("TESTE ANDROID", tt.wantLine)
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := protocol.BuildPacket(wantDSP)
+			if len(transport.steps) < 4 || !bytes.Equal(transport.steps[3].ExpectedWrite, want) {
+				t.Fatalf("DSP não usa configuração efetiva: % X", transport.steps[3].ExpectedWrite)
+			}
+		})
 	}
 }
 

@@ -23,6 +23,8 @@ existentes; não introduz backend HTTP, parser Kotlin ou módulos novos.
 ## Sequência normal
 
 1. BAT valida ambiente e prepara reverse se emulador estiver selecionável.
+   A porta física é lida exclusivamente de `PORTA_PINPAD` no processo; scripts,
+   testes instrumentados e código não escolhem nem corrigem a COM por conta própria.
 2. Entrypoint prepara log e dependências e solicita startup do servidor.
 3. Após bind bem-sucedido, servidor registra `bridge_listening`.
 4. Abrir no Android inicia Ping controlado, sem COM, se cliente fechado.

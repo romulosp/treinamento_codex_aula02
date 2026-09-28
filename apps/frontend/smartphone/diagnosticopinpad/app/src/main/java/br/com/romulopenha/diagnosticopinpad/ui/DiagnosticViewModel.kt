@@ -7,6 +7,7 @@ import br.com.romulopenha.diagnosticopinpad.data.EndpointConfig
 import br.com.romulopenha.diagnosticopinpad.data.AppLogger
 import br.com.romulopenha.diagnosticopinpad.data.CatalogAction
 import br.com.romulopenha.diagnosticopinpad.data.CatalogInput
+import br.com.romulopenha.diagnosticopinpad.data.DiagnosticFailure
 import java.util.UUID
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -45,6 +46,11 @@ data class DiagnosticUiState(
     val result: String = "",
     val error: String? = null,
     val durationMillis: Long? = null,
+    val sessionState: String = "CLOSED",
+    val bridgeReachable: Boolean? = null,
+    val lastOperationId: String? = null,
+    val errorCode: String? = null,
+    val errorPhase: String? = null,
 )
 
 /**
@@ -61,6 +67,7 @@ class DiagnosticViewModel(
     val uiState: StateFlow<DiagnosticUiState> = _uiState.asStateFlow()
 
     private var operationJob: Job? = null
+    private var endpointCleanupJob: Job? = null
     private var activeOperationId: String? = null
     private val cleanupScope = CoroutineScope(SupervisorJob() + ioDispatcher)
 
@@ -84,19 +91,22 @@ class DiagnosticViewModel(
     /** Testa o Bridge sem encaminhar bytes ABECS à serial. */
     fun ping() = launchConfigured("ping", DiagnosticStatus.CONNECTING) { config, id ->
         repository.ping(config, id)
-        _uiState.update { it.copy(result = "PONG", status = DiagnosticStatus.OPEN) }
+        _uiState.update { it.copy(result = "PONG", bridgeReachable = true) }
     }
 
     /** Abre a sessão ABECS pelo transporte configurado. */
     fun open() = launchConfigured("open", DiagnosticStatus.CONNECTING) { config, id ->
         repository.open(config, id)
-        _uiState.update { it.copy(result = "Sessão aberta", status = DiagnosticStatus.OPEN) }
+        _uiState.update { it.copy(result = "Sessão aberta", bridgeReachable = true) }
     }
 
     /** Consulta informações tipadas do dispositivo por GIX. */
-    fun getInfo() = launchConfigured("get_info", DiagnosticStatus.RUNNING) { _, id ->
+    fun getInfo() {
+        if (!requireSession()) return
+        launchConfigured("get_info", DiagnosticStatus.RUNNING) { _, id ->
         val result = repository.getInfoJson(id)
-        _uiState.update { it.copy(result = result, status = DiagnosticStatus.OPEN) }
+        _uiState.update { it.copy(result = result) }
+        }
     }
 
     /** Executa uma ação nomeada do catálogo, mantendo parâmetros fora dos logs. */
@@ -105,14 +115,14 @@ class DiagnosticViewModel(
             _uiState.update { it.copy(status = DiagnosticStatus.ERROR, error = action.disabledReason ?: "Ação inválida") }
             return
         }
+        if (requiresSession(action) && !requireSession()) return
         input.validate(action)?.let { validationError ->
             _uiState.update { it.copy(status = DiagnosticStatus.ERROR, error = validationError) }
             return
         }
         launchConfigured(action.title, DiagnosticStatus.RUNNING) { config, id ->
             val result = repository.executeCatalog(config, action, input, id)
-            val nextStatus = if (action == CatalogAction.CLOSE) DiagnosticStatus.CLOSED else DiagnosticStatus.OPEN
-            _uiState.update { it.copy(result = result, status = nextStatus) }
+            _uiState.update { it.copy(result = result) }
         }
     }
 
@@ -197,28 +207,38 @@ class DiagnosticViewModel(
                     status = initialStatus,
                     action = action,
                     operationId = id,
+                    lastOperationId = id,
                     error = null,
+                    errorCode = null,
+                    errorPhase = null,
+                    result = "",
                     durationMillis = null,
                 )
             }
             logger.event("INFO", "operation_started", id)
             try {
+                endpointCleanupJob?.join()
                 withContext(ioDispatcher) { block() }
                 val duration = (System.nanoTime() - startedAt) / 1_000_000
-                _uiState.update { it.copy(durationMillis = duration, operationId = null) }
+                val session = confirmedSession()
+                _uiState.update { it.copy(durationMillis = duration, operationId = null, sessionState = session,
+                    status = if (session == "OPEN") DiagnosticStatus.OPEN else DiagnosticStatus.CLOSED) }
                 logger.event("INFO", "operation_finished", id, mapOf("durationMillis" to duration.toString()))
             } catch (cancelled: CancellationException) {
                 _uiState.update {
-                    it.copy(status = DiagnosticStatus.CLOSED, error = "Operação cancelada", operationId = null)
+                    it.copy(status = DiagnosticStatus.ERROR, error = "Operação cancelada", errorCode = "CANCELED", errorPhase = "command",
+                        sessionState = confirmedSession(), durationMillis = (System.nanoTime() - startedAt) / 1_000_000, operationId = null)
                 }
                 logger.event("INFO", "operation_canceled", id)
                 throw cancelled
             } catch (failure: Throwable) {
-                val message = sanitizeError(failure.message)
+                val safe = DiagnosticFailure.from(failure)
                 _uiState.update {
-                    it.copy(status = DiagnosticStatus.ERROR, error = message, operationId = null)
+                    it.copy(status = DiagnosticStatus.ERROR, error = safe.message, errorCode = safe.code, errorPhase = safe.phase,
+                        sessionState = confirmedSession(), durationMillis = (System.nanoTime() - startedAt) / 1_000_000, operationId = null,
+                        bridgeReachable = if (safe.code in setOf("BRIDGE_UNREACHABLE", "DISCONNECTED")) false else it.bridgeReachable)
                 }
-                logger.event("ERROR", "operation_failed", id, mapOf("errorCode" to message))
+                logger.event("ERROR", "operation_failed", id, mapOf("errorCode" to safe.code, "phase" to safe.phase))
             } finally {
                 activeOperationId = null
                 operationJob = null
@@ -243,13 +263,39 @@ class DiagnosticViewModel(
 
     private fun updateInput(update: DiagnosticUiState.() -> DiagnosticUiState) {
         if (operationJob?.isActive != true) {
-            _uiState.update(update)
+            val previous = _uiState.value
+            if (previous.update() == previous) return
+            _uiState.update { it.update().copy(sessionState = "CLOSED", bridgeReachable = null, status = DiagnosticStatus.IDLE) }
+            // Não abre o endpoint novo nem bloqueia a digitação. Toda próxima
+            // ação aguarda a liberação do cliente anterior no dispatcher IO.
+            if (endpointCleanupJob?.isActive != true) {
+                endpointCleanupJob = viewModelScope.launch(ioDispatcher) {
+                    runCatching { repository.close() }.onFailure { failure ->
+                        val safe = DiagnosticFailure.from(failure)
+                        logger.event("ERROR", "endpoint_cleanup_failed", fields = mapOf("errorCode" to safe.code, "phase" to safe.phase))
+                    }
+                }
+            }
         }
     }
 
-    private fun sanitizeError(message: String?): String = message
-        ?.replace(Regex("[\\u0000-\\u001F\\u007F]"), " ")
-        ?.take(240)
-        ?.ifBlank { "Falha sem mensagem" }
-        ?: "Falha sem mensagem"
+    private fun confirmedSession(): String {
+        val state = _uiState.value
+        return repository.stateFor(EndpointConfig(state.host.trim(), state.port.toIntOrNull() ?: -1, state.timeoutMillis.toLongOrNull() ?: -1))
+    }
+
+    private fun requireSession(): Boolean {
+        if (_uiState.value.sessionState == "OPEN") return true
+        _uiState.update { it.copy(status = DiagnosticStatus.ERROR, result = "", errorCode = "PINPAD_CLOSED", errorPhase = "command",
+            error = DiagnosticFailure.messageFor("PINPAD_CLOSED")) }
+        return false
+    }
+
+    companion object {
+        /** Somente ações que dialogam com o pinpad exigem sessão confirmada. */
+        fun requiresSession(action: CatalogAction): Boolean = action !in setOf(
+            CatalogAction.OPEN, CatalogAction.CLOSE, CatalogAction.STATE, CatalogAction.EXIT,
+            CatalogAction.UNAVAILABLE, CatalogAction.RESERVED, CatalogAction.QR,
+        )
+    }
 }

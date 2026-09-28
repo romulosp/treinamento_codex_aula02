@@ -15,9 +15,10 @@ enum class CatalogAction(
     val enabled: Boolean = true,
     val disabledReason: String? = null,
     val fields: List<CatalogField> = emptyList(),
+    val visibleInCatalog: Boolean = true,
 ) {
-    OPEN(1, "Abrir conexão", "Conexão"),
-    CLOSE(2, "Fechar conexão", "Conexão"),
+    OPEN(1, "Abrir conexão", "Conexão", visibleInCatalog = false),
+    CLOSE(2, "Fechar conexão", "Conexão", visibleInCatalog = false),
     STATE(3, "Estado atual", "Conexão"),
     INFO(4, "Informações do pinpad (GIX)", "Conexão"),
     RESET(5, "Reset rápido (CAN)", "Conexão"),

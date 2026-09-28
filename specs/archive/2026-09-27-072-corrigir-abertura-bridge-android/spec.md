@@ -5,6 +5,8 @@
 `SPEC_APROVADA`
 
 Revisão técnica: [2026-09-27-spec-review.md](reviews/2026-09-27-spec-review.md).
+Revisão da porta por ambiente:
+[2026-09-28-spec-review-porta-ambiente.md](reviews/2026-09-28-spec-review-porta-ambiente.md).
 
 ## 1. Precedência e invariantes
 
@@ -21,8 +23,8 @@ retry, troca de endpoint ou fallback scripted automático.
 ## 2. RF-072-01 — Configuração efetiva Windows
 
 O BAT `testar_bridge_pinpad.bat` deve usar `PORTA_PINPAD` herdada do processo,
-sem atribuir `COM14` ou outro valor fixo. O exemplo COM14 é documentação do
-ambiente do usuário, não default universal. Na execução física por esse BAT,
+sem atribuir qualquer valor fixo. Exemplos de COM são apenas
+documentação temporal do ambiente, não defaults. Na execução física por esse BAT,
 variável ausente, vazia ou só com espaços deve interromper a execução com
 mensagem clara e código não zero, antes de abrir a serial.
 
@@ -227,7 +229,7 @@ toolchain em função desta correção.
 
 | Critério | Comportamento verificável | Evidência prevista |
 |---|---|---|
-| CA-072-01 | BAT preserva COM14 e outra COM herdada; ausência/vazio falha | teste do launcher com comando controlado |
+| CA-072-01 | BAT preserva qualquer valor válido herdado de `PORTA_PINPAD`; ausência/vazio falha | teste do launcher com ambiente controlado |
 | CA-072-02 | defaults/unidades corretos, modo físico e config segura | testes de ambiente/configuração |
 | CA-072-03 | readiness após bind; conflito/erro retorna código real | subprocesso + listener conflitante |
 | CA-072-04 | reverse usa porta e emulador selecionado; ambiguidades são explícitas | ADB fake + ADB real |
@@ -239,7 +241,7 @@ toolchain em função desta correção.
 | CA-072-10 | read fatal, disconnect, cancel/close liberam workers/serial/lock | integração e reabertura |
 | CA-072-11 | mutex Windows correto em duas execuções; abandono controlado | teste específico Windows multiprocesso |
 | CA-072-12 | scripted prova Abrir → GIX → DSP → Fechar e reabrir | AAR/APK/Bridge e log compartilhado |
-| CA-072-13 | físico COM14 prova Abrir → GIX → DSP → Fechar e reabrir | hardware, log e confirmação visual |
+| CA-072-13 | porta física indicada por `PORTA_PINPAD` prova Abrir → GIX → DSP → Fechar e reabrir | ambiente efetivo, hardware, log e confirmação visual |
 | CA-072-14 | build/testes Go e Android passam, artefatos instalados correspondem ao build | comandos, hashes e versões |
 | CA-072-15 | anexos não viram instruções; docs e SPECs relacionadas são coerentes | revisão documental e rastreabilidade |
 

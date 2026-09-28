@@ -234,6 +234,43 @@ def build_change_070_pdf():
     return output
 
 
+def build_change_072_pdf():
+    """Produz a auditoria atual da correção 072, sem reutilizar relatório histórico."""
+    output = OUTPUT.with_name("relatorio-072-corrigir-abertura-bridge-android.pdf")
+    styles = build_styles()
+    document = BaseDocTemplate(str(output), pagesize=A4, leftMargin=2 * cm, rightMargin=2 * cm,
+                               topMargin=1.7 * cm, bottomMargin=1.8 * cm,
+                               title="Auditoria de Segurança - 072-corrigir-abertura-bridge-android", author="Codex")
+    document.addPageTemplates([PageTemplate(id="change-072", frames=Frame(document.leftMargin, document.bottomMargin, document.width, document.height))])
+    p = lambda text, kind="body": Paragraph(text, styles[kind])
+    rows = [
+        [p("Categoria", "small"), p("Conclusão", "small")],
+        [p("Loopback e superfície de rede"), p("Conforme: Bridge aceita somente 127.0.0.1; não há autenticação porque o contrato é local e de desenvolvimento." )],
+        [p("Segredos e dados sensíveis"), p("Conforme na inspeção estática: eventos e transporte opaco redigem payloads; busca delimitada não encontrou segredos reais." )],
+        [p("Entrada e comandos"), p("Conforme: porta, host, timeout, ADB e launcher têm validação; comandos ADB usam argumentos separados e seleção explícita." )],
+        [p("Android e logs"), p("Conforme: logger privado usa allowlist, tamanho máximo e sanitização; arquivo Windows permanece no processo Bridge." )],
+        [p("Hardware"), p("O fluxo físico usou a porta lida de PORTA_PINPAD e comprovou Open, GIX, DSP, Close e reabertura no log. A confirmação visual do DSP pelo operador permanece pendente." )],
+    ]
+    table = Table(rows, colWidths=[5.1 * cm, 11.7 * cm], repeatRows=1)
+    table.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8E1D5")), ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#C9C0AF")), ("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 7), ("RIGHTPADDING", (0, 0), (-1, -1), 7), ("TOPPADDING", (0, 0), (-1, -1), 6), ("BOTTOMPADDING", (0, 0), (-1, -1), 6)]))
+    story = [
+        Spacer(1, 4 * cm), p("Relatório de Auditoria de Segurança", "title"),
+        p("072-corrigir-abertura-bridge-android", "subtitle"), p("Data: 28 de setembro de 2026", "subtitle"),
+        Spacer(1, 1 * cm), p("Resultado: nenhum achado de segurança confirmado em aberto. O fluxo técnico físico passou usando exclusivamente a porta herdada de PORTA_PINPAD; a confirmação visual do display permanece um gate funcional."),
+        PageBreak(), p("Resumo e controles", "h1"),
+        p("Foram examinados o launcher Windows, helper ADB/reverse, Bridge loopback, ownership Windows, framing PBRG, transporte Emulator, fachada gomobile, UI Compose e logs compartilhados. O protocolo continua opaco; a fronteira pública usa categorias estáveis e não ecoa mensagens arbitrárias."),
+        p("Categorias avaliadas", "h1"), table,
+        PageBreak(), p("Achados, limitações e evidências", "h1"),
+        p("Nenhum achado de segurança confirmado exige correção nesta Change. A ausência de autenticação é aceitável somente para o laboratório local restrito a loopback; exposição em rede exigiria Change própria."),
+        p("Evidências executadas", "h2"),
+        p("go test -tags=integration ./...; go vet ./...; build do Bridge; testes Windows de ownership multiprocesso; testes de launcher/helper com ADB controlado; Gradle testDebugUnitTest, lintDebug e assemble; AAR gomobile gerado com Go amd64 e Java 17; testes instrumentados scripted e físicos no emulator-5554; busca estática delimitada por segredos e APIs perigosas."),
+        p("Pendente funcional", "h2"),
+        p("Confirmar visualmente no display o texto TESTE ANDROID e a linha HOST seguida da porta efetiva. O valor da porta vem exclusivamente de PORTA_PINPAD; este relatório não fixa uma COM e ainda não afirma a observação visual pelo operador."),
+    ]
+    document.build(story)
+    return output
+
+
 if __name__ == "__main__":
     import sys
     if "--change-011" in sys.argv:
@@ -244,5 +281,7 @@ if __name__ == "__main__":
         print(build_change_069_pdf())
     elif "--change-070" in sys.argv:
         print(build_change_070_pdf())
+    elif "--change-072" in sys.argv:
+        print(build_change_072_pdf())
     else:
         print(build_pdf())

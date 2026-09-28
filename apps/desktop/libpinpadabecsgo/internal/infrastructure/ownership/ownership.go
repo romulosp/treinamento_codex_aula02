@@ -12,6 +12,9 @@ import (
 // ErrBusy informa que outra sessão já possui o recurso.
 var ErrBusy = errors.New("serial ownership busy")
 
+// ErrAbandoned indica posse abandonada, liberada antes de solicitar nova tentativa.
+var ErrAbandoned = errors.New("serial ownership abandoned")
+
 // Acquirer representa um mecanismo de ownership por sessão.
 type Acquirer interface {
 	Acquire(context.Context, string) (func() error, error)
@@ -52,11 +55,11 @@ func (m *Manager) Acquire(ctx context.Context, resource string) (func() error, e
 		m.mu.Unlock()
 		return nil, err
 	}
-	return func() error {
+	return sync.OnceValue(func() error {
 		err := releasePlatform()
 		m.mu.Lock()
 		delete(m.active, resource)
 		m.mu.Unlock()
 		return err
-	}, nil
+	}), nil
 }

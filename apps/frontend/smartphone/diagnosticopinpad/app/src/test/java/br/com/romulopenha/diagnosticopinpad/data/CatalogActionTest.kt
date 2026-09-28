@@ -15,6 +15,20 @@ class CatalogActionTest {
     }
 
     @Test
+    fun `catalogo visual remove abrir e fechar mas preserva a ordem das demais`() {
+        val visible = CatalogAction.values().filter { it.visibleInCatalog }
+
+        assertEquals(26, visible.size)
+        assertFalse(visible.contains(CatalogAction.OPEN))
+        assertFalse(visible.contains(CatalogAction.CLOSE))
+        assertEquals(CatalogAction.STATE, visible.first())
+        assertEquals(
+            CatalogAction.values().filter { it != CatalogAction.OPEN && it != CatalogAction.CLOSE },
+            visible,
+        )
+    }
+
+    @Test
     fun `opcoes reservadas ficam desabilitadas e campos sensiveis sao marcados`() {
         assertFalse(CatalogAction.UNAVAILABLE.enabled)
         assertFalse(CatalogAction.RESERVED.enabled)

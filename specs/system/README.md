@@ -1,5 +1,8 @@
 # Sistema vigente
 
+- O laboratÃ³rio `diagnosticopinpad` usa Compose e Bridge Windows/Android. A porta fÃ­sica Ã© lida exclusivamente de `PORTA_PINPAD`; o BAT nÃ£o sobrescreve a configuraÃ§Ã£o do operador. O log compartilhado Ã© `logs/LogPinpadAbecs.txt` no processo Windows.
+- Na tela do `diagnosticopinpad`, `Abrir` e `Fechar` sÃ£o controles rÃ¡pidos Ãºnicos; o catÃ¡logo funcional nÃ£o duplica essas operaÃ§Ãµes e preserva as demais aÃ§Ãµes na ordem funcional.
+
 ## Estado atual
 
 - O .gitignore exclui node_modules, target, dist e .quarkus em qualquer profundidade, além de .env e variantes e arquivos .key/.pem/.p12/.pfx. As exclusões finais prevalecem sobre a inclusão de scripts e documentos; não detectam segredos embutidos nem removem arquivos já rastreados.

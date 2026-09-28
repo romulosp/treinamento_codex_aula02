@@ -3,11 +3,14 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -21,35 +24,77 @@ import (
 )
 
 func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	if err := run(ctx); err != nil {
+		log.Printf("bridge encerrado com erro: %v", err)
+		os.Exit(1)
+	}
+}
+
+// run prepara o log antes da configuração e encerra recursos antes de devolver
+// erro ao main. Os defers não são interrompidos por log.Fatal.
+func run(ctx context.Context) (result error) {
+	tracer := logging.NewTracer()
+	destination, err := configureTracer(tracer)
+	if err != nil {
+		return err
+	}
+	defer func() { result = errors.Join(result, tracer.Close()) }()
+	event := logging.BridgeEvent{Event: "bridge_starting", Phase: "startup", Code: "OK", PID: os.Getpid()}
+	defer func() {
+		if result != nil {
+			event.Event, event.Code = "bridge_start_failed", "STARTUP_ERROR"
+		} else {
+			event.Event, event.Code = "bridge_stopped", "OK"
+		}
+		result = errors.Join(result, tracer.RecordBridgeEvent(event))
+	}()
+	if err := tracer.RecordBridgeEvent(event); err != nil {
+		return err
+	}
 	bridgePortEnv := os.Getenv("PINPAD_BRIDGE_PORT")
 	portNumber := 39100
 	if bridgePortEnv != "" {
 		value, err := strconv.Atoi(bridgePortEnv)
 		if err != nil {
-			log.Fatal("invalid PINPAD_BRIDGE_PORT")
+			return fmt.Errorf("invalid PINPAD_BRIDGE_PORT")
 		}
 		portNumber = value
 	}
 	serialConfig, err := config.Load()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	tracer := logging.NewTracer()
-	destination, err := configureTracer(tracer)
-	if err != nil {
-		log.Fatal(err)
+	mode := strings.TrimSpace(os.Getenv("PINPAD_BRIDGE_TRANSPORT"))
+	if mode == "" {
+		mode = "physical"
 	}
-	defer tracer.Close()
-	log.Printf("rastro serial configurado: %s", destination)
+	if mode != "physical" && mode != "scripted" {
+		return fmt.Errorf("invalid PINPAD_BRIDGE_TRANSPORT")
+	}
+	if mode == "physical" && runtime.GOOS == "windows" && !regexp.MustCompile(`(?i)^COM[1-9][0-9]{0,3}$`).MatchString(serialConfig.Port) {
+		return fmt.Errorf("invalid PORTA_PINPAD")
+	}
+	event.Port, event.Mode = serialConfig.Port, mode
+	event.Endpoint = fmt.Sprintf("127.0.0.1:%d", portNumber)
+	event.BaudRate, event.TimeoutMillis = serialConfig.BaudRate, serialConfig.Timeout.Milliseconds()
+	event.Source = "PORTA_PINPAD=" + source("PORTA_PINPAD") + ";PINPAD_BRIDGE_PORT=" + source("PINPAD_BRIDGE_PORT")
+	if err := tracer.RecordBridgeEvent(event); err != nil {
+		return err
+	}
+	log.Printf("configuracao: COM=%s origem=%s baud=%d origem=%s timeout=%s origem=%s TCP=%d origem=%s modo=%s log=%s origem=%s", serialConfig.Port, source("PORTA_PINPAD"), serialConfig.BaudRate, source("PINPAD_BAUDRATE"), serialConfig.Timeout, source("PINPAD_TIMEOUT"), portNumber, source("PINPAD_BRIDGE_PORT"), mode, destination, source("PINPAD_LOG_FILE"))
 
 	var serialPort port.Transport
-	if os.Getenv("PINPAD_BRIDGE_TRANSPORT") == "scripted" {
-		scripted := serial.NewDiagnosticScriptedTransport()
+	if mode == "scripted" {
+		scripted := serial.NewDiagnosticScriptedTransportForPort(serialConfig.Port)
 		scripted.SetTracer(tracer)
+		scripted.SetOpaqueTrace(true)
 		serialPort = scripted
 	} else {
 		physical := serial.New(serialConfig.Port, serialConfig.BaudRate, serialConfig.Timeout)
 		physical.SetTracer(tracer)
+		physical.SetOpaqueTrace(true)
 		serialPort = physical
 	}
 	server, err := bridge.New(bridge.Config{
@@ -57,15 +102,23 @@ func main() {
 		SerialName: serialConfig.Port,
 		Transport:  serialPort,
 		Ownership:  ownership.New(),
+		Tracer:     tracer,
+		Mode:       mode,
+		OnListening: func(address string) {
+			log.Printf("bridge_listening endpoint=%s pid=%d modo=%s COM=%s log=%s", address, os.Getpid(), mode, serialConfig.Port, destination)
+		},
 	})
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-	if err := server.Serve(ctx); err != nil {
-		log.Fatal(err)
+	return server.Serve(ctx)
+}
+
+func source(key string) string {
+	if value, ok := os.LookupEnv(key); ok && strings.TrimSpace(value) != "" {
+		return "environment"
 	}
+	return "default"
 }
 
 const bridgeModulePath = "br.com.romulopenha/lib-pinpad-abecs-go"

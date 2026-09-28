@@ -155,12 +155,12 @@ func ReadFrame(ctx context.Context, conn net.Conn) (Frame, error) {
 	return Decode(data)
 }
 
-func setDeadline(ctx context.Context, conn net.Conn) error {
+func setDeadline(ctx context.Context, set func(time.Time) error) error {
 	deadline := time.Now().Add(100 * time.Millisecond)
 	if ctxDeadline, ok := ctx.Deadline(); ok && ctxDeadline.Before(deadline) {
 		deadline = ctxDeadline
 	}
-	return conn.SetDeadline(deadline)
+	return set(deadline)
 }
 
 func writeAll(ctx context.Context, conn net.Conn, data []byte) error {
@@ -168,7 +168,7 @@ func writeAll(ctx context.Context, conn net.Conn, data []byte) error {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		if err := setDeadline(ctx, conn); err != nil {
+		if err := setDeadline(ctx, conn.SetWriteDeadline); err != nil {
 			return fmt.Errorf("set bridge write deadline: %w", err)
 		}
 		n, err := conn.Write(data)
@@ -185,7 +185,9 @@ func writeAll(ctx context.Context, conn net.Conn, data []byte) error {
 			return io.ErrShortWrite
 		}
 	}
-	return conn.SetDeadline(time.Time{})
+	// O frame já foi integralmente enviado. Peer que fecha após recebê-lo não
+	// transforma a limpeza do deadline em falha de escrita (inclusive net.Pipe).
+	return clearDeadline(conn.SetWriteDeadline)
 }
 
 func readAll(ctx context.Context, conn net.Conn, data []byte) error {
@@ -193,7 +195,7 @@ func readAll(ctx context.Context, conn net.Conn, data []byte) error {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		if err := setDeadline(ctx, conn); err != nil {
+		if err := setDeadline(ctx, conn.SetReadDeadline); err != nil {
 			return fmt.Errorf("set bridge read deadline: %w", err)
 		}
 		n, err := conn.Read(data)
@@ -213,7 +215,18 @@ func readAll(ctx context.Context, conn net.Conn, data []byte) error {
 			return io.ErrNoProgress
 		}
 	}
-	return conn.SetDeadline(time.Time{})
+	return clearDeadline(conn.SetReadDeadline)
+}
+
+func clearDeadline(set func(time.Time) error) error {
+	err := set(time.Time{})
+	if err == nil {
+		return nil
+	}
+	if errors.Is(err, net.ErrClosed) || errors.Is(err, io.ErrClosedPipe) || strings.Contains(err.Error(), "closed pipe") {
+		return nil
+	}
+	return err
 }
 
 // ErrorPayload serializa uma mensagem de erro de infraestrutura sem incluir
