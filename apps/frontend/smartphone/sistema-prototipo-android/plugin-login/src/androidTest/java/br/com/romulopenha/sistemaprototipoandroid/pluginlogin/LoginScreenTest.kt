@@ -6,6 +6,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -41,13 +42,26 @@ class LoginScreenTest {
     }
 
     @Test
-    fun mostraEnterENaoMostraCancelar() {
+    fun naoMostraEnterNemCancelar() {
         composeRule.setContent {
             LoginScreen(LoginUiState(), onEvent = {})
         }
 
-        composeRule.onNodeWithText("ENTER").performClick()
+        composeRule.onNodeWithText("ENTER").assertDoesNotExist()
         composeRule.onAllNodesWithText("SAIR/CANCELAR").assertCountEquals(0)
+    }
+
+    @Test
+    fun mostraIdentidadeVisualEMensagemInicial() {
+        composeRule.setContent {
+            LoginScreen(LoginUiState(), onEvent = {})
+        }
+
+        composeRule.onNodeWithText("Buy More").assertDoesNotExist()
+        composeRule.onNodeWithText("POS - COMPRAS").assertDoesNotExist()
+        composeRule.onNodeWithText("v1.0.0.0").assertDoesNotExist()
+        composeRule.onNodeWithText("Digite seu usuário e senha para continuar").assertIsDisplayed()
+        composeRule.onNodeWithText("Loterias CAIXA").assertDoesNotExist()
     }
 
     @Test

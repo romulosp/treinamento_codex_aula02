@@ -11,7 +11,8 @@ class PluginNegocioAppTest {
     fun `publica menu demonstrativo neutro`() {
         val items = PluginNegocioApp().businessMenuItems
 
-        assertEquals(listOf("operacoes", "relatorios", "configuracoes", "indisponivel"), items.map { it.id })
+        assertEquals(listOf("operacoes"), items.map { it.id })
+        assertEquals("Principal > Operações", PluginNegocioApp().getCaminhoMenu())
         assertTrue(items.none { it.titulo.contains("senha", ignoreCase = true) })
     }
 }

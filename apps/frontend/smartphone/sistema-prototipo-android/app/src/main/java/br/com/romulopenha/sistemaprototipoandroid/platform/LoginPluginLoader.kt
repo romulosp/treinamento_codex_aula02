@@ -61,7 +61,7 @@ internal data class PluginDescriptor(
 
 /** Critérios de identidade e capacidade exigidos antes de carregar um APK. */
 internal data class PluginLoadingRequest(
-    val pluginId: String,
+    val pluginId: String? = null,
     val requiredCapability: String,
 )
 
@@ -100,6 +100,7 @@ internal object LoginPluginLoader {
     private val DependencyPattern = Regex("[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*")
     private val HostApi = SharedApi.version
     internal val LoginRequest = PluginLoadingRequest(PluginId, StartupAuthCapability)
+    internal val BusinessRequest = PluginLoadingRequest(requiredCapability = "business-menu")
 
     /**
      * Move semanticamente um candidato para quarentena, valida-o e o promove.
@@ -168,7 +169,11 @@ internal object LoginPluginLoader {
         return repository.listFiles { file -> file.isFile && file.extension == "apk" }
             .orEmpty()
             .sortedByDescending(File::lastModified)
-            .mapNotNull { apk -> verifyRepositoryEntry(context, apk, onTransition, request) }
+            .mapNotNull { apk ->
+                val descriptor = runCatching { readDescriptor(apk) }.getOrNull()
+                if (descriptor != null && !descriptor.matches(request)) null
+                else verifyRepositoryEntry(context, apk, onTransition, request)
+            }
     }
 
     /**
@@ -309,11 +314,16 @@ internal object LoginPluginLoader {
     /** Confere identidade, API, entry class e capacidade antes da inspeção do APK. */
     private fun validateDescriptor(descriptor: PluginDescriptor, request: PluginLoadingRequest) {
         require(descriptor.schemaVersion == ManifestSchemaVersion) { "Versão de manifesto incompatível" }
-        require(descriptor.pluginId == request.pluginId) { "Identidade de plugin incompatível" }
+        require(request.pluginId == null || descriptor.pluginId == request.pluginId) { "Identidade de plugin incompatível" }
         require(descriptor.displayName.isNotBlank()) { "Nome de exibição ausente" }
         require(SemVerPattern.matches(descriptor.pluginVersion)) { "Versão de plugin inválida" }
         require(descriptor.requiredMajor == HostApi.major) { "Major da API incompatível" }
         require(descriptor.requiredMinor <= HostApi.minor) { "Minor da API incompatível" }
+        if (request.requiredCapability == "startup-auth") {
+            require(descriptor.requiredMinor == HostApi.minor) {
+                "Plugin de autenticação exige a minor vigente da API"
+            }
+        }
         require(descriptor.priority >= 0) { "Prioridade inválida" }
         require(request.requiredCapability in descriptor.capabilities) { "Capacidade obrigatória ausente" }
         require(descriptor.dependencies.all(DependencyPattern::matches)) { "Dependência de plugin inválida" }
@@ -321,6 +331,10 @@ internal object LoginPluginLoader {
             "Entry class fora do pacote declarado"
         }
     }
+
+    /** Indica se o artefato pertence à consulta sem tratá-lo como inválido. */
+    private fun PluginDescriptor.matches(request: PluginLoadingRequest): Boolean =
+        (request.pluginId == null || pluginId == request.pluginId) && request.requiredCapability in capabilities
 
     /** Confere pacote e certificado do arquivo APK sem executar suas classes. */
     @Suppress("DEPRECATION")

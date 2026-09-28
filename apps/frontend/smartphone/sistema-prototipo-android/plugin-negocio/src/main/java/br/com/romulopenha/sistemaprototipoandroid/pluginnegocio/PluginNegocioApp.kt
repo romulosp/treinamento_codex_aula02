@@ -1,6 +1,5 @@
 package br.com.romulopenha.sistemaprototipoandroid.pluginnegocio
 
-import br.com.romulopenha.sistemaprototipoandroid.sharedapi.BusinessMenuItem
 import android.content.Context
 import android.view.View
 import androidx.compose.foundation.layout.Arrangement
@@ -18,18 +17,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.unit.dp
+import br.com.romulopenha.sistemaprototipoandroid.sharedapi.BusinessMenuItem
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IPluginNegocioApp
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IPluginRouter
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IUIRegistry
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.PluginHostContext
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.PluginManifest
 
-/** Fornece descritores neutros de menu sem regra transacional ou dado sensível. */
+/** Fornece uma folha demonstrativa de menu sem regra transacional ou dado sensível. */
 class PluginNegocioApp : IPluginNegocioApp {
     override val manifest = PluginManifest(
         pluginId = PluginId,
         displayName = "Menu demonstrativo",
-        pluginVersion = "1.0.0",
+        pluginVersion = "1.1.0",
         requiredSharedApiMajor = 1,
         requiredSharedApiMinor = 1,
         entryClass = PluginNegocioApp::class.java.name,
@@ -38,10 +38,10 @@ class PluginNegocioApp : IPluginNegocioApp {
 
     override val businessMenuItems: List<BusinessMenuItem> = listOf(
         BusinessMenuItem("operacoes", "Operações", "operacoes", 10),
-        BusinessMenuItem("relatorios", "Relatórios", "relatorios", 20),
-        BusinessMenuItem("configuracoes", "Configurações", "configuracoes", 30),
-        BusinessMenuItem("indisponivel", "Item indisponível", "indisponivel", 40),
     )
+
+    /** Declara a posição estável da folha demonstrativa no menu do host. */
+    override fun getCaminhoMenu(): String = "Principal > Operações"
 
     override fun onLoad(host: PluginHostContext) = Unit
 
@@ -60,7 +60,7 @@ class PluginNegocioApp : IPluginNegocioApp {
     }
 }
 
-/** Exibe navegação local, feedback e item desabilitado sem regra transacional. */
+/** Exibe uma ação local para a única folha publicada pelo plugin. */
 @Composable
 private fun DemonstrationMenu(items: List<BusinessMenuItem>) {
     var selected by remember { mutableStateOf<String?>(null) }
@@ -70,10 +70,7 @@ private fun DemonstrationMenu(items: List<BusinessMenuItem>) {
     ) {
         Text("Menu demonstrativo")
         items.forEach { item ->
-            Button(
-                onClick = { selected = item.titulo },
-                enabled = item.id != "indisponivel",
-            ) { Text(item.titulo) }
+            Button(onClick = { selected = item.titulo }) { Text(item.titulo) }
         }
     }
     selected?.let { title ->

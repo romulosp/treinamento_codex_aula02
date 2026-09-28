@@ -3,6 +3,7 @@ package br.com.romulopenha.sistemaprototipoandroid.pluginlogin
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
+import br.com.romulopenha.sistemaprototipoandroid.sharedapi.AuthenticatedProfile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONException
@@ -11,7 +12,11 @@ import org.json.JSONObject
 /** Resultado seguro da validação, sem tokens nem credenciais. */
 internal sealed interface AuthenticationResult {
     /** Sessão opaca criada pela API. */
-    data class Success(val sessionId: String, val expiresAtEpochMillis: Long) : AuthenticationResult
+    data class Success(
+        val sessionId: String,
+        val expiresAtEpochMillis: Long,
+        val profile: AuthenticatedProfile,
+    ) : AuthenticationResult
 
     /** O provedor recusou usuário ou senha. */
     data object InvalidCredentials : AuthenticationResult
@@ -100,8 +105,19 @@ internal fun parseAuthenticationResponse(statusCode: Int, body: String): Authent
         val json = JSONObject(body)
         val sessionId = json.optString("sessaoId")
         val expiresAt = json.optLong("expiraEmEpochMillis")
-        if (json.optBoolean("autenticado") && sessionId.isNotBlank() && expiresAt > 0) {
-            AuthenticationResult.Success(sessionId, expiresAt)
+        val profileJson = json.optJSONObject("perfil")
+        val username = profileJson?.optString("username").orEmpty().trim()
+        val displayName = profileJson?.optString("displayName").orEmpty().trim()
+        val roleLabel = profileJson?.optString("roleLabel").orEmpty().trim()
+        if (
+            json.optBoolean("autenticado") && sessionId.isNotBlank() && expiresAt > 0 &&
+            username.isNotBlank() && displayName.isNotBlank() && roleLabel.isRecognizedRole()
+        ) {
+            AuthenticationResult.Success(
+                sessionId,
+                expiresAt,
+                AuthenticatedProfile(username, displayName, roleLabel),
+            )
         } else {
             AuthenticationResult.Unavailable
         }
@@ -109,3 +125,6 @@ internal fun parseAuthenticationResponse(statusCode: Int, body: String): Authent
     HttpURLConnection.HTTP_UNAUTHORIZED -> AuthenticationResult.InvalidCredentials
     else -> AuthenticationResult.Unavailable
 }
+
+private fun String.isRecognizedRole(): Boolean =
+    this == "OPERADOR" || this == "SUPERVISOR" || this == "PROPRIETARIO"

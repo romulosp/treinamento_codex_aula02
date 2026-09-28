@@ -13,8 +13,8 @@ android {
         applicationId = "br.com.romulopenha.sistemaprototipoandroid.pluginlogin"
         minSdk = 29
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = 3
+        versionName = "1.2.0"
     }
 
     buildFeatures {
@@ -49,6 +49,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")
+    testImplementation(project(":shared-api"))
     androidTestImplementation(composeBom)
     androidTestImplementation(project(":shared-api"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")

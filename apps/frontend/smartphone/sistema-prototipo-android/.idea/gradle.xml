@@ -11,6 +11,8 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/plugin-login" />
+            <option value="$PROJECT_DIR$/plugin-negocio" />
+            <option value="$PROJECT_DIR$/plugin-saque-cartao" />
             <option value="$PROJECT_DIR$/shared-api" />
           </set>
         </option>

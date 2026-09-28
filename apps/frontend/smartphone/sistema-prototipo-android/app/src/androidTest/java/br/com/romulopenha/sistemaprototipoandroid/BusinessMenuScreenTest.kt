@@ -19,13 +19,34 @@ class BusinessMenuScreenTest {
         composeRule.setContent {
             BusinessMenuScreen(
                 items = emptyList(),
+                fatalMessage = null,
                 logoutInProgress = false,
+                onItemSelected = {},
                 onLogout = { logoutCount++ },
+                onFatalAcknowledged = {},
             )
         }
 
         composeRule.onNodeWithText("Nenhum plugin de negócio carregado.").assertIsDisplayed()
         composeRule.onNodeWithText("Sair").performClick()
         composeRule.runOnIdle { assertEquals(1, logoutCount) }
+    }
+
+    @Test
+    fun folhaDoMenuEncaminhaSelecaoDoOperador() {
+        var selected: String? = null
+        composeRule.setContent {
+            BusinessMenuScreen(
+                items = listOf(br.com.romulopenha.sistemaprototipoandroid.sharedapi.BusinessMenuItem("saque", "Saque Cartão", "saque", 1)),
+                fatalMessage = null,
+                logoutInProgress = false,
+                onItemSelected = { selected = it },
+                onLogout = {},
+                onFatalAcknowledged = {},
+            )
+        }
+
+        composeRule.onNodeWithText("Saque Cartão").performClick()
+        composeRule.runOnIdle { assertEquals("saque", selected) }
     }
 }

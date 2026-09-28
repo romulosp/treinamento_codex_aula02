@@ -12,8 +12,21 @@ data class SharedApiVersion(val major: Int, val minor: Int, val patch: Int) {
 
 /** Versão publicada pelo AAR e usada para identificar eventos e rotas. */
 object SharedApi {
-    val version = SharedApiVersion(major = 1, minor = 1, patch = 0)
+    val version = SharedApiVersion(major = 1, minor = 2, patch = 0)
 }
+
+/**
+ * Perfil sanitizado usado exclusivamente para apresentação no shell do host.
+ *
+ * @property username identifica visualmente o usuário autenticado
+ * @property displayName nome apresentado ao usuário, sem token ou credencial
+ * @property roleLabel resultado sem acento do mapeamento de role aprovado
+ */
+data class AuthenticatedProfile(
+    val username: String,
+    val displayName: String,
+    val roleLabel: String,
+)
 
 /** Metadados validados antes de instanciar o ponto de entrada de um plugin. */
 data class PluginManifest(
@@ -34,12 +47,13 @@ interface PluginHostContext {
 
 /** Evento seguro compartilhado entre plugin e host. */
 sealed interface PluginEvent {
-    /** Indica sessão SSO estabelecida sem transportar senha ou token. */
+    /** Indica sessão SSO estabelecida com perfil visual, sem senha ou token. */
     data class SessionStateChanged(
         val pluginId: String,
         val contractVersion: SharedApiVersion,
         val sessionId: String,
         val expiresAtEpochMillis: Long,
+        val profile: AuthenticatedProfile,
     ) : PluginEvent
 }
 
@@ -64,7 +78,11 @@ data class BusinessMenuItem(
     val titulo: String,
     val rota: String,
     val ordem: Int,
-)
+    val filhos: List<BusinessMenuItem> = emptyList(),
+) {
+    /** Mantém compatibilidade binária com plugins compilados contra a API 1.1. */
+    constructor(id: String, titulo: String, rota: String, ordem: Int) : this(id, titulo, rota, ordem, emptyList())
+}
 
 /** Fonte declarativa de itens de menu pertencentes a um plugin de negócio. */
 interface IMenuProvider {
@@ -149,6 +167,14 @@ interface IPluginNegocioApp : IPluginApp, IMenuProvider {
 
     /** Mantém compatibilidade com o descritor de menu inicialmente publicado. */
     override fun menuItems(): List<BusinessMenuItem> = businessMenuItems
+
+    /**
+     * Devolve o caminho hierárquico obrigatório da única folha deste plugin.
+     *
+     * O valor é validado pelo host e usa `>` apenas como delimitador; este
+     * método não deve executar IO, bloquear nem acessar dados sensíveis.
+     */
+    fun getCaminhoMenu(): String
 
     /** Cria a tela neutra de demonstração sem receber credenciais ou tokens. */
     fun createBusinessScreen(context: Context): View

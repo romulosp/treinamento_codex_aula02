@@ -22,4 +22,19 @@ class PluginContractsTest {
     fun `rejeita versao negativa`() {
         SharedApiVersion(-1, 0, 0)
     }
+
+    @Test
+    fun `publica perfil no evento sem token`() {
+        val profile = AuthenticatedProfile("L123", "Operador Teste", "OPERADOR")
+        val event = PluginEvent.SessionStateChanged(
+            pluginId = "login",
+            contractVersion = SharedApi.version,
+            sessionId = "sessao",
+            expiresAtEpochMillis = 123_000,
+            profile = profile,
+        )
+
+        assertEquals(SharedApiVersion(1, 2, 0), event.contractVersion)
+        assertEquals(profile, event.profile)
+    }
 }

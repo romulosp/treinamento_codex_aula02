@@ -12,7 +12,11 @@ Change 003-concluir-execucao-produto-base: ARQUIVADA em 2026-09-06; verificaçõ
 
 | Mudança | Fase atual | Última atualização |
 | --- | --- | --- |
+| `10007-cabecalho-global-autenticacao` | `IMPLEMENTADA` | 2026-09-26 |
 | `10002-microkernel-pasta-dinamica` | `ARQUIVADA` | 2026-09-21 |
+| `10003-menu-negocio-dinamico` | `IMPLEMENTACAO_APROVADA` | 2026-09-25 |
+| `10004-plugin-saque-cartao` | `IMPLEMENTACAO_APROVADA` | 2026-09-25 |
+| `10005-padronizar-plugins-negocio` | `IMPLEMENTACAO_APROVADA` | 2026-09-25 |
 | `10001-plugin-login-autenticacao` | `ARQUIVADA` | 2026-09-21 |
 | `9999-sistema-prototipo-android` | `SPEC_APROVADA` | 2026-09-19 |
 | `2026-09-18-067-android-native-engineering` | `ARQUIVADA` | 2026-09-19 |

@@ -12,9 +12,9 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
-/** Gera o diretório de assets debug contendo o APK independente de login. */
-abstract class StageLoginPluginTask : DefaultTask() {
-    /** APK produzido pelo módulo `:plugin-login`. */
+/** Gera um diretório de assets debug contendo um APK de plugin independente. */
+abstract class StagePluginApkTask : DefaultTask() {
+    /** APK produzido pelo módulo do plugin. */
     @get:InputFile
     abstract val pluginApk: RegularFileProperty
 
@@ -34,18 +34,25 @@ abstract class StageLoginPluginTask : DefaultTask() {
     }
 }
 
-val stageDebugLoginPlugin = tasks.register<StageLoginPluginTask>("stageDebugLoginPlugin") {
+val stageDebugLoginPlugin = tasks.register<StagePluginApkTask>("stageDebugLoginPlugin") {
     dependsOn(":plugin-login:assembleDebug")
     pluginApk.set(project(":plugin-login").layout.buildDirectory.file("outputs/apk/debug/plugin-login-debug.apk"))
     outputDirectory.set(layout.buildDirectory.dir("generated/loginPluginAssets/debug"))
     assetName.set("plugin-login.apk")
 }
 
-val stageDebugBusinessPlugin = tasks.register<StageLoginPluginTask>("stageDebugBusinessPlugin") {
+val stageDebugBusinessPlugin = tasks.register<StagePluginApkTask>("stageDebugBusinessPlugin") {
     dependsOn(":plugin-negocio:assembleDebug")
     pluginApk.set(project(":plugin-negocio").layout.buildDirectory.file("outputs/apk/debug/plugin-negocio-debug.apk"))
     outputDirectory.set(layout.buildDirectory.dir("generated/businessPluginAssets/debug"))
-    assetName.set("plugin-negocio.apk")
+    assetName.set("business/plugin-negocio.apk")
+}
+
+val stageDebugSaqueCartaoPlugin = tasks.register<StagePluginApkTask>("stageDebugSaqueCartaoPlugin") {
+    dependsOn(":plugin-saque-cartao:assembleDebug")
+    pluginApk.set(project(":plugin-saque-cartao").layout.buildDirectory.file("outputs/apk/debug/plugin-saque-cartao-debug.apk"))
+    outputDirectory.set(layout.buildDirectory.dir("generated/saqueCartaoPluginAssets/debug"))
+    assetName.set("business/plugin-saque-cartao.apk")
 }
 
 android {
@@ -75,11 +82,15 @@ androidComponents {
     onVariants(selector().withBuildType("debug")) { variant ->
         variant.sources.assets?.addGeneratedSourceDirectory(
             stageDebugLoginPlugin,
-            StageLoginPluginTask::outputDirectory,
+            StagePluginApkTask::outputDirectory,
         )
         variant.sources.assets?.addGeneratedSourceDirectory(
             stageDebugBusinessPlugin,
-            StageLoginPluginTask::outputDirectory,
+            StagePluginApkTask::outputDirectory,
+        )
+        variant.sources.assets?.addGeneratedSourceDirectory(
+            stageDebugSaqueCartaoPlugin,
+            StagePluginApkTask::outputDirectory,
         )
     }
 }

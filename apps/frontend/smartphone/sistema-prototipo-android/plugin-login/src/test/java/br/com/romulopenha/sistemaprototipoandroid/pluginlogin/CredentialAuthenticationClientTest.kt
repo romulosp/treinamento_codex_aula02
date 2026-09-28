@@ -3,6 +3,7 @@ package br.com.romulopenha.sistemaprototipoandroid.pluginlogin
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import br.com.romulopenha.sistemaprototipoandroid.sharedapi.AuthenticatedProfile
 
 /** Testa a conversão do contrato HTTP sem realizar rede. */
 class CredentialAuthenticationClientTest {
@@ -10,10 +11,17 @@ class CredentialAuthenticationClientTest {
     fun `converte resposta positiva em sessao opaca`() {
         val result = parseAuthenticationResponse(
             200,
-            """{"autenticado":true,"sessaoId":"sessao","expiraEmEpochMillis":123000}""",
+            """{"autenticado":true,"sessaoId":"sessao","expiraEmEpochMillis":123000,"perfil":{"username":"L123","displayName":"Operador Teste","roleLabel":"OPERADOR"}}""",
         )
 
-        assertEquals(AuthenticationResult.Success("sessao", 123000), result)
+        assertEquals(
+            AuthenticationResult.Success(
+                "sessao",
+                123000,
+                AuthenticatedProfile("L123", "Operador Teste", "OPERADOR"),
+            ),
+            result,
+        )
     }
 
     @Test
@@ -26,6 +34,16 @@ class CredentialAuthenticationClientTest {
         assertTrue(
             parseAuthenticationResponse(200, """{"autenticado":true}""") is
                 AuthenticationResult.Unavailable,
+        )
+    }
+
+    @Test
+    fun `recusa perfil parcial ou role desconhecida`() {
+        assertTrue(
+            parseAuthenticationResponse(
+                200,
+                """{"autenticado":true,"sessaoId":"sessao","expiraEmEpochMillis":123,"perfil":{"username":"L1","displayName":"Nome","roleLabel":"ADM"}}""",
+            ) is AuthenticationResult.Unavailable,
         )
     }
 }
