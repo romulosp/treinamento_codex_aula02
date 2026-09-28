@@ -2,7 +2,7 @@
 
 ## Status
 
-`IMPLEMENTADA`
+`VALIDADA`
 
 Esta validação registra evidências da análise, da implementação técnica e dos
 limites ainda não executados. Não há AAR, teste Kotlin ou teste funcional
@@ -51,7 +51,15 @@ Arquivos principais implementados: `internal/application/port`,
 `internal/infrastructure/bridge`, `internal/infrastructure/ownership`,
 `cmd/libpinpadabecsgo-bridge` e `mobile`.
 
-## Limitações
+## Validação sucessora
+
+As limitações registradas na validação histórica foram encerradas por evidência sucessora, sem reescrever o ambiente original. A Change 068 criou o aplicativo Android e o AAR; a Change 069 validou o laboratório funcional; e a Change 072 comprovou o fluxo físico com `PORTA_PINPAD=COM10`, incluindo `PING`, `Open`, `GIX`, `DSP`, `Close`, reconexão e crescimento do log compartilhado `LogPinpadAbecs.txt`.
+
+- [Change 068 arquivada](../../archive/2026-09-27-068-diagnosticopinpad/validation.md)
+- [Change 069 arquivada](../../archive/2026-09-27-069-diagnosticopinpad-functional-lab/validation.md)
+- [Change 072 arquivada](../../archive/2026-09-27-072-corrigir-abertura-bridge-android/validation.md)
+
+## Limitações históricas
 
 - O Gate 1 não pode ser executado neste ambiente por falta do toolchain mobile.
 - A compatibilidade real de `go.bug.st/serial` não será presumida; o pacote
@@ -62,10 +70,7 @@ Arquivos principais implementados: `internal/application/port`,
 
 ## Estado da implementação
 
-`IMPLEMENTADA`. A implementação e os testes técnicos aplicáveis terminaram,
-mas a Change ainda não está `IMPLEMENTACAO_APROVADA`, `VALIDADA` ou
-`APROVADA`. A revisão humana deve avaliar o diff antes de qualquer etapa
-posterior.
+`VALIDADA`. A implementação e os testes técnicos aplicáveis foram concluídos e os gates originalmente indisponíveis foram comprovados por suas Changes sucessoras. A aprovação formal desta Change está registrada em `reviews/2026-09-28-approval.md`.
 
 ## Evidências previstas após aprovação
 

@@ -1,7 +1,7 @@
 # Revisão da SPEC — 067 Android Emulator Transport Bridge
 
-Data: 2026-09-27  
-Revisor: Codex  
+Data: 2026-09-27
+Revisor: Codex
 Skill: `spec-review`
 
 ## Escopo revisado

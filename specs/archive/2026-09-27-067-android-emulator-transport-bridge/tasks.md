@@ -27,13 +27,13 @@
 - [x] Disponibilizar transporte serial roteirizado para testes sem hardware.
 - [x] Fazer o Bridge consumir `PORTA_PINPAD` como fonte da porta física e
   reutilizar o valor no adapter e no ownership.
-- [ ] Executar Gate 1 em ambiente com Go Mobile, Java, SDK/NDK e ADB.
-- [ ] Executar Gates 2–5, registrando evidências em `validation.md`.
-- [ ] Revisar implementação e segurança antes da Change 068.
+- [x] Executar Gate 1 em ambiente com Go Mobile, Java, SDK/NDK e ADB; a evidência foi produzida pela validação Android da Change 068.
+- [x] Executar Gates 2–5, registrando evidências em `validation.md`; os gates foram exercitados e confirmados pelas Changes 069 e 072.
+- [x] Revisar implementação e segurança antes da Change 068; a revisão final está registrada em `reviews/2026-09-28-implementation-review.md`.
 
 ## Change 068 — dependência posterior
 
-- [ ] Criar o projeto `apps/frontend/smartphone/diagnosticopinpad`.
-- [ ] Importar somente o AAR aprovado e usar Compose/ViewModel/UDF.
-- [ ] Implementar o laboratório com comandos classificados a partir do código.
-- [ ] Executar Gate 6 e validação física com pinpad real.
+- [x] Criar o projeto `apps/frontend/smartphone/diagnosticopinpad`, entregue na Change 068.
+- [x] Importar somente o AAR aprovado e usar Compose/ViewModel/UDF, entregue nas Changes 068/069.
+- [x] Implementar o laboratório com comandos classificados a partir do código, entregue nas Changes 068/069.
+- [x] Executar Gate 6 e validação física com pinpad real, comprovados na Change 072.

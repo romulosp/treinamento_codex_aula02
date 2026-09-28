@@ -1,11 +1,12 @@
 # Status das mudanças
 
-Change 073-remover-acoes-duplicadas-catalogo: ARQUIVADA em 2026-09-28; commit de encerramento `23d15eb`.
-Change 072-corrigir-abertura-bridge-android: ARQUIVADA em 2026-09-28; fluxo físico, log compartilhado e confirmação visual concluídos no commit `23d15eb`.
-Change 071-bat-teste-modulo-windows: ARQUIVADA em 2026-09-28; validação concluída por evidência da Change 072 no commit `627998b`.
-Change 070-bridge-log-android: ARQUIVADA em 2026-09-28; validação end-to-end concluída por evidência da Change 072 no commit `c24a917`.
-Change 069-diagnosticopinpad-functional-lab: ARQUIVADA em 2026-09-28; baseline validada e correções sucessoras encerradas no commit `7a66a24`.
-Change 068-diagnosticopinpad: ARQUIVADA em 2026-09-28; baseline mínima validada pelas Changes 069/072 no commit `5c7602f`.
+Change 073-remover-acoes-duplicadas-catalogo: ARQUIVADA em 2026-09-28; commit de encerramento `8f63741`.
+Change 072-corrigir-abertura-bridge-android: ARQUIVADA em 2026-09-28; fluxo físico, log compartilhado e confirmação visual concluídos no commit `8f63741`.
+Change 071-bat-teste-modulo-windows: ARQUIVADA em 2026-09-28; validação concluída por evidência da Change 072 no commit `4d3d561`.
+Change 070-bridge-log-android: ARQUIVADA em 2026-09-28; validação end-to-end concluída por evidência da Change 072 no commit `8987d4d`.
+Change 069-diagnosticopinpad-functional-lab: ARQUIVADA em 2026-09-28; baseline validada e correções sucessoras encerradas no commit `abac809`.
+Change 068-diagnosticopinpad: ARQUIVADA em 2026-09-28; baseline mínima validada pelas Changes 069/072 no commit `051d24a`.
+Change 067-android-emulator-transport-bridge: ARQUIVADA em 2026-09-28; gates móveis e físicos encerrados por evidência sucessora no commit `a3370b6`.
 
 Change 011-corrigir-upload-postgresql: ARQUIVADA em 2026-09-06; entrega aprovada no commit e0f5713, especificação vigente consolidada e 14 testes aprovados após restauração.
 
