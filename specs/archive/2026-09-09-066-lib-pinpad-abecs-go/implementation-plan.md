@@ -1,0 +1,189 @@
+# Plano de implementação — 066-lib-pinpad-abecs-go
+
+Autor: Rômulo Penha
+
+## Fatos observados
+
+- O módulo Go já existe em `apps/desktop/libpinpadabecsgo/`, mas a integração completa ainda não foi concluída.
+- A Change define uma biblioteca headless e um adaptador RESTful HTTP/JSON. A fachada interna (`PinpadService`) permanece independente da API; WebSocket e UI ficam fora do escopo.
+- O módulo será criado em `apps/desktop/libpinpadabecsgo/` com `go.mod` `br.com.romulopenha/lib-pinpad-abecs-go`.
+- O ambiente disponível informa Go `1.26.5` em Windows 386.
+- A dependência serial aprovada é `go.bug.st/serial` e deve permanecer isolada no adaptador de infraestrutura.
+- O framing, CRC, parte dos builders/parsers, fila, worker e fachada parcial já estão presentes; os checks de `tasks.md` precisam ser confrontados com o código real.
+- A matriz de SPECs individuais está em construção e todas as novas/alteradas SPECs devem retornar a `SPEC_APROVADA` somente após revisão formal.
+
+## Impactos prováveis
+
+- Novo módulo completo sob `apps/desktop/libpinpadabecsgo/`.
+- Novos pacotes de domínio para modelos, protocolo, parsers, comandos, fila, sessão, estados e erros.
+- Adaptador serial real e fake sob infraestrutura.
+- Configuração por ambiente, logging `slog` e worker.
+- Fachada de aplicação cobrindo ciclo de vida, display, imagens/QR Code, EMV, GCX, GKY e GPN.
+- Builders, parsers e fluxos dos comandos aprovados em `spec-conformidade-abecs-v212.md`.
+- Fila `CommandQueue` com `Enqueue` não bloqueante, `Submit` bloqueante e `SessionManager` com relógio injectável.
+- Executável de validação em `cmd/libpinpadabecsgo`.
+- README operacional do módulo.
+- Nenhuma persistência, frontend, WebSocket ou alteração no protocolo serial. A API HTTP será adicionada como adaptador de entrada isolado.
+- `TransactionGCX` com parâmetros completos existirá apenas como stub `ErrNotImplemented` nesta Change.
+
+## Estratégia de implementação
+
+1. Inventariar o protocolo ABECS v2.12 e classificar cada função como integrada, parcial, ausente ou fora de escopo.
+2. Manter a matriz de SPEC individual por comando e obter aprovação formal antes de implementar cada lote.
+3. Consolidar modelos, constantes, erros e catálogo de status/comandos.
+4. Validar CRC, substitution, framing, leitura de resposta e parsers ABECS/BER-TLV com limites defensivos.
+5. Ajustar `SerialPort` para propagação de contexto e cancelamento efetivo.
+6. Implementar logging com redaction e tracer SPE/PP/RSP sem duplicação,
+   injetando a mesma instância no serviço e no adaptador serial. O adaptador
+   será a fonte única de `open`, `close`, `SPE`, `PP` e erros de I/O; o serviço
+   fornecerá o comando ativo e emitirá somente `RSP` após o parser obter o
+   status. O utilitário resolverá um destino absoluto canônico a partir da raiz
+   do módulo, respeitará `PINPAD_LOG_FILE`, gravará e validará um marcador de
+   ativação antes do menu e exibirá o caminho efetivamente aberto.
+7. Revisar `SessionManager`, fila FIFO de capacidade 100, worker único, cancelamento e shutdown.
+8. Implementar e validar individualmente CAN/OPN/GIX/CLO/CLX; registrar RST como exclusão normativa.
+9. Implementar e validar display, multimídia, tabelas EMV, GKY, GCX, GTK, GOX, FCX e GPN conforme suas SPECs.
+   Para GCX, montar os parâmetros ABECS `0013`, `0015`, `0016` e `0017`,
+   validar N12/N6/N6/N5, realizar uma única escrita por `PurchaseGCX`, consumir
+   notificações `NTM` até a resposta final e perguntar o modo de leitura e a
+   visibilidade do valor no CLI. Criar o contexto da operação depois dessas
+   entradas e preservar seu prazo na fila, sem aplicar o timeout genérico da
+   configuração ao GCX.
+   Na opção 19, coletar o modo GTK antes de iniciar a operação: claro envia
+   `GTK000`; criptografado usa método 50 e índice DUKPT validado.
+   Na opção 20, conservar a resposta e o valor do GCX; extrair as redes das
+   entradas N6 de `PP_AIDTABINFO`, coletar método/índice/WKENC de PIN e só
+   então iniciar o contexto do GOX.
+10. Implementar a comunicação segura RSA/AES somente após aprovação de `spec-protocolo-seguro.md`.
+11. Manter `TransactionGCX` como `ErrNotImplemented` enquanto sua tabela de parâmetros completos não estiver especificada e aprovada.
+12. Documentar todo código novo, convertido ou gerado conforme `.agents/skills/golang-documentation/SKILL.md`, incluindo comentários de pacote, símbolos exportados, fluxos internos complexos e exemplos executáveis aplicáveis.
+13. Executar revisão de implementação, inspeção documental, testes automatizados e validação com pinpad físico real por comando.
+
+## Testes, cobertura e qualidade
+
+- Testes unitários orientados a tabela para CRC, bytes, substitution, framing, parsers, status, erros e estados.
+- Testes do fake serial para CAN/EOT, OPN/ACK, GIX/ACK+payload, CLO/ACK, NAK, timeout e CRC inválido.
+- Testes de sessão com relógio controlável, incluindo conflito e expiração de 300 segundos.
+- Testes de fila para FIFO, capacidade 100, `ErrQueueFull` em `Enqueue`, `Submit` bloqueante com cancelamento de contexto, `Clear` e `Stop` sem execução pós-shutdown.
+- Testes de builders/parsers de display, multimídia, EMV, GKY, GCX (subconjunto) e GPN, incluindo redaction de PAN/PIN/KSN.
+- Teste GCX byte a byte com o vetor físico informado e teste da fachada que
+  rejeita entrada inválida e comprova uma única escrita serial por compra.
+- Teste GCX com duas notificações `NTM000032` seguidas da resposta final no
+  mesmo fluxo serial e teste das quatro combinações de `SPE_GCXOPT` escolhidas
+  no CLI. Teste de propagação comprovará que o prazo de 60 segundos fornecido
+  ao GCX não é reduzido pelo timeout genérico de 30 segundos.
+- Testes da fachada cobrindo ciclo de vida, `GetInfo`/`GetInfoRaw`, `DisplayQRCode` (com fake `QRCodeGenerator`, geração ausente e limites inválidos), `LoadCompleteEMVTable` (incluindo `StatusTableVersionDifferent`) e stub `ErrNotImplemented` de `TransactionGCX`.
+- Testes do tracer e da composição local cobrindo: execução a partir da raiz e
+  de `cmd/libpinpadabecsgo`; ausência de arquivos homônimos; marcador de
+  ativação imediatamente legível; caminho absoluto exibido; append; falha de
+  escrita/flush não silenciosa; matriz completa de comandos tipados; e
+  `SPE/PP/RSP` observáveis antes do encerramento do processo.
+- Cobertura mínima: 80% da produção aplicável, aferida por `go test ./... -coverprofile=coverage.out` e `go tool cover -func=coverage.out`.
+- Qualidade: `gofmt`, `go vet ./...`, `go test ./...`, `go test -race ./...` e build para o ambiente disponível.
+- O inventário de todos os arquivos `.go` e a associação com testes serão registrados em `validation.md`.
+- A inspeção de documentação Go deverá verificar comentários de pacote, símbolos exportados, código gerado, exemplos executáveis e documentação de fluxos complexos; as lacunas serão registradas em `validation.md`.
+- Como não há configuração Sonar existente no módulo, planejar Auditoria de Qualidade Assistida por LLM caso Sonar/scanner não esteja disponível; não declarar métrica não aferida.
+- Atualizar o README sem documentar servidor ou contratos fora do escopo.
+
+## Auditoria de segurança
+
+- Escopo: dependência serial, configuração por ambiente, leitura/escrita de bytes, limites de payload, cancelamento, concorrência, logs e dados sensíveis.
+- Verificar ausência de PAN, trilhas, PIN, KSN ou EMV sensível em logs e fixtures.
+- Executar `go test -race ./...`, `go vet ./...` e verificações de dependências disponíveis.
+- Aplicar `security-audit` na validação por existir dependência, configuração e integração serial; registrar o resultado atual em `validation.md` e gerar relatório conforme o procedimento vigente, sem segredos.
+- Se houver achado corrigível dentro da SPEC, corrigir e repetir revisão, validação e auditoria. Bloquear se depender de alteração de contrato ou ação externa.
+
+## Riscos, dúvidas e decisões necessárias
+
+- A execução usa Windows 386; a compatibilidade Linux deverá ser comprovada por build/teste em ambiente Linux disponível ou registrada como limitação objetiva.
+- `PinpadConfig` inicia com a porta padrão configurada pelo processo; `PORTA_PINPAD` definida e não vazia tem precedência, e ausência usa o default. Essa política deve ser coberta por testes e refletida no script local.
+- A API atual `SerialPort.Read()` ainda precisa ser alinhada à SPEC de cancelamento para receber contexto e retornar `context.Canceled`/`context.DeadlineExceeded` corretamente.
+- A biblioteca serial poderá exigir download de dependência; falha de rede será registrada como bloqueio de ambiente, não contornada com implementação inventada.
+- A validação com hardware físico não está disponível automaticamente; o fake comprovará somente componentes puros e a validação física deverá ser registrada separadamente. Sem essa evidência, o comando permanece não validado.
+- Nenhuma dependência concreta de geração de QR Code será adicionada nesta Change; `DisplayQRCode` depende de `QRCodeGenerator` injetado pelo consumidor.
+- `TransactionGCX` com parâmetros completos permanece como stub `ErrNotImplemented` até uma Change futura especificar a tabela de tags GCX completa.
+
+## Complemento de implementação FCX — 2026-09-13
+
+- Conservar a resposta GOX válida no CLI e recusar a opção 21 quando ela não
+  existir.
+- Perguntar aprovação, negação ou falha da comunicação com a rede e coletar
+  ARC somente nas duas primeiras decisões.
+- Decodificar dados EMV e lista de tags em hexadecimal, validar timeout B1 e
+  montar o comando com `BuildFCXCommand` antes de acessar a serial.
+- Criar o contexto blocante depois das entradas e exibir `PP_FCXRES` retornado.
+- Testar as três decisões, ARC condicional, campos opcionais, entradas
+  inválidas, ausência de GOX e payload exato sem `PP_FCXRES` como entrada.
+- Acrescentar ao diagnóstico GOX os parâmetros não sensíveis selecionados e
+  preservar o `047` como retorno não catalogado, pois o rastro físico mais
+  recente mostrou uma resposta imediata `GOX047` após dois fluxos anteriormente
+  válidos.
+
+## Corre??o multim?dia da op??o 16
+
+Reproduzir digita??o lenta com rel?gio virtual; renovar o contexto somente no
+CLI depois das entradas. Exercitar fake serial com falhas em cada etapa,
+particionamento 995 e vetores publicados. Executar su?te, vet e build Windows.
+
+## Aditivo de multimídia LMF/DMF e ressincronização — 2026-09-14
+
+### Impactos
+
+- Domínio de comandos: incluir builders literais `LMF` e `DMF` com um ou mais
+  nomes A8 em `SPE_MFNAME`.
+- Modelo/parser: preservar ocorrências repetidas de `RSP_DATID 0x805E` e
+  normalizar os nomes LMF para maiúsculas, mantendo cópias defensivas.
+- Serviço: adicionar listagem/exclusão; após timeout, falha de ACK ou resposta
+  de outro comando, enviar CAN/EOT antes de aceitar outro comando; proteger a
+  instância se a recuperação falhar, liberando-a por Reset ou reabertura.
+- CLI: expor LMF e DMF em opções novas; aceitar vários nomes DMF separados por
+  `;` e imprimir lista vazia sem tratá-la como falha.
+- Logging: acrescentar LMF/DMF à matriz tipada sem registrar mídia binária.
+
+### Estratégia e testes
+
+- Builders byte a byte com os vetores publicados nas páginas 100–101 do manual.
+- Parser com zero/um/vários `PP_MFNAME`, nomes minúsculos, formato inválido e
+  cópia defensiva.
+- Fake serial para timeout e resposta com RSP_ID divergente, CAN/EOT, falha de
+  recuperação, rejeição de comandos fora de sincronia e recuperação por Reset.
+- Testes do serviço para LMF vazio/listado e DMF plural, desconhecidos e status.
+- Testes de menu para opções novas, separador `;`, resultado vazio e erro.
+- Preservar o limite ABECS de 10 segundos; não estender timeout de comandos
+  multimídia não bloqueantes.
+- Executar `gofmt`, `go test ./...`, `go test ./... -coverprofile=coverage.out`,
+  `go tool cover -func=coverage.out`, `go test -race ./...`, `go vet ./...`,
+  `go build ./...` e auditoria `security-audit`; registrar saídas e limitações.
+
+### Risco e limite
+
+Os testes automatizados não demonstram que o firmware apaga mídias, lista a
+capacidade real, responde no prazo ou implementa a centralização/escalonamento
+de imagens. A validação física permanece pendente e não será inferida dos fakes.
+
+## Aditivo MLI com tipo desconhecido — 2026-09-14
+
+`BuildMLICommand` manterá a detecção de PNG/JPG/GIF para preencher `B1`, mas
+usará `00h` (RUF) quando a assinatura não for reconhecida. O builder continuará
+validando nome, arquivo não vazio, tamanho e CRC. Testes compararão o pacote MLI
+byte a byte e executarão MLR/MLE com tipo RUF; a decisão de suporte cabe ao
+firmware durante DSI.
+
+## Aditivo de reconexão e prova visual — 2026-09-14
+
+- Alterar a recuperação pós-timeout e `Reset` para escalar, uma única vez, de
+  três CAN sem EOT para fechamento e nova abertura pelo mesmo ciclo de vida de
+  `Open`, incluindo CAN/EOT inicial e OPN.
+- Preservar o erro e o resultado indeterminado do comando original; não reenviar
+  MLE nem qualquer outro comando automaticamente.
+- Manter a fila bloqueada durante toda a reconexão e revalidar o estado dentro
+  do worker antes de executar itens que já estavam aguardando.
+- Distinguir falha de fechamento, reabertura, CAN/EOT inicial e OPN, garantindo
+  que uma recuperação parcial não publique estado `OPEN`.
+- Ajustar o CLI para informar que `DSI000` representa comando aceito e solicitar
+  confirmação visual durante a validação local, sem transformar essa interação
+  em requisito da biblioteca headless.
+- Testar com adaptador determinístico: reconexão bem-sucedida, falha em cada
+  etapa, limite de uma reconexão, ausência de reenvio e fila concorrente.
+- Repetir em COM7 o timeout real de MLE e registrar a recuperação automática;
+  validar DSI com status e confirmação visual separados.

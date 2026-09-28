@@ -17,6 +17,8 @@ pasta. A skill-base prevalece sobre as especializações.
 
 ## Skills técnicas
 
+- `android-native-engineering`: governa planejamento, implementação, revisão e validação de aplicações Android nativas em Kotlin, compondo fontes e skills externas somente após classificação e aprovação pela SPEC.
+
 - `java-quarkus-resource`: contratos e recursos REST Quarkus.
 - `java-panache-repository`: persistência com JPA e Panache.
 - `java-integration-test`: testes de integração Quarkus.

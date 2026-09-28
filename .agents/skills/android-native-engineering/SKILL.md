@@ -16,8 +16,6 @@ Construa Android nativo com decisões rastreáveis e o menor nível de complexid
 
 Leia [references/spec-driven-workflow.md](references/spec-driven-workflow.md) ao criar ou alterar uma Change. Leia [references/architecture-and-profiles.md](references/architecture-and-profiles.md) ao decidir estrutura, camadas, módulos ou stack. Leia [references/quality-gates.md](references/quality-gates.md) ao implementar, revisar ou validar. Consulte [references/sources-and-decisions.md](references/sources-and-decisions.md) antes de afirmar práticas ou versões Android atuais.
 
-Ao criar, alterar ou revisar código Kotlin, leia e aplique obrigatoriamente [references/kdoc-guidelines.md](references/kdoc-guidelines.md).
-
 ## Regras de implementação
 
 - Prefira Kotlin e Compose em novas UIs, salvo contrato aprovado em contrário.
