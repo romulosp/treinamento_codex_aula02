@@ -7,6 +7,7 @@ Change 070-bridge-log-android: ARQUIVADA em 2026-09-28; validação end-to-end c
 Change 069-diagnosticopinpad-functional-lab: ARQUIVADA em 2026-09-28; baseline validada e correções sucessoras encerradas no commit `abac809`.
 Change 068-diagnosticopinpad: ARQUIVADA em 2026-09-28; baseline mínima validada pelas Changes 069/072 no commit `051d24a`.
 Change 067-android-emulator-transport-bridge: ARQUIVADA em 2026-09-28; gates móveis e físicos encerrados por evidência sucessora no commit `a3370b6`.
+Change 066-lib-pinpad-abecs-go: ARQUIVADA em 2026-09-28; comandos físicos confirmados manualmente, testes automatizados aprovados e melhorias posteriores registradas no commit `9cb12ac`.
 
 Change 011-corrigir-upload-postgresql: ARQUIVADA em 2026-09-06; entrega aprovada no commit e0f5713, especificação vigente consolidada e 14 testes aprovados após restauração.
 
