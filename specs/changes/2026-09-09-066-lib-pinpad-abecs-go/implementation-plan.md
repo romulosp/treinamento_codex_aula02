@@ -96,7 +96,7 @@ Autor: Rômulo Penha
 ## Riscos, dúvidas e decisões necessárias
 
 - A execução usa Windows 386; a compatibilidade Linux deverá ser comprovada por build/teste em ambiente Linux disponível ou registrada como limitação objetiva.
-- `PinpadConfig` inicia com `COM7`; `PORTA_PINPAD` definida e não vazia tem precedência, e ausência usa o default. Essa política deve ser coberta por testes e refletida no script local.
+- `PinpadConfig` inicia com a porta padrão configurada pelo processo; `PORTA_PINPAD` definida e não vazia tem precedência, e ausência usa o default. Essa política deve ser coberta por testes e refletida no script local.
 - A API atual `SerialPort.Read()` ainda precisa ser alinhada à SPEC de cancelamento para receber contexto e retornar `context.Canceled`/`context.DeadlineExceeded` corretamente.
 - A biblioteca serial poderá exigir download de dependência; falha de rede será registrada como bloqueio de ambiente, não contornada com implementação inventada.
 - A validação com hardware físico não está disponível automaticamente; o fake comprovará somente componentes puros e a validação física deverá ser registrada separadamente. Sem essa evidência, o comando permanece não validado.

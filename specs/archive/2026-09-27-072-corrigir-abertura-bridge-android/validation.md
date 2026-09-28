@@ -17,7 +17,7 @@ temporal do ambiente, não configuração normativa.
 
 | Evidência | Procedimento | Resultado/código |
 |---|---|---|
-| VAL-072-R01 | Ler `[Environment]::GetEnvironmentVariable('PORTA_PINPAD','User')`, repassar ao processo e validar com `mode`/WMI | Origem `User`; valor efetivo `COM10`; porta enumerada e válida, 0 |
+| VAL-072-R01 | Ler `[Environment]::GetEnvironmentVariable('PORTA_PINPAD','User')`, repassar ao processo e validar com `mode`/WMI | Origem `User`; valor efetivo obtido do ambiente; porta enumerada e válida, 0 |
 | VAL-072-R02 | Go amd64: `go test -tags=integration ./... -count=1 -timeout=120s`, `go vet ./...`, `go build ./cmd/libpinpadabecsgo-bridge` após a revisão | Passou com `go1.26.5 windows/amd64`, 0 |
 | VAL-072-R03 | Cobertura selecionada dos componentes alterados e `go tool cover -func` | Passou, 0; total selecionado 73,7% incluindo legado; `NewDiagnosticScriptedTransportForPort` 100% |
 | VAL-072-R04 | Gradle/JDK17: `testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest` após a revisão | `BUILD SUCCESSFUL`, 0 |
@@ -46,7 +46,7 @@ tráfego físico e liberou serial/ownership antes da reabertura. Como o protocol
 | VAL-072-04 | Validator Android em cópia de fontes sem `local.properties` | Passou, 0; o arquivo local permanece ignorado no projeto real |
 | VAL-072-05 | AAR gomobile Go amd64/JDK17, SHA256 `DFE925694A06CB7D885A51A01D10268DBDA6EE3A22F53A49B4CF258089377C04` | Gerado, 0 |
 | VAL-072-06 | Instrumentação scripted no `emulator-5554`: Ping, Open, GIX, DSP, Close e reabertura | Passou, 4 testes, 0 do comando ADB |
-| VAL-072-07 | `PORTA_PINPAD=COM14`, modo físico, mesma instrumentação | Falhou em Open: `SERIAL_UNAVAILABLE:serial_open` |
+| VAL-072-07 | `PORTA_PINPAD` obtida do ambiente, modo físico, mesma instrumentação | Falhou em Open: `SERIAL_UNAVAILABLE:serial_open` |
 | VAL-072-08 | `mode COM14` e enumeração WMI após falha | `COM14` inválida; dispositivos enumerados: COM1 e COM10 |
 | VAL-072-09 | `LogPinpadAbecs.txt` após tentativa física | Cresceu e registrou `serial_open_failed`, `session_error` e correlação `072-physical-open`; sem payload/driver bruto |
 | VAL-072-10 | `go test -race` | Não executado com sucesso: toolchain/sessão sem CGO; não declarar race aprovado |

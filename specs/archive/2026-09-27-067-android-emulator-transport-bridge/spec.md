@@ -23,7 +23,7 @@ Baseline confirmado no repositório:
 | Serviço | `internal/application/service.PinpadService` existente |
 | Transporte atual | `internal/application/service.SerialPort` e `internal/infrastructure/serial.Adapter` |
 | Driver físico | `go.bug.st/serial v1.6.2` |
-| Configuração serial | `PORTA_PINPAD`, `PINPAD_BAUDRATE`, `PINPAD_TIMEOUT`; default `COM7` |
+| Configuração serial | `PORTA_PINPAD`, `PINPAD_BAUDRATE`, `PINPAD_TIMEOUT`; porta efetiva lida do ambiente |
 | REST | existente em `cmd/libpinpadabecsgo-api`; não será usado como fronteira principal |
 | Android app | inexistente |
 | `go test ./...` | código 0 nesta revisão |

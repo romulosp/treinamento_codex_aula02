@@ -7,7 +7,7 @@ Inspeção somente leitura em 27/09/2026, Windows 10, PowerShell, repositório
 
 | ID | Evidência | Consequência demonstrável |
 |---|---|---|
-| DIA-001 | `testar_bridge_pinpad.bat:7` atribui COM14 incondicionalmente | outra PORTA_PINPAD herdada seria ignorada |
+| DIA-001 | `testar_bridge_pinpad.bat:7` atribui uma porta fixa incondicionalmente | outra PORTA_PINPAD herdada seria ignorada |
 | DIA-002 | `DiagnosticViewModel.kt:87` marca OPEN após Ping | sucesso de transporte aparenta abertura ABECS |
 | DIA-003 | `DiagnosticViewModel.kt:114` marca OPEN após qualquer ação salvo Close | consulta que retorna CLOSED habilita ações de sessão |
 | DIA-004 | `DiagnosticScreen.kt:197` renderiza erro após catálogo iniciado em :162 | erro de Abrir não aparece na área de estado inicial |
@@ -24,7 +24,7 @@ Linhas são referência do baseline, não promessa de posição após a correç�
 
 ## Observações de runtime e anexos
 
-- Imagens do usuário mostram COM14 enumerada e PORTA_PINPAD de usuário COM14.
+- As evidências do usuário mostram uma porta enumerada e `PORTA_PINPAD` de usuário; o valor deve sempre ser lido do ambiente.
 - Imagens mostram Open com ERROR, consulta Estado com OPEN e posterior
   `pinpad is closed`/resultado CLOSED. O código DIA-003 explica o falso estado
   da UI; não comprova a causa inicial de Open.

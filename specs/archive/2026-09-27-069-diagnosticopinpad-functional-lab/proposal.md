@@ -59,5 +59,5 @@ contratos ABECS existentes.
 O operador poderá selecionar no Android as mesmas capacidades funcionais do
 menu desktop, informar os parâmetros necessários, acompanhar estado/duração e
 receber resultado sanitizado. No cenário físico, o Bridge continuará sendo
-iniciado com `PORTA_PINPAD=COM14` (ou outra porta efetiva) e o Android usará
+iniciado com `PORTA_PINPAD` definida no ambiente (ou outra porta efetiva) e o Android usará
 somente o endpoint TCP configurado.

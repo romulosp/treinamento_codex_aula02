@@ -47,7 +47,7 @@ testes da Change.
 | GOX | Continuação EMV distinta de GCX/GTK, podendo retornar PIN block, KSN e TLV. | `spec-command-gox.md`, `spec-command-gpn.md`, `spec-logging.md` | Contrato, referência e classificação incluídos em `spec.md`. |
 | FCX | Finalização transacional e resultados próprios, sem preencher `GCXResponse`. | `spec-command-fcx.md` | Contrato, referência e matriz de rastreabilidade incluídos em `spec.md`. |
 | Comunicação segura | O legado possui operações JNI de RSA e AES; seu uso somente é permitido no formato normativo ABECS. | `spec-protocolo-seguro.md` | Escopo decidido em RF-018; formato detalhado permanece sujeito ao contrato transversal e à validação física. |
-| Configuração serial | Legado opera serial 8N1 com baud rate configurável; a Change exige ambiente e `PinpadConfig`. | RF-002 de `spec.md` | `COM7` é default; `PORTA_PINPAD` não vazia definida no ambiente tem precedência. |
+| Configuração serial | Legado opera serial 8N1 com baud rate configurável; a Change exige ambiente e `PinpadConfig`. | RF-002 de `spec.md` | A porta padrão é definida pelo processo; `PORTA_PINPAD` não vazia definida no ambiente tem precedência. |
 
 ## Checklist de desbloqueio da revisão da SPEC
 

@@ -44,7 +44,7 @@ A Change integra a comunicação com pinpad ABECS v2.12 em uma biblioteca Go hea
 11. O catálogo de comandos será documentado uma SPEC por comando. Uma implementação parcial deverá declarar explicitamente o subconjunto suportado e não poderá simular campos de resposta que pertençam a outro comando.
 12. A validação automatizada de componentes puros não substitui a validação de transporte e comportamento com pinpad físico real.
 13. A comunicação segura ABECS será isolada do framing em claro e seguirá `spec-protocolo-seguro.md`: OPN negocia `KSEC` temporária pelo perfil RSA de 2048 bits comprovado no legado; pacotes protegidos seguem o formato normativo AES-CBC; CLO encerra e limpa a sessão. CLX é visual e não fecha a porta, mas também encerra a sessão segura no pinpad, conforme manual ABECS v2.12, seção 6.4.5.
-14. `PinpadConfig` inicia em `COM7`; uma `PORTA_PINPAD` não vazia no ambiente do processo tem precedência. O script local não deve sobrescrever essa escolha.
+14. `PinpadConfig` inicia com a porta padrão configurada pelo processo; uma `PORTA_PINPAD` não vazia no ambiente do processo tem precedência. O script local não deve sobrescrever essa escolha.
 15. `GCX` é a própria iniciação da captura transacional. A fachada não envia
     um GCX preliminar com data/hora zeradas. O builder usa parâmetros ABECS
     tipados e codifica `SPE_GCXOPT` como N5, conforme a seção 3.7.1 do manual.

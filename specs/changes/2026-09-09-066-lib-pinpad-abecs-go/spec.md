@@ -77,12 +77,12 @@ Variáveis:
 - opcionais: `PINPAD_BAUDRATE`, `PINPAD_TIMEOUT`, `LOG_LEVEL` e
   `PINPAD_LOG_FILE`.
 
-Defaults: porta `COM7`, baud rate `19200`, timeout `30s`, log `INFO`. O modelo
+Defaults: porta obtida de `PORTA_PINPAD` no ambiente do processo, baud rate `19200`, timeout `30s`, log `INFO`. O modelo
 `PinpadConfig` deverá conter `Port`, `BaudRate`, `Timeout`,
-`AutoLoadEMVTables`, `AcquirerIndex` e `TableVersion`, com defaults `COM7`,
+`AutoLoadEMVTables`, `AcquirerIndex` e `TableVersion`, com a porta efetiva obtida do ambiente,
 `19200`, `30s`, `false`, `00` e `TABVER0001`, respectivamente. O carregamento operacional inicia com
 esses defaults e aplica as variáveis de ambiente definidas no processo; logo,
-ausência de `PORTA_PINPAD` usa `COM7`, enquanto valor presente e não vazio tem
+ausência de `PORTA_PINPAD` usa a porta padrão configurada pelo processo, enquanto valor presente e não vazio tem
 precedência. Um valor vazio, baud rate inválido ou timeout inválido retorna erro
 de configuração. O README e `start_aplication.bat` devem refletir essa mesma
 precedência sem persistir alteração no sistema.
@@ -486,7 +486,7 @@ sem implementar o contrato do comando deve permanecer marcada como parcial ou
 
 Deverá existir `start_aplication.bat` na raiz do módulo para execução por usuário comum do Windows, sem exigir elevação de privilégio e sem gravar configuração permanente no sistema. O script deverá:
 
-- preservar `PORTA_PINPAD` já definida no ambiente da sessão e atribuir `COM7`
+- preservar `PORTA_PINPAD` já definida no ambiente da sessão e não atribuir uma porta fixa
   somente quando ela estiver ausente ou vazia; definir `PINPAD_BAUDRATE` e
   `PINPAD_TIMEOUT` somente na sessão do processo;
 - preservar `PINPAD_LOG_FILE` quando definida; quando ausente, definir o
@@ -576,7 +576,7 @@ no pinpad, sem fechar a porta física.
 - [ ] **CA-017:** concorrência, cancelamento, shutdown e proteção de dados sensíveis são testados na fachada.
 - [ ] **CA-018:** `Enqueue` nunca bloqueia o produtor e retorna `ErrQueueFull` na capacidade máxima; `Submit` bloqueia até resultado ou cancelamento de contexto; `Clear` e `Stop` cancelam comandos pendentes sem executar após o encerramento; `SessionManager` cobre posse, conflito, renovação, liberação e expiração de 300 segundos com relógio injectável.
 - [ ] **CA-019:** a API REST não expõe WebSocket, comando hexadecimal bruto, estado serial global mutável fora do `PinpadService` nem dados sensíveis em respostas ou logs.
-- [ ] **CA-020:** carregamento usa `COM7` somente quando `PORTA_PINPAD` estiver ausente; valor não vazio definido no ambiente do processo tem precedência. `start_aplication.bat` preserva essa variável quando já existente, executa como usuário comum, não persiste configuração, compila o binário em diretório do módulo e informa claramente bloqueios de política de grupo.
+- [ ] **CA-020:** carregamento usa a porta padrão configurada pelo processo somente quando `PORTA_PINPAD` estiver ausente; valor não vazio definido no ambiente do processo tem precedência. `start_aplication.bat` preserva essa variável quando já existente, executa como usuário comum, não persiste configuração, compila o binário em diretório do módulo e informa claramente bloqueios de política de grupo.
 - [ ] **CA-021:** todo pacote Go entregue possui comentário de pacote, todos os símbolos exportados possuem comentários iniciados pelo identificador e os fluxos internos complexos de protocolo, segurança, concorrência e cancelamento estão documentados conforme RF-017.
 - [ ] **CA-022:** em pinpad físico, um timeout real seguido de três tentativas
   CAN sem EOT aciona uma única reconexão controlada; a fila permanece protegida,

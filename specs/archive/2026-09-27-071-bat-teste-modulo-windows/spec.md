@@ -13,7 +13,7 @@ mostra configuração/log efetivos e mantém a janela legível após encerrament
 
 ## Correção de contrato pela Change 072
 
-A atribuição fixa `set PORTA_PINPAD=COM14` da primeira versão é substituída
+A atribuição fixa `set PORTA_PINPAD=...` da primeira versão é substituída
 pelo consumo da variável herdada do Windows. COM14 é exemplo do ambiente do
 operador. Ausência/vazio no launcher físico exige mensagem e código não zero.
 O BAT preserva valores explícitos válidos e aplica defaults somente conforme

@@ -118,7 +118,8 @@ metadados de tamanho/status.
 - CA-069-05: formulários rejeitam entradas inválidas antes da chamada;
 - CA-069-06: resultados sensíveis são redigidos e testes provam a ausência de
   PAN, trilhas, PIN block, KSN, chaves e bytes raw;
-- CA-069-07: `PORTA_PINPAD=COM14` é consumida pelo Bridge Windows e não pelo
+- CA-069-07: `PORTA_PINPAD` é consumida pelo Bridge Windows, com o valor efetivo
+  lido do ambiente, e não pelo
   Android;
 - CA-069-08: `testDebugUnitTest`, `lintDebug`, `assembleDebug`, validador
   estrutural e testes Go passam;

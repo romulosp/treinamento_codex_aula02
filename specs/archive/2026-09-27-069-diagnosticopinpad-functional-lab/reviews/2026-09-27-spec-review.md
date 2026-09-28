@@ -47,7 +47,7 @@ Data: 2026-09-27
 ### REV-069-004 — Configuração física
 
 - Severidade: informativo;
-- Evidência: requisito do usuário `PORTA_PINPAD=COM14`;
+- Evidência: requisito do usuário de consumir `PORTA_PINPAD` a partir do ambiente;
 - Impacto: duplicar COM no Android causaria divergência de ownership;
 - Decisão: Android conhece apenas host/porta TCP; Bridge Windows consome
   `PORTA_PINPAD`;

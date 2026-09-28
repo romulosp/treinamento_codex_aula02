@@ -53,7 +53,7 @@ Arquivos principais implementados: `internal/application/port`,
 
 ## Validação sucessora
 
-As limitações registradas na validação histórica foram encerradas por evidência sucessora, sem reescrever o ambiente original. A Change 068 criou o aplicativo Android e o AAR; a Change 069 validou o laboratório funcional; e a Change 072 comprovou o fluxo físico com `PORTA_PINPAD=COM10`, incluindo `PING`, `Open`, `GIX`, `DSP`, `Close`, reconexão e crescimento do log compartilhado `LogPinpadAbecs.txt`.
+As limitações registradas na validação histórica foram encerradas por evidência sucessora, sem reescrever o ambiente original. A Change 068 criou o aplicativo Android e o AAR; a Change 069 validou o laboratório funcional; e a Change 072 comprovou o fluxo físico usando a porta obtida de `PORTA_PINPAD`, incluindo `PING`, `Open`, `GIX`, `DSP`, `Close`, reconexão e crescimento do log compartilhado `LogPinpadAbecs.txt`.
 
 - [Change 068 arquivada](../../archive/2026-09-27-068-diagnosticopinpad/validation.md)
 - [Change 069 arquivada](../../archive/2026-09-27-069-diagnosticopinpad-functional-lab/validation.md)
