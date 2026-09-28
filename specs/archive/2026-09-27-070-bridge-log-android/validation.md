@@ -2,10 +2,10 @@
 
 ## Status
 
-`IMPLEMENTADA`
+`VALIDADA`
 
-A implementação e os testes técnicos foram concluídos. A revisão da
-implementação, validação formal, aprovação e commit permanecem pendentes.
+A implementação foi validada pelos testes técnicos e pelo fluxo Android/Bridge
+físico registrado na Change 072.
 
 ## Evidências da implementação
 
@@ -24,8 +24,9 @@ implementação, validação formal, aprovação e commit permanecem pendentes.
 - `go test ./...` — aprovado, código 0.
 - `go vet ./...` — aprovado, código 0.
 - `go build ./cmd/libpinpadabecsgo-bridge` — aprovado, código 0.
-- Fluxo Android/Bridge físico — pendente de reinício manual do Bridge para
-  observar o arquivo no host; não declarado como validado nesta fase.
+- Fluxo Android/Bridge físico — validado na Change 072: o mesmo arquivo cresceu
+  em append e registrou startup, Ping, ownership, abertura, TX/RX redigidos,
+  fechamento e reabertura.
 
 ## Auditoria de segurança
 
@@ -39,5 +40,10 @@ deve ser exposto em rede sem change própria de autenticação.
 Log com apenas ativação foi observado após o relato de falha de Abrir. Testes
 anteriores comprovam configuração do tracer, não o fluxo físico atual.
 Eventos de falhas anteriores à serial e regressão end-to-end são tratados na
-[Change 072](../2026-09-27-072-corrigir-abertura-bridge-android/spec.md).
-A alimentação física do log permanece não comprovada até CA-072-13.
+[Change 072](../../archive/2026-09-27-072-corrigir-abertura-bridge-android/spec.md).
+A alimentação física foi comprovada na validação sucessora.
+
+## Evidência vigente
+
+Detalhamento e hashes estão em
+[validation.md da Change 072](../../archive/2026-09-27-072-corrigir-abertura-bridge-android/validation.md).

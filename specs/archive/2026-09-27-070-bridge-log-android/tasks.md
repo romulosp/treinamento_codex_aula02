@@ -16,6 +16,6 @@
 ## Qualidade
 
 - [x] Executar testes Go, vet e build do Bridge.
-- [ ] Executar fluxo Android/Bridge disponível.
+- [x] Executar fluxo Android/Bridge disponível, usando evidência sucessora da Change 072.
 - [x] Registrar evidências da implementação e dos testes técnicos.
-- [ ] Revisar, aprovar e arquivar a change em commit separado.
+- [x] Revisar, aprovar e arquivar a change em commit separado.

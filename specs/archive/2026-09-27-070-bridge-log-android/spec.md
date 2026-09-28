@@ -47,7 +47,7 @@ Change 069.
 
 ## 6. Complemento corretivo — Change 072
 
-A [SPEC 072](../2026-09-27-072-corrigir-abertura-bridge-android/spec.md)
+A [SPEC 072](../../archive/2026-09-27-072-corrigir-abertura-bridge-android/spec.md)
 complementa CA-070-03/04: criar e ativar o arquivo não comprova alimentação.
 O mesmo destino deve receber eventos reais de startup, Ping, ownership,
 falhas de sessão e abertura/fechamento. Falha anterior ao Open serial deve
