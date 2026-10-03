@@ -1,4 +1,6 @@
-# Tarefas: plugin-saque-cartao
+# Tarefas: 10004-plugin-saque-cartao
+
+**Autor:** Rômulo Penha
 
 ## Status
 `IMPLEMENTACAO_APROVADA`

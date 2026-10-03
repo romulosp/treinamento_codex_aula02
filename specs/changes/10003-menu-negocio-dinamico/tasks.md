@@ -1,5 +1,7 @@
 # Tarefas: 10003-menu-negocio-dinamico
 
+**Autor:** Rômulo Penha
+
 ## Status
 
 `IMPLEMENTACAO_APROVADA`
@@ -11,7 +13,9 @@
 
 ## Implementação
 
-- [x] Evoluir shared API, major e KDoc; adequar plugin de demonstração e seu descritor de serviço.
+- [x] Evoluir a SharedApi sem elevar a major, preservar o baseline 1.1.0 e o
+      construtor compatível, atualizar KDoc e adequar o plugin de demonstração
+      e seu descritor de serviço.
 - [x] Implementar validador de caminho, árvore determinística e conversão recursiva.
 - [x] Implementar descoberta por APK/descritor de serviço, handles isolados e falhas catalogadas.
 - [x] Integrar executor, cancelamento por geração, lifecycle, modal fatal e UI hierárquica.

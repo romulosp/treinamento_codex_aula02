@@ -1,4 +1,6 @@
-# Validação
+# Validação: 10005-padronizar-plugins-negocio
+
+**Autor:** Rômulo Penha
 
 ## Status
 `IMPLEMENTADA`

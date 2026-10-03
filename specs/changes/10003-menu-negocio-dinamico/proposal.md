@@ -1,5 +1,7 @@
 # Proposta: 10003-menu-negocio-dinamico
 
+**Autor:** Rômulo Penha
+
 ## Status
 
 `SPEC_APROVADA`
@@ -36,8 +38,14 @@ O menu de negócio é hoje uma lista estática obtida de um único APK bootstrap
 
 `BusinessMenuItem` atual não representa filhos. Para cumprir a exigência de que agrupadores também sejam itens de menu, a API compartilhada terá uma árvore opcional de filhos e preservará o construtor binário de quatro campos da API 1.1. Plugins de negócio ainda precisam declarar `getCaminhoMenu()` para participar da montagem dinâmica.
 
+Nesta Change, a `SharedApi` permanece na linha `1.1.0` e na major 1. A Change
+sucessora `10007-cabecalho-global-autenticacao` eleva a versão vigente para
+`1.2.0`. Plugins `business-menu` que exigem minor 1 continuam compatíveis com o
+host 1.2 conforme a regra compartilhada de compatibilidade por minor.
+
 ## Critérios para aprovação da SPEC
 
 - Contrato, gramática do caminho, regras de conflito e tratamento de falhas são verificáveis.
 - A fronteira de confiança e o ciclo de vida do classloader permanecem claros.
-- A evolução incompatível da API é aceita explicitamente.
+- O versionamento e a compatibilidade da API estão definidos sem elevação de
+  major nesta Change.

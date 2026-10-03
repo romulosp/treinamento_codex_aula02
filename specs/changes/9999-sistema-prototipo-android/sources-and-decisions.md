@@ -35,11 +35,13 @@
 
 ### SDK mínimo
 
-- Problema: não foi fornecida matriz corporativa de aparelhos.
-- Alternativas avaliadas: API 23, 26 ou uma versão mais recente.
-- Decisão: API 26, correspondente a Android 8.0, para equilibrar compatibilidade e custo de validação do protótipo.
-- Classificação: `CONTEXTUAL` e `REQUIRED` nesta Change.
-- Validação: emulador API 26 e emulador API 36, além das janelas definidas nos critérios de aceite.
+- Problema original: não foi fornecida matriz corporativa de aparelhos.
+- Decisão histórica: API 26 para a fundação monolítica.
+- Decisão vigente: API 29 para a plataforma de plugins, conforme a Change 10000
+  e seu ADR de fronteira de segurança.
+- Classificação: `REQUIRED` para host, API compartilhada e plugins.
+- Validação: emulador/dispositivo a partir da API 29 e no alvo configurado,
+  além das janelas definidas nos critérios de aceite.
 
 ### Compose e BOM
 
@@ -62,7 +64,9 @@
 - Fontes: [recomendações de arquitetura](https://developer.android.com/topic/architecture/recommendations) e [camada de UI](https://developer.android.com/topic/architecture/ui-layer).
 - Decisão: single-activity, Compose, estado imutável, fluxo unidirecional, ViewModel na tela e componentes sem ViewModel próprio.
 - Classificação: `RECOMMENDED`.
-- Adaptação local: perfil `SIMPLE`, sem repository porque não há fonte de dados externa ou persistente neste escopo.
+- Adaptação vigente: perfil `STANDARD`, host mínimo e módulos por capacidade.
+  Repositories continuam contextuais; não são exigidos sem fonte de dados que
+  justifique a abstração.
 
 ### Adaptabilidade
 

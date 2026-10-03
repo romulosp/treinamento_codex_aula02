@@ -1,5 +1,7 @@
 # SPEC: 10003-menu-negocio-dinamico
 
+**Autor:** Rômulo Penha
+
 ## Status
 
 `SPEC_APROVADA`
@@ -13,6 +15,11 @@ A Change depende da infraestrutura segura e do repositório privado verificado d
 ### RF-01 — Contrato e versão
 
 `IPluginNegocioApp` DEVE estender `IPluginApp` e `IMenuProvider` e declarar `fun getCaminhoMenu(): String`. Um plugin de negócio declara exatamente uma folha. `menuItems()` permanece somente como compatibilidade e NÃO é usado para posicionar ou reconstruir a árvore. A API compartilhada preserva a versão 1.1.0 e o construtor binário de quatro campos de `BusinessMenuItem`.
+
+A versão `1.1.0` é o baseline desta Change. Após a Change 10007, o host publica
+`1.2.0`; plugins de negócio que declaram major 1 e minor requerida 1 permanecem
+compatíveis porque o host aceita `requiredSharedApiMinor <= hostMinor` para a
+capacidade `business-menu`. Esta Change não eleva a major.
 
 `BusinessMenuItem` DEVE representar tanto agrupador quanto folha: mantém `id`, `titulo`, `rota` e `ordem`, e recebe `filhos: List<BusinessMenuItem>`. Agrupador tem filhos não vazios e rota neutra; folha tem filhos vazios e conserva os metadados oferecidos pelo plugin. Cada plugin DEVE expor exatamente um item-folha em `businessMenuItems`; a infraestrutura usa esse único descritor como metadado da folha e nunca usa sua posição para formar a árvore. A UI consome a mesma classe, agora recursiva.
 
@@ -38,7 +45,7 @@ O host chama `getCaminhoMenu()` uma vez por instância, valida o resultado, dete
 | MENU-004 | Nenhum plugin elegível | Warning; UI permanece funcional com estado vazio. |
 | MENU-005 | Arquivo/carga de APK corrompida | Falha isolada; log e continuação. |
 | MENU-006 | Descritor de serviço ausente ou inválido | Falha isolada; log e continuação. |
-| MENU-007 | Timeout de discovery, instanciação ou caminho | Falha isolada; log e continuação. |
+| MENU-007 | Resultado concluído depois de logout, destruição ou troca de geração | Resultado descartado, referências liberadas cooperativamente e nenhuma publicação na UI. |
 | MENU-008 | Major da API incompatível | Falha isolada; log e continuação. |
 
 No erro fatal o log contém data/hora, caminho normalizado, classes e APKs envolvidos; no conflito contém literalmente `[FATAL] Inicialização interrompida por conflito de caminho de menu entre plugins.` O modal informa o código e plugins envolvidos; após reconhecimento, a Activity é encerrada. Falhas isoladas jamais derrubam a Activity.
@@ -59,7 +66,9 @@ Discovery, leitura de ZIP, classe, instanciação e montagem ocorrem fora da mai
 1. Dois plugins com pai compartilhado formam um agrupador com duas folhas em ordem alfabética e IDs estáveis.
 2. Caminhos duplicados, inclusive por case, produzem `MENU-001`, modal e log.
 3. Caminhos nulo/vazio produzem `MENU-002`; raiz, um único segmento ou segmento vazio produzem `MENU-003`.
-4. APK sem descritor de serviço, inválido, incompatível ou lento é isolado; os demais plugins continuam disponíveis.
+4. APK sem descritor de serviço, inválido ou incompatível é isolado; os demais plugins continuam disponíveis.
 5. Sem plugins elegíveis, a UI mostra o estado vazio sem modal crítico.
-6. A tela não bloqueia a main thread; logout ou destruição impedem a publicação tardia de resultado e destacam os plugins cooperativamente.
+6. A tela não bloqueia a main thread; logout ou destruição produzem `MENU-007`,
+   impedem a publicação tardia de resultado e destacam os plugins
+   cooperativamente.
 7. Build, testes unitários, lint, teste instrumentado e validador estrutural são executados e registrados antes da conclusão.

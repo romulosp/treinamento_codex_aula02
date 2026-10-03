@@ -1,8 +1,14 @@
 # Design: 10006-layout-login-referencia-svg
 
+**Autor:** Rômulo Penha
+
 ## Status
 
 `SPEC_APROVADA`
+
+> **Sucessão arquitetural:** a Change 10007 moveu `LoginHeader` para o
+> `CoreShell` de `:app`. A estrutura abaixo registra a entrega intermediária;
+> no estado final, `LoginScreen` contém somente conteúdo e rodapé.
 
 ## Contexto
 
@@ -22,12 +28,13 @@ substituir somente a organização visual interna.
   elemento raiz.
 - Manter `LoginRoute`, `LoginViewModel`, `LoginReducer` e os contratos de
   autenticação sem alteração.
-- Organizar a tela em três regiões invariantes: cabeçalho, conteúdo com peso e
-  rodapé.
+- Organizar a entrega intermediária em três regiões: cabeçalho, conteúdo com
+  peso e rodapé. Após a Change 10007, o cabeçalho sai de `LoginScreen` e passa
+  ao shell do host.
 - Usar `BoxWithConstraints` para derivar dimensões adaptativas sem criar uma
   segunda implementação funcional.
-- Manter componentes privados simples para cabeçalho, campos, grupos de teclas
-  e rodapé. Não criar slots ou parâmetros públicos sem necessidade.
+- Manter componentes privados simples para campos, grupos de teclas e rodapé.
+  O componente de cabeçalho passa a pertencer ao `:app` na Change 10007.
 - Preservar `testTag("login-screen")`, `user-field` e `password-field`. Não
   renderizar `enter-button`.
 - Representar o gradiente, as sombras e as formas com primitivas Compose; não

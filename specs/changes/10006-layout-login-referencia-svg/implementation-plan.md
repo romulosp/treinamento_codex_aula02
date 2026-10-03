@@ -1,8 +1,14 @@
 # Plano de implementação: 10006-layout-login-referencia-svg
 
+**Autor:** Rômulo Penha
+
 ## Status
 
-`SPEC_APROVADA`
+`EXECUTADO — SNAPSHOT_PRE_IMPLEMENTACAO`
+
+Este plano registra a implementação intermediária da Change 10006. A Change
+10007 substitui somente a propriedade do cabeçalho; o restante do plano
+permanece como evidência histórica da entrega.
 
 ## Impactos prováveis
 

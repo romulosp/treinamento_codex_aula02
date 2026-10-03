@@ -12,6 +12,7 @@
 **/target/
 **/.quarkus/
 **/*.log
+tmp/pdfs/gcx-pages/
 apps/backend/gerenciartarefas/start_aplicacao.bat
 apps/backend/gerenciarcategorias/start_aplicacao.bat
 apps/backend/autenticadorsso/start_aplicacao.bat
@@ -25,17 +26,56 @@ apps/backend/autenticadorsso/start_aplicacao.bat
 
 # Arquivos de IDE e sistema operacional.
 .idea/
+.tmp/
 .vscode/
 *.iml
 Thumbs.db
 Desktop.ini
 
+# ===================================================================
+# APPS
+# ===================================================================
+
 #arquivos apps retirando
 **/apps/backend/**
 **/apps/backend/**
 
+# Backend não deve ser versionado
+apps/backend/**
+
+# Frontends não devem ser versionados
+apps/frontend/web/**
+apps/frontend/smartphone/**
+apps/frontend/desktop/**
+
+# Exceção: o aplicativo Android de diagnóstico da Change 075 é fonte do projeto.
+!apps/frontend/smartphone/
+!apps/frontend/smartphone/diagnosticopinpad/
+!apps/frontend/smartphone/diagnosticopinpad/**
+apps/frontend/smartphone/diagnosticopinpad/.gradle/
+apps/frontend/smartphone/diagnosticopinpad/**/build/
+apps/frontend/smartphone/diagnosticopinpad/.idea/
+apps/frontend/smartphone/diagnosticopinpad/gradle/gradle-daemon-jvm.properties
+apps/frontend/smartphone/diagnosticopinpad/local.properties
+apps/frontend/smartphone/diagnosticopinpad/app/libs/*.aar
+apps/frontend/smartphone/diagnosticopinpad/app/libs/*.jar
+
+# Exceção: permitir versionamento do módulo Go
+!apps/
+!apps/desktop/
+!apps/desktop/libpinpadabecsgo/
+!apps/desktop/libpinpadabecsgo/**
+
+# Artefatos locais da biblioteca Go ABECS.
+apps/desktop/libpinpadabecsgo/coverage
+apps/desktop/libpinpadabecsgo/coverage.out
+apps/desktop/libpinpadabecsgo/.gocache/
+apps/desktop/libpinpadabecsgo/.gomodcache/
+apps/desktop/libpinpadabecsgo/.bin/
+apps/desktop/libpinpadabecsgo/*.exe
+apps/desktop/libpinpadabecsgo/**/logs/LogPinpadAbecs.txt
+
 **/apps/frontend/web/**
-**/apps/frontend/smartphone/**
 !**/apps/frontend/smartphone/sistema-prototipo-android/
 !**/apps/frontend/smartphone/sistema-prototipo-android/**
 **/apps/frontend/smartphone/sistema-prototipo-android/.gradle/

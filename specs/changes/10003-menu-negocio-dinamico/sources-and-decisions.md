@@ -1,5 +1,8 @@
 # Fontes e decisões: 10003-menu-negocio-dinamico
 
+**Autor:** Rômulo Penha
+
+
 ## SKILL-CANDIDATE-001 — Android Skills oficiais
 
 - Classificação: `REJECT`.

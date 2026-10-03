@@ -4,7 +4,12 @@
 
 ## Status
 
-`SPEC_APROVADA`
+`EXECUTADO — SNAPSHOT_PRE_MICROKERNEL`
+
+Este plano registra a fundação anterior e a transição inicial para o
+microkernel. As decisões operacionais vigentes pertencem às Changes 10000,
+10001, 10003, 10006 e 10007. O status corrente da Change 9999 permanece em
+`tasks.md` e `validation.md`.
 
 ## Plano de continuação de 2026-09-24
 
@@ -13,11 +18,12 @@
 3. Carregar o plugin após a sessão, preservando falha isolada e logout atual.
 4. Implementar menu, seleção, feedback e testes no plugin.
 
-## Atualização prompt2 — compatibility review e execução
+## Baseline histórico do prompt2
 
-A combinação aprovada é `minSdk = 26`, `compileSdk = 37`, `targetSdk = 36`,
-Compose BOM `2026.09.00`, Compose 1.12.x stable, AGP 9.4.0, Gradle 9.6.0,
-KGP 2.2.10 e JDK 17. A Compatibility Review terminou em `PASS`.
+A combinação aprovada para a fundação monolítica era `minSdk = 26`,
+`compileSdk = 37`, `targetSdk = 36`, Compose BOM `2026.09.00`, Compose 1.12.x
+stable, AGP 9.4.0, Gradle 9.6.0, KGP 2.2.10 e JDK 17. A Change 10000 elevou o
+`minSdk` vigente para 29 e substituiu a topologia de módulo único.
 
 A fundação foi criada e o bloqueio de ambiente foi resolvido no Android Studio,
 com o SDK configurado em `D:\desenvolvimento\ferramentas_android\Sdk`. O
@@ -32,11 +38,16 @@ emulador. As demais tarefas da implementação integral continuam pendentes.
 - A raiz ignora aplicações smartphone e arquivos não textuais; será necessária exceção explícita e restrita ao novo projeto, preservando a exclusão de builds, caches, `local.properties` e credenciais.
 - Java 17.0.11 está disponível em `C:\Desenvolvimento\jdk-17.0.11`, mas não está no `PATH` da sessão.
 - Android SDK e `adb` estão disponíveis em `D:\desenvolvimento\ferramentas_android\Sdk`; o projeto possui Gradle Wrapper 9.6.0.
-- A configuração aprovada é: perfil `SIMPLE`, módulo `app`, `minSdk = 26`, `compileSdk = 37`, `targetSdk = 36`, Java 17, AGP 9.4.0, KGP 2.2.10, Gradle 9.6.0, Compose BOM estável `2026.09.00`, Activity Compose 1.13.0 e Lifecycle 2.11.0.
+- A configuração histórica era perfil `SIMPLE`, módulo `app` e `minSdk = 26`.
+  A configuração vigente é perfil `STANDARD`, módulos de host/API/plugins e
+  `minSdk = 29`; `compileSdk = 37`, `targetSdk = 36` e Java 17 permanecem.
 - O projeto não possui Sonar configurado para este módulo; aplica-se a Auditoria de Qualidade Assistida por LLM.
 - A auditoria de segurança é aplicável por haver frontend Android, manifesto, dependências, entrada de senha e configuração de backup/captura. O gerador `docs/security-audit/gerar_relatorio.py` está disponível.
 
 ## Impactos prováveis
+
+Os itens desta seção descrevem a fundação original. A distribuição posterior
+entre host e plugins é regida pelas Changes sucessoras.
 
 - Criar o projeto em `apps/frontend/smartphone/sistema-prototipo-android/`, incluindo Gradle Wrapper, catálogo de versões, módulo `app`, manifesto e recursos textuais.
 - Ajustar `.gitignore` somente para versionar o novo projeto e seu Wrapper, mantendo artefatos gerados e dados locais ignorados.
@@ -64,7 +75,9 @@ emulador. As demais tarefas da implementação integral continuam pendentes.
 - Build: `gradlew.bat assembleDebug`.
 - Testes JVM: `gradlew.bat testDebugUnitTest`.
 - Lint: `gradlew.bat lintDebug`.
-- Testes instrumentados/UI: `gradlew.bat connectedDebugAndroidTest`, condicionados a emuladores API 26 e API 37 disponíveis; `targetSdk = 36` deve permanecer verificável na configuração.
+- Testes instrumentados/UI: `gradlew.bat connectedDebugAndroidTest`, com matriz
+  vigente iniciando na API 29; `targetSdk = 36` deve permanecer verificável na
+  configuração.
 - Cobertura: JaCoCo sobre lógica Kotlin elegível, mínimo 80% de linhas e branches; Composables declarativos, Activity e código gerado só podem ser excluídos com justificativa em `validation.md`.
 - Screenshots: teste instrumentado captura estados determinísticos e valida dimensões/conteúdo; a validação executa janelas mínimas e registra comparação humana em 800 x 600.
 - KDoc: inventariar todo `.kt` de produção, documentar declarações públicas/protegidas e regras internas não óbvias; Dokka não será adicionado porque não é exigido nem preexistente.

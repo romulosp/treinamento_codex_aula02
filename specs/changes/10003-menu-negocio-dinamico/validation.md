@@ -1,5 +1,7 @@
 # Validação: 10003-menu-negocio-dinamico
 
+**Autor:** Rômulo Penha
+
 ## Status
 
 `IMPLEMENTADA`

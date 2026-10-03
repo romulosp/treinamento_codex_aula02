@@ -3,7 +3,8 @@
 > **SUPERSEDIDA PARA A TOPOLOGIA ATUAL.** A fundação de módulo único foi
 > substituída pelas Changes 10000 e 10001: `:app` é host, `:shared-api` contém
 > contratos e `:plugin-login` contém a identificação. Este documento é apenas
-> registro da fundação original.
+> registro da fundação original. O `minSdk = 26` abaixo é histórico; a
+> plataforma vigente usa `minSdk = 29`.
 
 **Autor:** Rômulo Penha
 

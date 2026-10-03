@@ -1,12 +1,19 @@
 # Proposta: 10006-layout-login-referencia-svg
 
+**Autor:** Rômulo Penha
+
 ## Status
 
 `SPEC_APROVADA`
 
+> **Sucessão:** esta Change entregou o cabeçalho como parte de
+> `:plugin-login`. A Change `10007-cabecalho-global-autenticacao` transferiu esse
+> cabeçalho para o shell de `:app`. O cabeçalho descrito aqui é histórico; os
+> campos, teclados, gradiente e rodapé continuam vigentes.
+
 ## Responsável e data
 
-Romulo Penha e equipe do projeto, 2026-09-25.
+Rômulo Penha e equipe do projeto, 2026-09-25.
 
 ## Referências
 
@@ -24,7 +31,8 @@ eventos, foco, navegação, integração com o host ou contratos do plugin.
 ## Escopo
 
 - Alterar exclusivamente o layout Compose de `:plugin-login`.
-- Reproduzir cabeçalho branco, fundo azul em gradiente, título de identificação,
+- Reproduzir, como estado intermediário desta Change, cabeçalho branco, fundo
+  azul em gradiente, título de identificação,
   campos centralizados, teclado alfanumérico, teclado numérico e rodapé da
   referência.
 - Adequar cores, dimensões, espaçamentos, tipografia, bordas, cantos e sombras.

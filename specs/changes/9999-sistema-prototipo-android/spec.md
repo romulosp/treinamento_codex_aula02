@@ -22,13 +22,14 @@ sessão opaca de `plugin-login`; nenhum segredo é enviado ao plugin de negócio
 > módulo `:app` desde a Change `10001-plugin-login-autenticacao`. A Change 9999
 > permanece como histórico visual e de componentes de origem.
 
-## Atualização prompt2 — decisão vigente
+## Baseline histórico do prompt2
 
 A decisão anterior `compileSdk = 36` foi substituída por `compileSdk = 37`,
 mantendo `targetSdk = 36`. O baseline exige BOM Compose `2026.09.00`,
 Compose 1.12.x stable, AGP 9.4.0, Gradle 9.6.0, KGP 2.2.10 e JDK 17.
-`minSdk = 26` foi confirmado após análise de público, dispositivos,
-bibliotecas, segurança, APIs e custo de testes.
+Na fundação monolítica original, `minSdk = 26` foi confirmado após análise de
+público, dispositivos, bibliotecas, segurança, APIs e custo de testes. A Change
+10000 substituiu essa decisão pela API 29 para toda a topologia de plugins.
 
 Estado atual: `SPEC_APROVADA`. A Compatibility Review completa terminou em
 `PASS`; `compileSdk` e `targetSdk` permanecem decisões independentes.
@@ -45,9 +46,12 @@ Estado atual: `SPEC_APROVADA`. A Compatibility Review completa terminou em
 
 ## Premissas e decisões aprovadas para revisão
 
-- `REQUIRED`: aplicativo Android nativo, Kotlin, Compose, um módulo `app` e perfil `SIMPLE`.
+- `REQUIRED`: aplicativo Android nativo, Kotlin e Compose, com perfil `STANDARD`
+  e módulos `:app`, `:shared-api`, `:plugin-login` e plugins de negócio
+  independentes. O desenho `SIMPLE` de módulo único é histórico.
 - `REQUIRED`: `compileSdk = 37` e `targetSdk = 36`; compilar contra Android 17 não ativa automaticamente os comportamentos de alvo da API 37.
-- `REQUIRED`: `minSdk = 26`. O protótipo suporta Android 8.0 ou superior; APIs posteriores exigem fallback compatível ou não podem ser usadas.
+- `REQUIRED`: `minSdk = 29`, conforme a Change 10000 e seu ADR de fronteira de
+  segurança. O baseline 26 pertence somente à fundação monolítica superada.
 - `REQUIRED`: distribuição exclusivamente interna para desenvolvimento, demonstração e validação. Publicação em Google Play, outra loja ou distribuição pública exige nova Change.
 - `REQUIRED`: nenhum arquivo de imagem, fonte ou marca do material legado será copiado para o APK, pois não há licença ou autorização de distribuição comprovada. O material permanece como evidência analítica local.
 - `REQUIRED`: o aplicativo deve executar exclusivamente em orientação paisagem; a Activity deve declarar `screenOrientation="landscape"`.
@@ -88,18 +92,22 @@ Componentes interativos devem representar, quando aplicável, os estados `defaul
 
 ### RF-005 — Tela operacional obrigatória
 
-Deve existir uma tela inicial única que reproduza a interface operacional da
-referência aprovada em 2026-09-20. A tela não contém galeria técnica nem
-rolagem no enquadramento expandido.
+`SUPERADO_PELAS_CHANGES_10001_10006_10007`. A antiga tela operacional única foi
+decomposta: `:plugin-login` possui identificação, campos, teclados e rodapé; o
+shell de `:app` possui o cabeçalho global; plugins de negócio fornecem conteúdo
+após uma sessão válida. O módulo `:app` não reimplementa esses elementos.
 
 O contrato detalhado está em [spec-tela-catalogo.md](spec-tela-catalogo.md).
 
-Os componentes reutilizáveis criados anteriormente continuam no código para
-evolução posterior, mas não aparecem abaixo da tela inicial.
+Os componentes reutilizáveis criados anteriormente permanecem como origem
+histórica e só podem ser usados nos módulos proprietários definidos pelas
+Changes sucessoras.
 
 ### RF-006 — Estrutura de menu demonstrativa
 
-O aplicativo deve apresentar uma árvore de menu local e navegável para demonstrar botões de menu, níveis hierárquicos, retorno e estado desabilitado. O conteúdo será uma amostra neutra; os 350 nós da origem serão inventariados, mas não devem carregar regras de negócio ou nomes protegidos para o protótipo.
+`SUPERADO_PELA_CHANGE_10003`. O host monta uma árvore dinâmica a partir de
+plugins `business-menu` verificados. O conteúdo demonstrativo neutro pertence a
+`:plugin-negocio`; o host não mantém árvore local nem regras de negócio.
 
 O contrato detalhado está em [spec-menu-demonstrativo.md](spec-menu-demonstrativo.md).
 
@@ -111,7 +119,11 @@ Nenhuma linha pode ser marcada `MIGRAR` se depender de arquivo ausente ou direit
 
 ### RF-008 — Demonstração local e determinística
 
-Todos os dados da tela-catálogo e do menu devem ser locais, determinísticos e não sensíveis. A aplicação não deve exigir rede, conta, segredo, permissão perigosa ou periférico para executar o cenário principal.
+Os dados demonstrativos de `:plugin-negocio` devem ser locais, determinísticos e
+não sensíveis. Esse requisito não se aplica à autenticação: o fluxo vigente usa
+`plugin-login`, a API `autenticadorsso` e o Keycloak conforme as Changes 10001,
+10003 e 10007. Credenciais e tokens não atravessam a fronteira do plugin de
+negócio.
 
 ### RF-009 — Autonomia do material de origem
 
@@ -132,7 +144,11 @@ Especificação, implementação, revisão e validação devem usar somente arqu
 - Aplicação `single-activity`.
 - Estado imutável e fluxo unidirecional: estado desce, eventos sobem.
 - `ViewModel` somente para estado de tela; componentes reutilizáveis recebem estado e callbacks.
-- Injeção manual por construtor; Hilt, camada de domínio, banco, rede e múltiplos módulos não são necessários neste escopo.
+- Perfil vigente `STANDARD`, com `:app` como host mínimo, `:shared-api` como
+  fronteira contratual e plugins independentes por capacidade. A decisão
+  original de injeção manual e módulo único está superada pelas Changes 10000 e
+  10001; DI, domínio, persistência e rede continuam contextuais e só devem ser
+  introduzidos no módulo que efetivamente os possuir.
 
 ### RNF-003 — Adaptabilidade
 
@@ -182,7 +198,9 @@ Especificação, implementação, revisão e validação devem usar somente arqu
 
 - RN-001: pressionar uma tecla virtual altera apenas o campo atualmente selecionado.
 - RN-002: `Limpar` remove todo o conteúdo do campo; apagar remove um caractere compatível com Unicode.
-- RN-003: confirmar credenciais de demonstração nunca chama serviço externo; apenas apresenta retorno local e permite abrir o menu demonstrativo.
+- RN-003: `SUPERADA_PELAS_CHANGES_10001_E_10007`. A confirmação usa o fluxo SSO
+  aprovado, produz sessão opaca e perfil sanitizado; não existe autenticação
+  local demonstrativa no estado vigente.
 - RN-004: componente desabilitado não dispara callback e deve expor semanticamente seu estado.
 - RN-005: seleção exclusiva mantém no máximo um item selecionado por grupo; seleção múltipla mantém cada estado independentemente.
 - RN-006: diálogo modal retém foco enquanto aberto e devolve foco ao acionador ao fechar.
@@ -196,23 +214,28 @@ Dado que a implementação foi concluída, quando o diretório do projeto e a co
 
 ### CA-002 — Controles operacionais no mesmo enquadramento
 
-Dada a tela inicial em tablet paisagem, o avaliador deve encontrar cabeçalho,
-credenciais, teclados alfanumérico e numérico, limpar, retorno, fixar,
-confirmar, sair/cancelar e instrução inferior sem navegar ou rolar.
+`SUPERADO_PELAS_CHANGES_10006_E_10007`. Os critérios vigentes de composição do
+login e do cabeçalho são validados nessas Changes; este cenário permanece como
+registro visual histórico.
 
 ### CA-003 — Semelhança visual em janela expandida
 
-Dada uma janela de 800 x 600 em orientação horizontal, quando a tela-catálogo for renderizada, então a primeira área visível deve conter cabeçalho superior, painel de identificação ao centro, teclado numérico à direita, teclado alfanumérico na região inferior e ações de cancelar/confirmar nos extremos inferiores, usando paleta azul clara e controles arredondados.
+`SUPERADO_PELAS_CHANGES_10006_E_10007`. A comparação visual atual usa os SVGs,
+o viewport 1280×800 e a divisão de propriedade entre `CoreShell` e
+`:plugin-login` definida nessas Changes.
 
-As teclas da nova referência são retangulares com cantos arredondados e
-elevação discreta. Limpar, retorno, fixar e confirmar usam azul-escuro;
-sair/cancelar usa vermelho. Não deve existir ação verde-escura.
+No registro visual histórico, as teclas da referência eram retangulares com
+cantos arredondados e elevação discreta. O contrato vigente de teclados, ações
+e cores pertence às Changes 10001 e 10006.
 
 Não é exigida cópia pixel a pixel, uso de marca de terceiro nem manutenção de coordenadas absolutas.
 
 ### CA-004 — Layout compacto
 
-Dada uma janela compacta em orientação paisagem, quando todo o catálogo for percorrido, então nenhum componente deve ficar inalcançável, sobreposto ou cortado, e não deve haver rolagem horizontal da tela.
+Dada uma janela compacta em orientação paisagem, quando o catálogo neutro de
+`:plugin-negocio` for percorrido, então nenhum componente deve ficar
+inalcançável, sobreposto ou cortado, e não deve haver rolagem horizontal da
+tela.
 
 ### CA-004A — Faixa de janelas Android
 
@@ -226,11 +249,17 @@ Dado um componente interativo, quando ele for pressionado, focado, selecionado o
 
 ### CA-006 — Entradas e teclados
 
-Dado um campo selecionado, quando letras, números, espaço, apagar e limpar forem acionados no teclado virtual, então o texto deve mudar deterministicamente; em campo de senha, o valor não deve ficar visível nem aparecer em logs.
+Dado um campo de `:plugin-login` selecionado, quando letras, números, espaço,
+apagar e limpar forem acionados no teclado virtual, então o texto deve mudar
+deterministicamente; em campo de senha, o valor não deve ficar visível nem
+aparecer em logs. As Changes 10001 e 10006 são o contrato vigente desse fluxo.
 
 ### CA-007 — Menu
 
-Dado o menu demonstrativo, quando um item com filhos for acionado, então o próximo nível deve ser exibido; quando voltar for acionado, então o nível anterior deve ser restaurado; um item desabilitado não deve navegar.
+Dado o menu dinâmico da Change 10003, quando um agrupador for acionado, então o
+próximo nível deve ser exibido; quando voltar for acionado, então o nível
+anterior deve ser restaurado; uma folha deve abrir exclusivamente a tela do
+plugin proprietário.
 
 ### CA-008 — Acessibilidade
 

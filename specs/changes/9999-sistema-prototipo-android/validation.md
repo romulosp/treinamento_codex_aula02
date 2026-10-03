@@ -9,7 +9,10 @@
 ## Resultado da Compatibility Review do prompt2
 
 - Resultado: `PASS` documental.
-- Stack: AGP 9.4.0, Gradle 9.6.0, KGP 2.2.10, JDK 17, Compose BOM `2026.09.00`, Compose 1.12.x, `compileSdk = 37`, `targetSdk = 36` e `minSdk = 26`.
+- Stack: AGP 9.4.0, Gradle 9.6.0, KGP 2.2.10, JDK 17, Compose BOM
+  `2026.09.00`, Compose 1.12.x, `compileSdk = 37`, `targetSdk = 36` e
+  `minSdk = 29`. A Compatibility Review original avaliou 26; a Change 10000
+  elevou posteriormente o baseline operacional.
 - Evidência principal: AGP 9.4.0 suporta API 37 e publica a combinação mínima/default acima.
 - Limitação: build, resolução real das dependências e testes permanecem pendentes até a implementação.
 
@@ -198,6 +201,51 @@ Os comandos finais deverão ser executados a partir do diretório do projeto com
 - Entradas textuais incorporadas; código, configurações, imagens, fontes e referência visual permanecem pendentes em `source-material/`.
 - Evidências de implementação: build, lint, validador estrutural, smoke test e geração completa registrados em `VAL-IMP-003` a `VAL-IMP-011`.
 
-## Veredito
+## Veredito da validação funcional original
 
 `PENDENTE`
+
+## Evidência documental pós-merge — 2026-09-29
+
+Esta seção valida somente a consistência das SPECs corrigidas. Build Android,
+testes JVM, lint e instrumentação não foram repetidos porque nenhuma alteração
+de código de produção ou de teste faz parte desta correção.
+
+### VAL-DOC-006 — Integridade dos links locais
+
+- Ambiente: Windows, PowerShell, raiz do repositório.
+- Escopo: `specs/README.md`, arquitetura compartilhada de plugins e Changes
+  9999, 10003, 10004, 10005, 10006 e 10007.
+- Comando: script PowerShell inline que extrai destinos com a expressão
+  `(?<!\!)\[[^\]]+\]\(([^)]+)\)`, ignora URLs e âncoras, resolve cada caminho
+  relativamente ao arquivo de origem e executa `Test-Path -LiteralPath`.
+- Resultado: `LINK_CHECK_OK files=85 broken=0`.
+- Código de saída: `0`.
+
+### VAL-DOC-007 — Formatação do diff
+
+- Ambiente: Windows, Git, raiz do repositório.
+- Comandos: `git diff --check -- <escopo>` e
+  `git diff --cached --check -- <escopo>`, incluindo o índice, a arquitetura
+  compartilhada e as Changes 9999, 10003, 10004, 10005, 10006 e 10007.
+- Resultado: nenhuma inconsistência de whitespace; avisos de
+  normalização LF/CRLF, quando emitidos pelo Git, não representam falha de
+  conteúdo.
+- Código de saída: `0`.
+
+### VAL-DOC-008 — Contratos consolidados
+
+- Ambiente: Windows, PowerShell e ripgrep, raiz do repositório.
+- Comandos: busca dirigida por `minSdk`, `SharedApi`, `MENU-007`, timeout,
+  propriedade do cabeçalho e status dos planos nos documentos do escopo.
+- Resultado: API 29 vigente; API 26 apenas histórica; sequência 1.1.0 para
+  1.2.0 explícita; compatibilidade por capacidade definida; ausência de timeout
+  temporal em 10003; cabeçalho final no shell; planos 10003 e 10006 marcados
+  como snapshots executados.
+- Código de saída: `0`.
+
+### Resultado documental
+
+`APROVADO`
+
+Evidência de revisão: `reviews/2026-09-29-spec-rereview-pos-merge.md`.

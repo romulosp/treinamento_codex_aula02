@@ -1,9 +1,5 @@
 # Skills do laboratório
 
-As skills Kotlin/Compose são subordinadas a
-`.agents/skills/android-native-engineering/kotlin/`; consulte `INDEX.md` nessa
-pasta. A skill-base prevalece sobre as especializações.
-
 ## Processo Spec Driven
 
 | Fase | Skill |
@@ -16,6 +12,8 @@ pasta. A skill-base prevalece sobre as especializações.
 | Encerrar, arquivar e commitar | `git-commit` |
 
 ## Skills técnicas
+
+- `android-native-engineering`: governa planejamento, implementação, revisão e validação de aplicações Android nativas em Kotlin, compondo fontes e skills externas somente após classificação e aprovação pela SPEC.
 
 - `java-quarkus-resource`: contratos e recursos REST Quarkus.
 - `java-panache-repository`: persistência com JPA e Panache.

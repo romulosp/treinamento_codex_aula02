@@ -17,8 +17,9 @@ de `:shared-api` como `compileOnly`, declara itens neutros pelo contrato
 
 O baseline vigente é `compileSdk = 37`, `targetSdk = 36`, BOM Compose
 `2026.09.00`, Compose 1.12.x stable, AGP 9.4.0, Gradle 9.6.0,
-KGP 2.2.10 e JDK 17. `minSdk = 26`. A combinação foi validada pelas fontes
-oficiais registradas na matriz de compatibilidade.
+KGP 2.2.10 e JDK 17. `minSdk = 29`, conforme a Change 10000 e seu ADR de
+fronteira de segurança. A combinação foi validada pelas fontes registradas na
+matriz de compatibilidade.
 
 ## Contexto
 
@@ -43,7 +44,11 @@ vermelho. O verde fica restrito aos três indicadores de conectividade.
 
 ### D-001 — Perfil e módulos
 
-Usar perfil `SIMPLE` e somente o módulo `app`. O produto é um protótipo local com uma tela-catálogo e um menu demonstrativo. Múltiplos módulos, banco, rede e framework de injeção aumentariam custo sem evidência de benefício.
+`SUPERADA_PELA_CHANGE_10000`. A fundação original usava perfil `SIMPLE` e
+somente o módulo `app`. A topologia vigente é `STANDARD`, com `:app` como host,
+`:shared-api` como contrato, `:plugin-login` para autenticação e APKs de negócio
+independentes. A modularização foi aprovada para isolar capacidades, ciclo de
+vida e fronteiras de confiança.
 
 ### D-002 — Compose estável
 
@@ -101,9 +106,27 @@ Recursos rasterizados terão estratégia explícita de `ContentScale`, recorte e
 
 ### D-008 — Plataforma e distribuição
 
-O aplicativo usa `minSdk = 26`, `compileSdk = 37`, `targetSdk = 36`, Java 17, AGP 9.4.0, Gradle 9.6.0, KGP 2.2.10 e BOM Compose estável `2026.09.00` (Compose 1.12.x). A entrega é interna e demonstrativa. Publicação pública, Google Play ou incorporação de ativos legados exige nova Change e nova análise de direitos.
+O aplicativo usa `minSdk = 29`, `compileSdk = 37`, `targetSdk = 36`, Java 17,
+AGP 9.4.0, Gradle 9.6.0, KGP 2.2.10 e BOM Compose estável `2026.09.00`
+(Compose 1.12.x). A entrega é interna e demonstrativa. Publicação pública,
+Google Play ou incorporação de ativos legados exige nova Change e nova análise
+de direitos. O antigo `minSdk = 26` permanece apenas no histórico da fundação
+monolítica.
 
 ## Arquitetura e componentes
+
+A topologia vigente é:
+
+```text
+:app (host, shell, sessão, validação e roteamento)
+├── :shared-api (contratos binários)
+├── :plugin-login (startup-auth)
+├── :plugin-negocio (catálogo demonstrativo neutro)
+└── :plugin-saque-cartao e demais plugins business-menu
+```
+
+O diagrama abaixo registra a organização monolítica original e não autoriza
+reintroduzir UI de autenticação, catálogo ou menu dentro de `:app`:
 
 ```text
 apps/frontend/smartphone/sistema-prototipo-android/
@@ -164,6 +187,9 @@ Nenhum componente visual acessa diretamente Activity, sistema de arquivos, rede 
 Em largura compacta, cabeçalho, identificação, teclado numérico, teclado alfanumérico e demais seções passam a uma coluna rolável. Em largura média, os blocos podem ocupar uma ou duas colunas conforme constraints. Em largura expandida, a composição aproxima a referência 800 x 600 e usa o espaço adicional sem esticar controles além de seus limites. A ordem semântica permanece coerente com a ordem visual.
 
 ## Contratos públicos propostos
+
+Esta lista registra os contratos da fundação visual. A propriedade atual de
+login, shell e menu é definida pelas Changes 10001, 10003, 10006 e 10007.
 
 - `PrototypeTheme`: aplica tokens visuais.
 - `ComponentCatalog`: resolve variantes por identificador semântico.

@@ -1,7 +1,14 @@
 # Matriz de compatibilidade — 9999-sistema-prototipo-android
 
-**Data da verificacao:** 2026-09-19  
+**Data da verificação inicial:** 2026-09-19
+
+**Atualização arquitetural:** 2026-09-24
+
 **Resultado:** `PASS`
+
+A verificação de toolchain foi preservada. A Change 10000 alterou somente o
+baseline operacional mínimo de 26 para 29 ao introduzir a plataforma de
+plugins; essa decisão é normativa para host, API compartilhada e plugins.
 
 | Componente | Baseline solicitado | Evidencia/verificacao | Resultado |
 | --- | --- | --- | --- |
@@ -14,7 +21,7 @@
 | Compose | 1.12.x stable | Linha estável que requer `compileSdk = 37` e AGP 9 | `VERIFIED` |
 | compileSdk | 37 | Compatível com AGP 9.4.0 | `VERIFIED` |
 | targetSdk | 36 | Decisão independente; requisito vigente da Google Play | `VERIFIED` |
-| minSdk | 26 | Compatível com Compose e com o suporte interno aprovado | `VERIFIED` |
+| minSdk | 29 | Exigido pela fronteira de segurança da plataforma de plugins na Change 10000; permanece compatível com o toolchain | `VERIFIED` |
 
 ## Fontes oficiais consultadas
 

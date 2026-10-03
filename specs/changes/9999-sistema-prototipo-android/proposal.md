@@ -44,13 +44,13 @@ indicadores de conectividade.
 - [Fontes e decisões](sources-and-decisions.md).
 - [Estado do material de origem](source-material/README.md).
 
-## Atualização prompt2 — baseline aprovado
+## Baseline histórico do prompt2
 
-A decisão anterior de `compileSdk = 36` foi substituída pela decisão humana
+A decisão então vigente de `compileSdk = 36` foi substituída pela decisão humana
 registrada em `prompt2.txt`: `compileSdk = 37`, `targetSdk = 36`, Compose BOM
-`2026.09.00`, Compose 1.12.x stable e Java 17. `minSdk` permanece
-definido como API 26 após análise de público, requisitos, bibliotecas,
-segurança e custo de testes.
+`2026.09.00`, Compose 1.12.x stable e Java 17. Na fundação monolítica original,
+`minSdk` era API 26. Essa decisão foi superada pela Change 10000, que elevou o
+baseline da plataforma de plugins para API 29.
 
 A combinação foi verificada com AGP 9.4.0, Gradle 9.6.0, JDK 17 e KGP
 2.2.10. O AGP 9.4.0 suporta API 37. Ver
@@ -70,7 +70,11 @@ Esta Change deve orientar a criação de um aplicativo Android nativo em Kotlin 
 - Grupo: `br.com.romulopenha`.
 - `namespace` e `applicationId`: `br.com.romulopenha.sistemaprototipoandroid`.
 
-## Escopo
+## Escopo histórico da entrega original
+
+Os itens abaixo registram a fundação que originou o protótipo. Após as Changes
+10000, 10001, 10003, 10006 e 10007, eles não autorizam reintroduzir catálogo,
+menu, autenticação ou cabeçalho no módulo `:app` fora dos contratos sucessores.
 
 - Criar a fundação de um aplicativo Android nativo em Kotlin e Compose.
 - Migrar para componentes Compose as famílias reutilizáveis identificadas no inventário.
@@ -79,11 +83,16 @@ Esta Change deve orientar a criação de um aplicativo Android nativo em Kotlin 
 - Usar exclusivamente o material incorporado nesta Change, sem dependência de caminho externo ao repositório.
 - Criar uma tela operacional única e adaptativa, sem galeria técnica ou rolagem no enquadramento de tablet em paisagem.
 - Garantir que a interface se adapte à janela disponível em celulares, tablets, dobráveis e multiwindow, mantendo o aplicativo sempre em orientação paisagem e sem depender de resolução ou densidade fixa.
-- Criar uma estrutura de menu local demonstrativa, acionada a partir da tela-catálogo, sem integrações de negócio.
+- Criar uma estrutura de menu local demonstrativa, posteriormente migrada para
+  `:plugin-negocio` e substituída pelo menu dinâmico da Change 10003.
 - Incluir testes unitários, testes de UI Compose, testes de acessibilidade e testes de regressão visual.
 - Documentar a matriz entre definições de origem e componentes Android.
 
-## Fora de escopo
+## Fora de escopo histórico da entrega original
+
+As exclusões abaixo limitaram somente a fundação monolítica. As Changes
+sucessoras podem introduzir capacidades próprias, como autenticação SSO e
+integrações de rede, sem reabrir o restante deste escopo.
 
 - Reimplementar regras de negócio, transações, autenticação real ou integrações de rede.
 - Integrar impressoras, leitores, sensores, biometria real ou outros periféricos.
@@ -107,6 +116,8 @@ Esta Change deve orientar a criação de um aplicativo Android nativo em Kotlin 
 - O caminho, nome, grupo, `namespace` e `applicationId` estão inequívocos.
 - Todas as famílias encontradas no inventário possuem contrato ou decisão explícita de exclusão.
 - A tela-catálogo exige todos os componentes criados e define a semelhança visual verificável com a referência.
-- `minSdk = 26`, distribuição interna e tratamento conservador de recursos estão decididos e rastreados.
+- `minSdk = 29` para a plataforma de plugins, distribuição interna e tratamento
+  conservador de recursos estão decididos e rastreados. O antigo baseline 26 é
+  apenas histórico da fundação anterior à Change 10000.
 - Arquitetura, acessibilidade, segurança, testes e critérios de aceite são verificáveis.
 - A SPEC não autoriza implementação antes da revisão formal.

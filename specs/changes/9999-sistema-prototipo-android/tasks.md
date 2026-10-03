@@ -8,14 +8,17 @@
 
 ## Atualização prompt2 — compatibilidade resolvida
 
-- [x] Confirmar `minSdk = 26` pela análise de suporte e custo de testes.
+- [x] Registrar `minSdk = 26` como decisão histórica do prompt2.
+- [x] Adotar `minSdk = 29` após a Change 10000 e seu ADR de fronteira de
+      segurança.
 - [x] Validar `compileSdk = 37` com AGP 9.4.0, Gradle 9.6.0, KGP 2.2.10 e JDK 17.
 - [x] Obter `PASS` na Compatibility Review do stack completo.
 
 ## Pré-condições
 
 - [x] Revisar `proposal.md`, `spec.md`, `DESIGN.md` e todas as especificações complementares.
-- [x] Definir `minSdk = 26` e distribuição interna.
+- [x] Definir distribuição interna e consolidar `minSdk = 29` como baseline
+      vigente da plataforma de plugins.
 - [x] Proibir incorporação de binários legados e definir substituições neutras por Compose/sistema.
 - [x] Marcar definições dependentes das 118 referências ausentes como `SUBSTITUIR` na matriz completa.
 - [x] Alterar `proposal.md` e `spec.md` para `SPEC_APROVADA` somente após relatório formal sem pendência material.
@@ -33,7 +36,8 @@
 - [x] Ler `compose-animations` antes de implementar transições, gestos ou motion previstos pela SPEC.
 - [x] Ler `compose-ui-testing-patterns` antes dos testes Compose e instrumentados.
 - [x] Executar o validador estrutural; resultado `0`.
-- [x] Disponibilizar Android SDK API 26/API 37 e Build Tools 36.0.0 para desbloquear o build.
+- [x] Disponibilizar Android SDK API 29/API 37 e Build Tools aplicáveis para
+      desbloquear o build.
 
 ### Inventário e recursos
 

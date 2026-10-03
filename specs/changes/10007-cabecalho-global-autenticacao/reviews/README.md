@@ -1,4 +1,6 @@
-# Revisoes
+# Revisões: 10007-cabecalho-global-autenticacao
 
-Diretorio reservado para revisao formal da SPEC e, depois da implementacao,
-revisao de conformidade do codigo.
+**Autor:** Rômulo Penha
+
+Diretório reservado para revisão formal da SPEC e, depois da implementação,
+revisão de conformidade do código.

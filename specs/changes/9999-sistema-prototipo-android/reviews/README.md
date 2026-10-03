@@ -8,7 +8,9 @@
 - [2026-09-19 — ressubmissão da revisão da SPEC](2026-09-19-spec-review-resubmissao.md): `SPEC_APROVADA` após resolução integral dos quatro achados.
 - [2026-09-19 — revisão extraordinária de toolchain](2026-09-19-spec-review-toolchain.md): `REPROVADA` por incompatibilidade entre BOM Compose `2026.09.00` e SDK 36 (`REV-005`).
 - [2026-09-19 — ressubmissão de toolchain](2026-09-19-spec-review-toolchain-resubmissao.md): `SPEC_APROVADA` com BOM `2026.06.01` compatível com SDK 36.
-- [2026-09-19 — revisão do baseline do prompt2](2026-09-19-spec-review-prompt2.md): `SPEC_APROVADA` com AGP 9.4.0, API 37, BOM `2026.09.00` e `minSdk = 26`; substitui o baseline técnico das revisões anteriores.
+- [2026-09-19 — revisão do baseline do prompt2](2026-09-19-spec-review-prompt2.md): `SPEC_APROVADA` com AGP 9.4.0, API 37, BOM `2026.09.00` e `minSdk = 26`; substituiu o baseline técnico anterior e foi depois superada, quanto ao `minSdk` e à topologia, pela Change 10000.
 - [2026-09-19 — Compatibility Review do prompt2](2026-09-19-compatibility-review-prompt2.md): `PASS` para a combinação completa registrada na matriz.
+- [2026-09-28 — auditoria pós-merge](2026-09-28-spec-review.md): `REPROVADA` por contradições entre contratos históricos e sucessores.
+- [2026-09-29 — re-revisão pós-merge](2026-09-29-spec-rereview-pos-merge.md): `SPEC_APROVADA` após a resolução dos sete achados da auditoria.
 
 A implementação está autorizada somente após o preenchimento do plano técnico preparatório e deve permanecer dentro do contrato aprovado.

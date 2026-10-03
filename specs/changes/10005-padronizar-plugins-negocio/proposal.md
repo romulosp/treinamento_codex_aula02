@@ -1,4 +1,6 @@
-# Proposta: padronizar plugins de negócio Android
+# Proposta: 10005-padronizar-plugins-negocio
+
+**Autor:** Rômulo Penha
 
 ## Status
 `SPEC_APROVADA`

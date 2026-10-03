@@ -1,11 +1,17 @@
 # Evidências de implementação — 10006-layout-login-referencia-svg
 
+**Autor:** Rômulo Penha
+
 ## Status
 
 `IMPLEMENTADA`
 
 Esta evidência prepara a Change para teste humano. Ela não constitui revisão
 da implementação, validação formal, aprovação ou arquivamento.
+
+O cabeçalho observado nesta validação era o estado intermediário da Change
+10006. A Change 10007 o remove de `:plugin-login` e o mantém no shell global;
+esta evidência não deve ser interpretada como contrato do estado final.
 
 ## Ambiente
 

@@ -1,8 +1,13 @@
 # Tarefas: 10006-layout-login-referencia-svg
 
+**Autor:** Rômulo Penha
+
 ## Status
 
 `IMPLEMENTADA`
+
+O item de cabeçalho abaixo registra a entrega intermediária. Sua remoção de
+`:plugin-login` e transferência para `:app` pertencem à Change 10007.
 
 ## Pré-condições
 

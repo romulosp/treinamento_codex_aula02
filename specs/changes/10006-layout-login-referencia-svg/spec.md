@@ -1,8 +1,15 @@
 # SPEC: 10006-layout-login-referencia-svg
 
+**Autor:** Rômulo Penha
+
 ## Status
 
 `SPEC_APROVADA`
+
+> **Contrato sucessor:** a Change `10007-cabecalho-global-autenticacao`
+> substitui o RF-02 e os critérios de aceite exclusivos do cabeçalho. No estado
+> final, o cabeçalho pertence ao shell de `:app`; os demais requisitos desta
+> Change permanecem vigentes em `:plugin-login`.
 
 ## Referências e dependências
 
@@ -24,10 +31,11 @@ renderizado.
 
 ### RF-02 — Cabeçalho
 
-A tela DEVE exibir cabeçalho branco com aproximadamente 64 dp de altura,
-divisor inferior claro, `Buy More` alinhado à esquerda, `POS - COMPRAS`
-centralizado e `v1.0.0.0` alinhado à direita. Os indicadores de infraestrutura
-do layout atual NÃO DEVEM permanecer visíveis.
+`SUPERADO_PELA_CHANGE_10007`. Nesta entrega intermediária, a tela exibia
+cabeçalho branco com aproximadamente 64 dp de altura, divisor inferior claro,
+`Buy More` alinhado à esquerda, `POS - COMPRAS` centralizado e `v1.0.0.0`
+alinhado à direita. No estado final, esses elementos são renderizados uma única
+vez pelo shell de `:app`, e `:plugin-login` não mantém cabeçalho próprio.
 
 ### RF-03 — Área de identificação
 
@@ -78,10 +86,12 @@ inalteradas.
 
 ## Cenários e critérios de aceite
 
-1. Em 1280×800 paisagem, cabeçalho, identificação, campos, teclados e rodapé
-   aparecem na mesma hierarquia e proporção visual do SVG.
-2. O cabeçalho mostra `Buy More`, `POS - COMPRAS` e `v1.0.0.0` e não mostra
-   `Loterias CAIXA`, `Gateway`, `DNS` ou `HTTP`.
+1. Em 1280×800 paisagem, identificação, campos, teclados e rodapé aparecem na
+   mesma hierarquia e proporção visual do SVG abaixo do cabeçalho global da
+   Change 10007.
+2. `:plugin-login` não renderiza uma segunda instância do cabeçalho. A presença
+   de `Buy More`, `POS - COMPRAS` e `v1.0.0.0` é validada no shell de `:app`
+   pela Change 10007.
 3. O estado inicial mostra no rodapé `Digite seu usuário e senha para continuar`.
 4. Os testes existentes continuam comprovando rejeição do primeiro caractere
    inválido, ausência de `ENTER` e `SAIR/CANCELAR` e bloqueio da

@@ -24,6 +24,20 @@ O ponto de entrada DEVE implementar `IPluginNegocioApp` e publicar:
 
 Posição do menu vem exclusivamente de `getCaminhoMenu()`. O arquivo `META-INF/services/<FQCN-IPluginNegocioApp>` DEVE declarar a entry class sem varredura reflexiva.
 
+## Compatibilidade da SharedApi
+
+- A versão vigente após a Change `10007-cabecalho-global-autenticacao` é
+  `1.2.0`.
+- O host DEVE rejeitar major diferente da sua própria major.
+- Para a capacidade `business-menu`, o manifesto é compatível quando declara a
+  mesma major e `requiredSharedApiMinor` menor ou igual à minor do host. Assim,
+  plugins de negócio compilados para 1.1 continuam elegíveis no host 1.2.
+- Para a capacidade `startup-auth`, o manifesto DEVE declarar exatamente a
+  minor vigente, pois o evento de sessão da 1.2 inclui o perfil autenticado.
+- Um plugin só pode declarar uma minor anterior quando não usa contratos
+  introduzidos por minor posterior. A compatibilidade deve ser coberta por teste
+  de manifesto e carregamento.
+
 ## Manifesto do plugin
 
 `assets/plugin-manifest.json` DEVE conter `schemaVersion`, `pluginId`, `displayName`, `pluginVersion`, versão mínima da API, `entryClass`, `declaredPackageName`, `priority`, capacidade `business-menu` e `dependencies`. Identidades usam domínio reverso e devem ser únicas.

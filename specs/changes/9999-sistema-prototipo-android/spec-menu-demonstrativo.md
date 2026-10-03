@@ -2,9 +2,15 @@
 
 **Autor:** Rômulo Penha
 
+> **SUPERADA PELA CHANGE 10003.** Este documento registra o menu local da
+> fundação original. O menu vigente é montado pelo host a partir dos caminhos
+> declarados por plugins `business-menu`; o conteúdo neutro pertence a
+> `:plugin-negocio` e só aparece após autenticação.
+
 ## Objetivo
 
-Demonstrar uma árvore hierárquica após a confirmação local do painel de identificação, usando componentes migrados sem incorporar regras de negócio da origem.
+Registrar a árvore hierárquica local que antecedeu o menu dinâmico, sem
+incorporar regras de negócio da origem.
 
 ## Modelo
 

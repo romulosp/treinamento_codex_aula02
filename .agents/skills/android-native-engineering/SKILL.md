@@ -16,8 +16,6 @@ Construa Android nativo com decisões rastreáveis e o menor nível de complexid
 
 Leia [references/spec-driven-workflow.md](references/spec-driven-workflow.md) ao criar ou alterar uma Change. Leia [references/architecture-and-profiles.md](references/architecture-and-profiles.md) ao decidir estrutura, camadas, módulos ou stack. Leia [references/quality-gates.md](references/quality-gates.md) ao implementar, revisar ou validar. Consulte [references/sources-and-decisions.md](references/sources-and-decisions.md) antes de afirmar práticas ou versões Android atuais.
 
-Ao criar, alterar ou revisar código Kotlin, leia e aplique obrigatoriamente [references/kdoc-guidelines.md](references/kdoc-guidelines.md).
-
 ## Regras de implementação
 
 - Prefira Kotlin e Compose em novas UIs, salvo contrato aprovado em contrário.
@@ -29,7 +27,7 @@ Ao criar, alterar ou revisar código Kotlin, leia e aplique obrigatoriamente [re
 - Não registre tokens, credenciais, PAN, localização precisa ou dados pessoais. Valide componentes exportados, intents, deep links, permissões, backup, armazenamento e rede conforme a superfície real.
 - Não altere arquitetura aprovada sem ADR ou revisão da SPEC.
 - A incorporação de uma skill externa não aprova automaticamente suas recomendações; confronte cada uma com a SPEC da aplicação.
-- Trate KDoc como parte do contrato: documente toda declaração Kotlin pública/protegida criada ou alterada e contratos internos/privados não óbvios; atualize a documentação junto com o comportamento.
+- Trate KDoc como parte do contrato: documente toda declaração Kotlin pública/protegida criada ou alterada e contratos internos/privados não abreviado; atualize a documentção junto com o comportamento.
 
 ## Execução e evidência
 

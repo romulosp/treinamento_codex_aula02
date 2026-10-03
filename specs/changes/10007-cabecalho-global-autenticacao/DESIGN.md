@@ -31,14 +31,18 @@ portanto e o menor owner capaz de manter um cabecalho global.
 - `AutenticacaoResponse` preserva `autenticado=true`, inclui um DTO de perfil
   minimo e nao inclui outro claim. O cliente Android rejeita resposta parcial
   em vez de preencher identidade ficticia.
-- `SessionStateChanged` carrega o perfil minimo e a `SharedApi` recebe nova
-  versao minor. Plugins e manifests afetados sao recompilados.
+- `SessionStateChanged` carrega o perfil mínimo e a `SharedApi` passa de 1.1.0
+  para 1.2.0. O plugin de login e seu manifesto passam a exigir minor 2.
+  Plugins de negócio que exigem minor 1 permanecem válidos porque não consomem
+  o contrato de perfil; o host aceita minor requerida menor ou igual à sua para
+  `business-menu`.
 - O `:app` usa um `CoreShell` invariavel com cabecalho e slot de conteudo. O
   componente e stateless e deriva sua variante da sessao do host.
 - `TERMINAL` e somente um label visual sem valor. `LOTERICA` e removida porque
   nao existe fonte aprovada; nenhum `BuildConfig` novo e criado.
-- O cabecalho privado da Change 10006 e removido do login para existir uma unica
-  instancia visual.
+- O cabeçalho privado e o RF-02 da Change 10006 são superados por esta Change.
+  O cabeçalho é removido do login para existir uma única instância visual no
+  shell do host; os campos, teclados e rodapé definidos pela 10006 permanecem.
 
 ## Arquitetura e componentes
 
