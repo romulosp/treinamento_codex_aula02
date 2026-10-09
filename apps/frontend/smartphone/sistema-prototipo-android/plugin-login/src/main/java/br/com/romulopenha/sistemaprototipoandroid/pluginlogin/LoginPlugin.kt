@@ -39,6 +39,8 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.InterceptPlatformTextInput
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
@@ -65,6 +67,7 @@ import br.com.romulopenha.sistemaprototipoandroid.sharedapi.SharedApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.awaitCancellation
 
 private val TerminalBlue = Color(0xFF005CA9)
 private val TerminalDeepBlue = Color(0xFF00509A)
@@ -278,7 +281,10 @@ private fun LoginRoute(onSessionEstablished: (PluginEvent.SessionStateChanged) -
     LoginScreen(state = state, onEvent = viewModel::onEvent)
 }
 
-/** Renderiza a tela de autenticação e restaura foco no fim do campo alterado. */
+/**
+ * Renderiza autenticação com teclado próprio e físico, sem iniciar IME Android.
+ * Mantém edição e restaura foco no fim do campo alterado.
+ */
 @Composable
 internal fun LoginScreen(
     state: LoginUiState,
@@ -287,6 +293,10 @@ internal fun LoginScreen(
 ) {
     val userFocus = remember { FocusRequester() }
     val passwordFocus = remember { FocusRequester() }
+    val softwareKeyboard = LocalSoftwareKeyboardController.current
+    LaunchedEffect(softwareKeyboard) {
+        softwareKeyboard?.hide()
+    }
     LaunchedEffect(state.target, state.editRevision) {
         if (state.target == LoginInputTarget.USER) userFocus.requestFocus() else passwordFocus.requestFocus()
     }
@@ -315,7 +325,10 @@ internal fun LoginScreen(
                         letterSpacing = 1.2.sp,
                     )
                     Spacer(Modifier.height(12.dp))
-                    Credentials(state, onEvent, userFocus, passwordFocus)
+                    // Bloqueia somente a sessão de IME, preservando edição e KeyEvents físicos.
+                    InterceptPlatformTextInput(interceptor = { _, _ -> awaitCancellation() }) {
+                        Credentials(state, onEvent, userFocus, passwordFocus)
+                    }
                     Spacer(Modifier.height(if (compact) 18.dp else 32.dp))
                     Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.Top) {
                         AlphaKeyboard(state, onEvent, keyWidth, keyHeight, gap)

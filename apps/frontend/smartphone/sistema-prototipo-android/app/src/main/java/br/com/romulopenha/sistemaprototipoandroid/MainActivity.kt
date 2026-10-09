@@ -9,13 +9,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.Button
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -71,7 +69,11 @@ class MainActivity : ComponentActivity() {
                 headerState = session?.let {
                     AuthenticationHeaderState.LoggedIn(it.profile)
                 } ?: AuthenticationHeaderState.LoggedOut,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().then(
+                    if (session != null && selectedBusinessItemId == null) Modifier.safeDrawingPadding()
+                    else Modifier,
+                ),
+                menuAppearance = session != null && selectedBusinessItemId == null,
             ) {
                 PluginHostContent(
                 state = hostState,
@@ -214,68 +216,6 @@ private fun PluginHostContent(
             },
             modifier = modifier,
         )
-    }
-}
-
-/**
- * Exibe itens de negócio já validados ou o estado vazio previsto nesta fase.
- *
- * @param items itens fornecidos exclusivamente por [br.com.romulopenha.sistemaprototipoandroid.sharedapi.IPluginNegocioApp]
- * @param logoutInProgress impede solicitações concorrentes de logout
- * @param onLogout solicita encerramento da sessão atual
- */
-@Composable
-internal fun BusinessMenuScreen(
-    items: List<BusinessMenuItem>,
-    fatalMessage: String?,
-    logoutInProgress: Boolean,
-    onItemSelected: (String) -> Unit,
-    onLogout: () -> Unit,
-    onFatalAcknowledged: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier.padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        if (items.isEmpty()) {
-            Text("Nenhum plugin de negócio carregado.")
-        } else {
-            BusinessMenuEntries(items, onItemSelected)
-        }
-        Spacer(Modifier.height(24.dp))
-        Button(onClick = onLogout, enabled = !logoutInProgress) {
-            Text(if (logoutInProgress) "Saindo..." else "Sair")
-        }
-    }
-    fatalMessage?.let { message ->
-        AlertDialog(
-            onDismissRequest = onFatalAcknowledged,
-            title = { Text("Erro crítico no menu") },
-            text = { Text(message) },
-            confirmButton = { Button(onClick = onFatalAcknowledged) { Text("Fechar") } },
-        )
-    }
-}
-
-/** Renderiza recursivamente agrupadores e folhas clicáveis do menu dinâmico. */
-@Composable
-private fun BusinessMenuEntries(
-    items: List<BusinessMenuItem>,
-    onItemSelected: (String) -> Unit,
-    level: Int = 0,
-) {
-    items.sortedWith(compareBy(BusinessMenuItem::ordem, BusinessMenuItem::id)).forEach { item ->
-        if (item.filhos.isEmpty()) {
-            Button(
-                onClick = { onItemSelected(item.id) },
-                modifier = Modifier.fillMaxWidth().padding(start = (level * 16).dp),
-            ) { Text(item.titulo) }
-        } else {
-            Text(item.titulo, modifier = Modifier.padding(start = (level * 16).dp, top = 8.dp))
-            BusinessMenuEntries(item.filhos, onItemSelected, level + 1)
-        }
     }
 }
 

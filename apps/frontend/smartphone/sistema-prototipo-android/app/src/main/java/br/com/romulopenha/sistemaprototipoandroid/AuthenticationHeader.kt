@@ -10,6 +10,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,26 +48,32 @@ internal sealed interface AuthenticationHeaderState {
     data class LoggedIn(val profile: AuthenticatedProfile) : AuthenticationHeaderState
 }
 
-/** Mantém o cabeçalho global acima de qualquer conteúdo hospedado pelo host. */
+/** Mantém o cabeçalho global; [menuAppearance] restringe os tokens POS à tela inicial autenticada. */
 @Composable
 internal fun CoreShell(
     headerState: AuthenticationHeaderState,
     modifier: Modifier = Modifier,
+    menuAppearance: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(modifier = modifier) {
-        AuthenticationHeader(headerState)
+        AuthenticationHeader(headerState, menuAppearance = menuAppearance)
         Column(modifier = Modifier.fillMaxWidth().weight(1f), content = content)
     }
 }
 
-/** Renderiza o cabeçalho global sem estado próprio ou efeitos colaterais. */
+/** Renderiza o cabeçalho global; variante POS opcional preserva login e telas hospedadas. */
 @Composable
 internal fun AuthenticationHeader(
     state: AuthenticationHeaderState,
     modifier: Modifier = Modifier,
+    menuAppearance: Boolean = false,
 ) {
     val loggedIn = state as? AuthenticationHeaderState.LoggedIn
+    if (menuAppearance && loggedIn != null) {
+        MenuAuthenticationHeader(loggedIn.profile, modifier)
+        return
+    }
     val profileDescription = loggedIn?.profile?.let {
         "${it.displayRole()}: ${it.username} - ${it.displayName}. TERMINAL"
     }
@@ -122,5 +138,64 @@ internal fun AuthenticationHeader(
     }
 }
 
+/** Organiza identidade e perfil sem fontes fictícias, usando largura útil em dp e sem anúncio duplicado. */
+@Composable
+private fun MenuAuthenticationHeader(profile: AuthenticatedProfile, modifier: Modifier = Modifier) {
+    BoxWithConstraints(modifier.fillMaxWidth().height(120.dp).background(MenuDesignTokens.surface)
+        .drawBehind {
+            drawRect(MenuDesignTokens.divider, topLeft = Offset(0f, size.height - 1.dp.toPx()),
+                size = Size(size.width, 1.dp.toPx()))
+        }) {
+        val compact = maxWidth < 600.dp
+        val side = if (maxWidth < 1024.dp) 16.dp else 24.dp
+        val gap = if (maxWidth < 1024.dp) 8.dp else 24.dp
+        val infoWidth = when {
+            maxWidth >= 1200.dp -> 380.dp
+            maxWidth >= 1024.dp -> 320.dp
+            else -> minOf(320.dp, maxWidth * 0.45f)
+        }
+        if (maxWidth >= 1200.dp) {
+            Text("POS - COMPRAS", fontSize = 14.sp, fontWeight = FontWeight.Medium,
+                color = MenuDesignTokens.text, modifier = Modifier.align(Alignment.Center))
+        }
+        Row(Modifier.fillMaxWidth().then(if (compact) Modifier.height(44.dp) else Modifier.fillMaxSize())
+            .padding(horizontal = side), verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(gap)) {
+            Text("Buy More", color = MenuDesignTokens.primary, fontSize = 22.sp,
+                fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f))
+            if (!compact) MenuProfileInfo(profile, Modifier.width(infoWidth))
+            Text("v1.0.0.0", color = MenuDesignTokens.muted, fontSize = 14.sp,
+                maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        if (compact) {
+            MenuProfileInfo(profile, Modifier.align(Alignment.BottomEnd).padding(end = side)
+                .width(infoWidth))
+        }
+    }
+}
+
+/** Exibe dados completos na semântica dos próprios textos, truncando somente sua apresentação visual. */
+@Composable
+private fun MenuProfileInfo(profile: AuthenticatedProfile, modifier: Modifier = Modifier) {
+    Column(modifier.height(76.dp).background(MenuDesignTokens.infoBackground, RoundedCornerShape(4.dp))
+        .drawBehind {
+            val stroke = 1.5.dp.toPx()
+            drawRoundRect(MenuDesignTokens.infoBorder,
+                topLeft = Offset(stroke / 2, stroke / 2),
+                size = Size(size.width - stroke, size.height - stroke),
+                cornerRadius = CornerRadius(4.dp.toPx()),
+                style = Stroke(stroke, pathEffect = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 4.dp.toPx()))))
+        }.padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.Center) {
+        Text("${profile.displayRole()}: ${profile.username} - ${profile.displayName}",
+            maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 12.sp,
+            color = MenuDesignTokens.text)
+        Text("TERMINAL", maxLines = 1, overflow = TextOverflow.Ellipsis,
+            fontSize = 12.sp, color = MenuDesignTokens.text)
+    }
+}
+
+/** Preserva o rótulo visual contratado do proprietário sem alterar os dados de sessão. */
 private fun AuthenticatedProfile.displayRole(): String =
     if (roleLabel == "PROPRIETARIO") "PROPRIETÁRIO" else roleLabel

@@ -13,14 +13,63 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.pressKey
+import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.platform.LocalView
+import android.view.WindowInsets
+import android.os.Build
+import android.view.View
 import org.junit.Rule
 import org.junit.Test
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 
 /** Valida a semântica observável da tela sem criar o grafo do host. */
 class LoginScreenTest {
     @get:Rule
     val composeRule = createComposeRule()
+
+    /** Usa eventos físicos e toque para verificar edição com a IME invisível. */
+    @Test
+    @android.annotation.TargetApi(30)
+    fun tecladoFisicoEProprioFuncionamSemTecladoAndroid() {
+        org.junit.Assume.assumeTrue(Build.VERSION.SDK_INT >= 30)
+        lateinit var root: View
+        var observed = LoginUiState()
+        composeRule.setContent {
+            root = LocalView.current
+            var state by remember { mutableStateOf(LoginUiState()) }
+            LoginScreen(state, onEvent = {
+                state = LoginReducer.reduce(state, it)
+                observed = state
+            })
+        }
+        composeRule.onNodeWithTag("user-field").performClick().assertIsFocused()
+        composeRule.onNodeWithTag("user-field").performKeyInput {
+            pressKey(Key.L)
+            pressKey(Key.One)
+        }
+        composeRule.runOnIdle { assertEquals("L1", observed.user) }
+        composeRule.onNodeWithText("L").performClick()
+        composeRule.runOnIdle { assertEquals("L1L", observed.user) }
+        composeRule.onNodeWithTag("password-field").performClick().assertIsFocused()
+        composeRule.onNodeWithTag("password-field").performKeyInput {
+            pressKey(Key.A)
+            pressKey(Key.Two)
+            pressKey(Key.Backspace)
+        }
+        composeRule.runOnIdle { assertEquals("a", observed.password) }
+        composeRule.onNodeWithText("L").performClick()
+        composeRule.runOnIdle {
+            assertEquals("aL", observed.password)
+            val insets = root.rootWindowInsets
+            assertNotNull(insets)
+            assertFalse(insets!!.isVisible(WindowInsets.Type.ime()))
+        }
+    }
 
     @Test
     fun primeiroCaractereInvalidoNaoAlteraUsuario() {
