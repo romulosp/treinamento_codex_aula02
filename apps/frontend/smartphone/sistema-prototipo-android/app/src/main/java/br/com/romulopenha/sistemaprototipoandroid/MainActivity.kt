@@ -7,13 +7,11 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,7 +22,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import br.com.romulopenha.sistemaprototipoandroid.platform.DynamicLoginPluginManager
 import br.com.romulopenha.sistemaprototipoandroid.platform.BusinessPluginManager
@@ -219,24 +216,22 @@ private fun PluginHostContent(
     }
 }
 
-/** Hospeda a View do plugin selecionado e oferece retorno controlado pelo host. */
+/** Hospeda a View sem faixa extra; Voltar Android retorna ao menu pelo host. */
 @Composable
-private fun BusinessPluginScreen(
+internal fun BusinessPluginScreen(
     factory: (android.content.Context) -> View?,
     onBack: () -> Unit,
     onRuntimeFailure: (Throwable) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier) {
-        Button(onClick = onBack, modifier = Modifier.padding(12.dp)) { Text("Voltar ao menu") }
-        AndroidView(
-            factory = { context ->
-                runCatching { factory(context) }.getOrElse { error ->
-                    onRuntimeFailure(error)
-                    TextView(context).apply { text = "Plugin de negócio indisponível." }
-                } ?: TextView(context).apply { text = "Plugin de negócio indisponível." }
-            },
-            modifier = Modifier.fillMaxWidth().weight(1f),
-        )
-    }
+    BackHandler(onBack = onBack)
+    AndroidView(
+        factory = { context ->
+            runCatching { factory(context) }.getOrElse { error ->
+                onRuntimeFailure(error)
+                TextView(context).apply { text = "Plugin de negócio indisponível." }
+            } ?: TextView(context).apply { text = "Plugin de negócio indisponível." }
+        },
+        modifier = modifier.fillMaxSize(),
+    )
 }

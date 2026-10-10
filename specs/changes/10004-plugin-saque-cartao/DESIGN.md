@@ -55,9 +55,16 @@ builder TLR. Perfil e evidências em [perfil DES](perfil-homologacao-des.md).
 
 ## Layout e launcher
 
-Ver [avaliação](avaliacao-layouts.md). Conteúdo do plugin: título, indicador,
+Ver [REV-006](reviews/2026-10-10-spec-review-layout.md): os SVGs Gemini são a
+referência visual principal. Conteúdo do plugin: título, indicador,
 formulário/resumo e instrução/aguardo; duas colunas quando couber e rolagem
 em janela reduzida/fonte grande. Não expor comandos/protocolo ao operador.
+
+Etapa 1: painéis equivalentes de formulário branco e resumo #F8FAFC, total
+em #EBF4FF. Etapas seguintes: cartão central limitado a 600–700 dp, com
+resumo de confirmação, modos ilustrados de leitura, terminal decorativo
+na etapa 4 e recibo do resumo real no resultado. Ajustar espaços à janela
+e ao cabeçalho existente; não duplicar o cabeçalho desenhado nos SVGs.
 
 Launcher dedicado em `scripts/` do projeto Android compõe o executável Bridge
 da 074, prontidão, reverse e abertura do host. Não usar o executável CLI como
@@ -83,3 +90,15 @@ callbacks, foco, ausência de campo PIN e layout com fonte ampliada.
 Integração: host/plugin/AAR/nativas/lifecycle. Go: GCX/AIDs/fallback,
 sessão GTK/GPN/GOX/FCX e redaction. Launcher: COM, porta, ADB e prontidão.
 Hardware: cartão de homologação autorizado, evidência própria separada de fake.
+
+
+## Correção da primeira tela — REV-007
+
+Contrato aprovado em [REV-007](reviews/2026-10-10-spec-review-primeira-tela.md):
+remover faixa Voltar ao menu do host, manter Voltar Android, oferecer SAIR
+vermelho abaixo de AVANÇAR. Modalidade e valor da compra editáveis sem perfil;
+cálculo local independente do hardware. Taxa = 5,34% + 0,80 ponto percentual
+por parcela adicional (1..12); débito em uma parcela. Total = compra + tarifa
+HALF_UP em centavos. Perfil fornece limites e filtros de aplicação distintos,
+não a taxa. AVANÇAR exige perfil válido. Testar cálculo, edição, seleção enviada
+à captura, retorno e layout; preservar animações já implementadas.

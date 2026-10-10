@@ -53,7 +53,7 @@ Schema versão 1: `environment="DES"`, `host` local (localhost/127.0.0.1 ou
 override 10.0.2.2), `port` 1..65535, `timeoutMillis` 100..120000,
 `timeoutSeconds` 1..120, `tableAcquirer` N2 01..99, `tableVersion` A10,
 `creditApplicationTypes`, `debitApplicationTypes` nos formatos acima,
-`feePercent` decimal 0..100, `maxBaseCents` inteiro positivo até N12,
+`maxBaseCents` inteiro positivo até N12,
 `gtkDataMethod` e `gtkKeyIndex` definidos separadamente do PIN,
 `scenario` APPROVE/DENY/COMMUNICATION_ERROR. Validar filtros não vazios e
 diferentes. Configuração de PIN fixa: método 3, índice 8, WK vazia.
@@ -61,7 +61,9 @@ O formato GTK será restrito ao método DUKPT TDES DAT#1 ECB `30` do manual loca
 sem PAN/trilhas em claro, openDigits 0 e sem material WK/RSA/IV externo.
 O índice DATA deve ser explicitamente informado; não deduzir índice 8.
 
-Taxa é parâmetro obrigatório, sem tarifa de produção presumida. Cálculo:
+Taxa definida pelo solicitante em REV-007: 5,34% + 0,80 ponto percentual
+por parcela adicional (1..12). O campo legado `feePercent` é ignorado.
+Formulário e cálculo funcionam sem perfil; iniciar hardware exige perfil. Cálculo:
 tarifa = base × taxa / 100, HALF_UP em centavos; total = base + tarifa.
 Validar limite configurado e N12 também após somar tarifa. Crédito 1..12,
 débito 1 parcela nesta homologação; sem alegação de juros/condições reais.

@@ -25,7 +25,8 @@ exclusivamente pelo `:app`: login, descoberta dinâmica, clique e renderização
 da View pelo host. Substituir o fluxo local por modalidade/valores,
 confirmação no pinpad, leitura, processamento/PIN e finalização.
 
-Usar a combinação visual justificada em [avaliação dos layouts](avaliacao-layouts.md).
+Usar os cinco SVGs Gemini como referência visual principal, conforme a
+[revisão visual aprovada REV-006](reviews/2026-10-10-spec-review-layout.md).
 Consumir o AAR Go da 074 sem duplicar framing, CRC, TLV ou fallback em Kotlin.
 Preparar launcher Windows com Bridge físico, prontidão, reverse do emulador
 e abertura do host. Cobrir cancelamento, timeout, comunicação e resultado
@@ -67,3 +68,15 @@ As duas séries de SVGs, o texto da jornada e os complementos foram incorporados
 em `source-material/`, com hashes. São conteúdo de referência, não instruções
 operacionais nem evidência normativa ABECS. A versão anterior dos documentos
 fica em `references/baseline-2026-09-25/`.
+
+
+## Correção da primeira tela — REV-007
+
+Contrato aprovado em [REV-007](reviews/2026-10-10-spec-review-primeira-tela.md):
+remover faixa Voltar ao menu do host, manter Voltar Android, oferecer SAIR
+vermelho abaixo de AVANÇAR. Modalidade e valor da compra editáveis sem perfil;
+cálculo local independente do hardware. Taxa = 5,34% + 0,80 ponto percentual
+por parcela adicional (1..12); débito em uma parcela. Total = compra + tarifa
+HALF_UP em centavos. Perfil fornece limites e filtros de aplicação distintos,
+não a taxa. AVANÇAR exige perfil válido. Testar cálculo, edição, seleção enviada
+à captura, retorno e layout; preservar animações já implementadas.

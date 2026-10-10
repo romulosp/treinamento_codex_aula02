@@ -74,10 +74,10 @@ Oferecer crédito/débito, valor editável e quantidade de parcelas de 1 a 12.
 Mostrar separadamente valor base, taxa, tarifa e total não editável,
 recalculados ao editar. Fórmula de homologação: `tarifa = valor × taxa / 100`
 e `total = valor + tarifa`, arredondados HALF_UP para centavos.
-Taxa obrigatória no perfil externo; os 5% dos SVGs não são tarifa de produção.
+Taxa definida em REV-007: 5,34% + 0,80 ponto percentual por parcela adicional.
 
 Usar representação monetária exata; bloquear vazio, inválido, zero, negativo,
-precisão maior que dois decimais e overflow. Limite de homologação e taxa vêm
+precisão maior que dois decimais e overflow. Limite de homologação vem
 do perfil validado; débito permite uma parcela. N12 também limita o total.
 Não apresentar "sem juros" sem contrato.
 
@@ -179,6 +179,11 @@ são eventos de UI e não geram comandos físicos artificiais.
 
 ## RNF — Visual, acessibilidade e segurança
 
+- Referência visual principal: os cinco SVGs de `source-material/gemini/`,
+  escolhidos expressamente pelo solicitante em 2026-10-10 e aprovados em
+  [REV-006](reviews/2026-10-10-spec-review-layout.md). Etapa 1 com dois painéis;
+  etapas 2–5 com cartão central, stepper conectado, fundo claro, azul #003366,
+  cantos arredondados, resumo e ilustrações equivalentes aos anexos.
 - Indicador não interativo de cinco etapas com número/rótulo da etapa atual.
   Cancelamento precoce não marca passos não executados como concluídos.
 - Cartões de entrada/resumo, total destacado e ações sólidas azul-escuro
@@ -186,7 +191,10 @@ são eventos de UI e não geram comandos físicos artificiais.
 - Duas colunas quando couber; coluna rolável em janela reduzida/fonte grande,
   sem posições absolutas 1280 × 800 e sem esconder ações essenciais.
 - Toque mínimo 48 dp, foco padrão, semântica acessível e textos em pt-BR.
-- Aguardo descreve estado real; animação decorativa não é requisito.
+- Aguardo descreve estado real; spinner indeterminado e transições suaves
+  entre etapas conforme solicitação de 2026-10-10 e REV-006. Implementação
+  nativa Compose com fade/deslocamento curto e escala de animação do sistema;
+  movimento não inicia comandos nem representa avanço físico ou financeiro.
 - Não duplicar cabeçalho do host nem copiar marcas/dados pessoais dos SVGs.
 - AAR com origem/versão/ABI/SHA-256. Provar libs nativas no carregamento
   dinâmico e INTERNET no processo host; permissão do plugin sozinho não basta.
@@ -229,3 +237,15 @@ Ele substitui as decisões pendentes acima. Nenhum parâmetro obrigatório
 ausente será suprido por valor financeiro inventado. Homologação física
 ocorre após implementação e testes técnicos; parar em IMPLEMENTADA conforme
 o prompt implementar-mudanca-para-teste.
+
+
+## Correção da primeira tela — REV-007
+
+Contrato aprovado em [REV-007](reviews/2026-10-10-spec-review-primeira-tela.md):
+remover faixa Voltar ao menu do host, manter Voltar Android, oferecer SAIR
+vermelho abaixo de AVANÇAR. Modalidade e valor da compra editáveis sem perfil;
+cálculo local independente do hardware. Taxa = 5,34% + 0,80 ponto percentual
+por parcela adicional (1..12); débito em uma parcela. Total = compra + tarifa
+HALF_UP em centavos. Perfil fornece limites e filtros de aplicação distintos,
+não a taxa. AVANÇAR exige perfil válido. Testar cálculo, edição, seleção enviada
+à captura, retorno e layout; preservar animações já implementadas.

@@ -3,6 +3,7 @@ package br.com.romulopenha.sistemaprototipoandroid.platform
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import android.os.Build
 import android.view.View
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.BusinessMenuItem
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IPluginNegocioApp
@@ -120,7 +121,8 @@ internal class BusinessPluginManager(
                 lines.map(String::trim).filter { it.isNotEmpty() && !it.startsWith('#') }.toList()
             }
             val optimized = File(context.codeCacheDir, "plugins/${verified.digestSha256}").apply { mkdirs() }
-            val loader = DexClassLoader(verified.apk.absolutePath, optimized.absolutePath, null, context.classLoader)
+            val nativeDirectory = prepareNativeLibraries(zip, optimized)
+            val loader = DexClassLoader(verified.apk.absolutePath, optimized.absolutePath, nativeDirectory?.absolutePath, context.classLoader)
             classNames.mapNotNull { className ->
                 runCatching {
                     val plugin = loader.loadClass(className).getDeclaredConstructor().newInstance() as? IPluginNegocioApp
@@ -136,6 +138,48 @@ internal class BusinessPluginManager(
         }
     } catch (_: Exception) {
         emptyList()
+    }
+
+    /**
+     * Extrai somente bibliotecas da ABI compatível de APK já verificado, por digest.
+     * Nomes e tamanho são limitados; diretório privado impede traversal e mantém
+     * nativas fora da fronteira de negócio. Ausência de ABI compatível rejeita carga.
+     */
+    private fun prepareNativeLibraries(zip: ZipFile, optimized: File): File? {
+        val entries = zip.entries().asSequence().filter { !it.isDirectory && it.name.startsWith("lib/") }.toList()
+        if (entries.isEmpty()) return null
+        val abi = Build.SUPPORTED_ABIS.firstOrNull { candidate -> entries.any { it.name.startsWith("lib/$candidate/") } }
+            ?: error("Plugin sem ABI compatível")
+        val libraries = entries.filter { it.name.startsWith("lib/$abi/") }
+        val directory = File(optimized, "native/$abi").apply { check(mkdirs() || isDirectory) }
+        var total = 0L
+        for (entry in libraries) {
+            val name = entry.name.removePrefix("lib/$abi/")
+            require(name.matches(Regex("lib[A-Za-z0-9_+.-]+[.]so")))
+            require(entry.size in 1..(64L * 1024 * 1024))
+            total += entry.size
+            require(total <= 256L * 1024 * 1024)
+            val target = File(directory, name)
+            if (!target.isFile) {
+                zip.getInputStream(entry).use { input ->
+                    target.outputStream().use { output ->
+                        var copied = 0L
+                        val buffer = ByteArray(8192)
+                        while (true) {
+                            val read = input.read(buffer)
+                            if (read < 0) break
+                            copied += read
+                            require(copied <= entry.size)
+                            output.write(buffer, 0, read)
+                        }
+                        require(copied == entry.size)
+                    }
+                }
+                check(target.setReadOnly())
+            }
+            require(target.length() == entry.size)
+        }
+        return directory
     }
 
     private fun Collection<BusinessPluginHandle>.detachAll() = forEach { handle -> runCatching { handle.plugin.onDetach() } }

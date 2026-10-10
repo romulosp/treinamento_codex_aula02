@@ -5,10 +5,10 @@ import android.content.pm.ApplicationInfo
 import br.com.romulopenha.libpinpadabecsgo.mobile.Client
 import br.com.romulopenha.libpinpadabecsgo.mobile.Mobile
 import java.io.File
-import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -74,7 +74,7 @@ internal class GoSaqueRepository(
 
     override suspend fun open(profile: SaquePerfil, operationId: String) = goCall {
         profile.validate()
-        val created = Mobile.newClient(profile.host, profile.port, profile.timeoutMillis)
+        val created = Mobile.newClient(profile.host, profile.port.toLong(), profile.timeoutMillis)
         client = created
         created.ping(operationId)
         created.open(operationId)
@@ -100,41 +100,43 @@ internal class GoSaqueRepository(
     }
 
     override suspend fun waitKey(operationId: String, timeoutSeconds: Int): Int = goCall {
-        requireClient().waitForKeyPress(operationId, timeoutSeconds).toInt()
+        requireClient().waitForKeyPress(operationId, timeoutSeconds.toLong()).toInt()
     }
 
     override suspend fun capture(profile: SaquePerfil, summary: SaqueResumo, operationId: String): String = goCall {
         val now = LocalDateTime.now()
         val json = requireClient().purchaseGCXFilteredSummaryJSON(
             operationId, summary.amountN12(), now.format(DateTimeFormatter.ofPattern("yyMMdd")),
-            now.format(DateTimeFormatter.ofPattern("HHmmss")), true, false, 1,
-            profile.tableAcquirer, profile.applicationTypes(summary.modalidade), "", profile.timeoutSeconds,
+            now.format(DateTimeFormatter.ofPattern("HHmmss")), true, false, 1L,
+            profile.tableAcquirer, profile.applicationTypes(summary.modalidade), "", profile.timeoutSeconds.toLong(),
         )
-        val type = JSONObject(json).getString("cardType")
+        val jsonObj = JSONObject(json)
+        require(jsonObj.getString("schemaVersion") == "1")
+        val type = jsonObj.getString("cardType")
         require(type in setOf("00", "03", "05", "06"))
         type
     }
 
     override suspend fun capturePin(operationId: String) = goCall {
-        requireClient().capturePINDUKPT(operationId, 8, "", "DIGITE SUA SENHA")
+        requireClient().capturePINDUKPT(operationId, 8L, "", "DIGITE SUA SENHA")
     }
 
     override suspend fun tracks(profile: SaquePerfil, operationId: String) = goCall {
-        requireClient().getTracksSummaryJSON(operationId, "0111", "30", 0, profile.gtkKeyIndex, "", "", "", "")
+        requireClient().getTracksSummaryJSON(operationId, "0111", "30", 0L, profile.gtkKeyIndex.toLong(), "", "", "", "")
         Unit
     }
 
     override suspend fun continueEmv(profile: SaquePerfil, summary: SaqueResumo, operationId: String): Char = goCall {
         val json = requireClient().continueEMVSummaryJSON(
-            operationId, profile.tableAcquirer, "3", 8, "", "\u0001", summary.amountN12(), "", "", "01000",
-            "", "", "", "", profile.timeoutSeconds,
+            operationId, profile.tableAcquirer, "3", 8L, "", "\u0001", summary.amountN12(), "", "", "01000",
+            "", "", "", "", profile.timeoutSeconds.toLong(),
         )
         decision(json, 6, "012")
     }
 
     override suspend fun finalizeEmv(profile: SaquePerfil, operationId: String): Char = goCall {
         val json = requireClient().finalizeEMVSummaryJSON(
-            operationId, profile.scenario.options, profile.scenario.arc, "", "", profile.timeoutSeconds,
+            operationId, profile.scenario.options, profile.scenario.arc, "", "", profile.timeoutSeconds.toLong(),
         )
         decision(json, 3, "01")
     }
@@ -153,6 +155,8 @@ internal class GoSaqueRepository(
     private suspend fun <T> goCall(action: () -> T): T = withContext(ioDispatcher) {
         try {
             action()
+        } catch (canceled: CancellationException) {
+            throw canceled
         } catch (error: Exception) {
             throw SaqueFailure(Mobile.errorCode(error.message.orEmpty()))
         } catch (_: LinkageError) {
@@ -170,19 +174,24 @@ private fun readPrivateFile(file: File, maxBytes: Long): String {
     return file.readText(Charsets.UTF_8)
 }
 
-/** Analisa schema explícito, sem defaults de taxa, filtros, cenário ou chave DATA. */
+/** Analisa perfil físico; taxa é regra de domínio e o campo legado é ignorado. */
 internal fun parseSaqueProfile(raw: String): SaquePerfil {
     val json = JSONObject(raw)
-    require(json.getInt("schemaVersion") == 1)
-    val fee = json.get("feePercent").toString()
-    require(fee.length <= 32 && fee.matches(Regex("[0-9]+(\\.[0-9]+)?")))
+    require(json.wholeNumber("schemaVersion") == 1L)
     return SaquePerfil(
-        json.getString("environment"), json.getString("host"), json.getInt("port"),
-        json.getLong("timeoutMillis"), json.getInt("timeoutSeconds"), json.getString("tableAcquirer"),
+        json.getString("environment"), json.getString("host"), Math.toIntExact(json.wholeNumber("port")),
+        json.wholeNumber("timeoutMillis"), Math.toIntExact(json.wholeNumber("timeoutSeconds")), json.getString("tableAcquirer"),
         json.getString("tableVersion"), json.getString("creditApplicationTypes"), json.getString("debitApplicationTypes"),
-        BigDecimal(fee), json.getLong("maxBaseCents"), json.getString("gtkDataMethod"), json.getInt("gtkKeyIndex"),
+        json.wholeNumber("maxBaseCents"), json.getString("gtkDataMethod"), Math.toIntExact(json.wholeNumber("gtkKeyIndex")),
         SaqueCenario.valueOf(json.getString("scenario")),
     ).also(SaquePerfil::validate)
+}
+
+/** Rejeita coerção JSON de fração/string/booleano para inteiros de configuração. */
+private fun JSONObject.wholeNumber(name: String): Long {
+    val value = get(name)
+    require(value is Number && value.toString().matches(Regex("[0-9]+")))
+    return value.toString().toLongOrNull() ?: throw IllegalArgumentException()
 }
 
 /** Confirma o tamanho/decisão da resposta resumida; JSON incompleto não implica aprovação. */

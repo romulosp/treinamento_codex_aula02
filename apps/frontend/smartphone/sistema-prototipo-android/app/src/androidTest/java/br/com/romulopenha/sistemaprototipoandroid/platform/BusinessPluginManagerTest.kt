@@ -1,6 +1,9 @@
 package br.com.romulopenha.sistemaprototipoandroid.platform
 
 import android.view.View
+import android.os.Build
+import dalvik.system.DexClassLoader
+import java.io.File
 import androidx.test.platform.app.InstrumentationRegistry
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.BusinessMenuItem
 import java.util.concurrent.CountDownLatch
@@ -47,5 +50,15 @@ class BusinessPluginManagerTest {
             view = manager!!.createScreen(saque.id, context)
         }
         assertNotNull("View do plugin não foi criada", view)
+        val verified = LoginPluginLoader.findVerified(context, {}, LoginPluginLoader.BusinessRequest)
+            .distinctBy { it.descriptor.pluginId }
+            .single { it.descriptor.pluginId.endsWith("saquecartao") }
+        val optimized = File(context.codeCacheDir, "plugins/${verified.digestSha256}")
+        val native = Build.SUPPORTED_ABIS.map { File(optimized, "native/$it") }.first { it.isDirectory }
+        assertTrue("libgojni não extraída", File(native, "libgojni.so").isFile)
+        val loader = DexClassLoader(verified.apk.absolutePath, optimized.absolutePath, native.absolutePath, context.classLoader)
+        val mobile = loader.loadClass("br.com.romulopenha.libpinpadabecsgo.mobile.Mobile")
+        val version = mobile.getMethod("version").invoke(null) as String
+        assertTrue("Go não inicializou na ABI do host", version.contains("revision=db23e7d"))
     }
 }

@@ -5,6 +5,11 @@ não representa teste de usabilidade nem inspeção da UI Android executada.
 
 ## Decisão visual
 
+Atualização solicitada em 2026-10-10: a série Gemini torna-se referência
+visual principal das cinco etapas por [REV-006](reviews/2026-10-10-spec-review-layout.md).
+A comparação abaixo permanece como histórico; as restrições funcionais,
+segurança, dados reais e adaptação de janela continuam aplicáveis.
+
 Combinar o indicador de cinco etapas, cartões e destaque do total do Gemini
 com as instruções explícitas de chip/tarja/aproximação da versão original.
 Preservar o cabeçalho real do host e os tokens compatíveis com a aplicação.

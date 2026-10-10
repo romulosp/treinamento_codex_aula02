@@ -80,7 +80,8 @@ normativas do perfil não forem satisfeitas.
   sem material criptográfico em resposta do usuário ou arquivos versionados.
 - Versão/perfil e provisionamento privado debug conforme contrato executável.
 - Cenário FCX explícito APPROVE/DENY/COMMUNICATION_ERROR no perfil.
-- Taxa, limite e prazos obrigatórios; débito em uma parcela; chave DATA GTK
+- Limite e prazos obrigatórios; taxa definida por REV-007, não pelo perfil;
+  débito em uma parcela; chave DATA GTK
   independente do índice PIN, conforme [contrato executável](contrato-implementacao-homologacao.md).
 
 ## Evidência de inspeção

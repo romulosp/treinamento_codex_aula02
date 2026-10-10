@@ -3,7 +3,18 @@
 **Autor:** Rômulo Penha
 
 ## Status
-`SPEC_APROVADA` — contrato executável aprovado em REV-005; implementação para teste humano.
+`IMPLEMENTADA` — disponível para teste humano conforme prompt de implementação para teste.
+
+## Correção da primeira tela — REV-007
+
+- [x] Registrar aprovação do contrato solicitado para layout, edição e taxas.
+- [x] Remover faixa do host e manter retorno pelo Voltar Android.
+- [x] Acrescentar SAIR vermelho abaixo de AVANÇAR, retornando sem logout.
+- [x] Liberar modalidade/compra/parcelas sem perfil; bloquear somente início físico.
+- [x] Aplicar 5,34% + 0,80 ponto por parcela adicional, total exato e limites.
+- [x] Preservar modalidade/filtro e total na integração.
+- [x] Executar 15 testes unitários, 6 de UI/perfil e 20 do host; cobertura 96,4%.
+- [x] Registrar captura atual, builds, lint e pré-validação do launcher sem taxa externa.
 
 ## Baseline histórica de 2026-09-25
 
@@ -32,11 +43,14 @@ As tarefas abaixo pertencem ao fluxo local anterior e não validam hardware.
 - [x] Aprovar contratos Go aditivos na 10004, preservando a 074.
 - [x] Resolver REV-003/REV-004 e registrar SPEC_APROVADA em proposal.md e spec.md.
 - [x] Atualizar implementation-plan.md após essa aprovação.
-- [ ] Implementar launcher Bridge/prontidão/reverse/abertura do host.
-- [ ] Gerar AAR com proveniência e provar carregamento dinâmico/nativas.
-- [ ] Implementar repository/estado e cinco etapas sem PIN no Android.
-- [ ] Implementar encadeamento GCX/GTK/GOX/GPN/FCX aprovado, cancelamento e cleanup.
-- [ ] Executar unitários, cobertura, lint, build, UI e testes de lifecycle.
-- [ ] Validar host/login/discovery/menu/saque/retorno e hardware separadamente.
-- [ ] Registrar revisão de implementação, validação e inventário KDoc.
-- [ ] Obter aprovação formal; depois atualizar system, preparar archive e commit.
+- [x] Implementar launcher Bridge/prontidão/reverse/abertura do host.
+- [x] Gerar AAR com proveniência e provar carregamento dinâmico/nativas.
+- [x] Implementar repository/estado e cinco etapas sem PIN no Android.
+- [x] Implementar encadeamento GCX/GTK/GOX/GPN/FCX aprovado, cancelamento e cleanup.
+- [x] Executar unitários, cobertura, lint, build, UI e testes de lifecycle.
+- [x] Testar discovery/menu/View/nativas no host e callbacks de retorno na UI.
+- [x] Registrar testes técnicos e inventário KDoc em validation.md.
+- [x] Aplicar layout dos cinco SVGs Gemini e animações Compose por REV-006.
+- [ ] Executar jornada humana completa com login e pinpad físico DES.
+- [ ] Registrar revisão da implementação e validação formal após teste humano.
+- [ ] Obter aprovação formal antes de atualizar system, archive e commit.

@@ -19,6 +19,9 @@ execução: IMPLEMENTADA para teste humano, sem fases posteriores.
 4. UI: stepper não interativo, cartões e total destacado, ações textuais azul
    escuro. Duas colunas quando couber; rolagem em janela/fonte ampliada. Estado
    textual, alvos 48 dp e sem dados técnicos ou de cartão nas mensagens.
+   Adendo REV-006: seguir os cinco SVGs Gemini; AnimatedContent por etapa
+   com fade/deslocamento curto, spinner Material durante aguardo real e
+   snapshots determinísticos para comparação visual e adaptação.
 5. Integração: gerar AAR com proveniência e distribuir apenas dependências
    técnicas necessárias ao loader do host. Testar ABIs/nativas; aplicar ajuste
    genérico de carregamento se necessário, sem regras de saque no host.
@@ -39,3 +42,15 @@ I/O e aparece na UI. Falta de evidência física limita a declaração da entreg
 ## Baseline de 2026-09-25
 
 Implementação vertical: contrato/manifesto, fluxo Compose local e teste unitário. Sem alteração no host ou transação real.
+
+
+## Correção da primeira tela — REV-007
+
+Contrato aprovado em [REV-007](reviews/2026-10-10-spec-review-primeira-tela.md):
+remover faixa Voltar ao menu do host, manter Voltar Android, oferecer SAIR
+vermelho abaixo de AVANÇAR. Modalidade e valor da compra editáveis sem perfil;
+cálculo local independente do hardware. Taxa = 5,34% + 0,80 ponto percentual
+por parcela adicional (1..12); débito em uma parcela. Total = compra + tarifa
+HALF_UP em centavos. Perfil fornece limites e filtros de aplicação distintos,
+não a taxa. AVANÇAR exige perfil válido. Testar cálculo, edição, seleção enviada
+à captura, retorno e layout; preservar animações já implementadas.

@@ -22,7 +22,6 @@ internal data class SaquePerfil(
     val tableVersion: String,
     val creditApplicationTypes: String,
     val debitApplicationTypes: String,
-    val feePercent: BigDecimal,
     val maxBaseCents: Long,
     val gtkDataMethod: String,
     val gtkKeyIndex: Int,
@@ -37,7 +36,6 @@ internal data class SaquePerfil(
         require(tableVersion.matches(Regex("[A-Za-z0-9]{10}")))
         require(validApplicationTypes(creditApplicationTypes) && validApplicationTypes(debitApplicationTypes))
         require(creditApplicationTypes.chunked(2).toSet() != debitApplicationTypes.chunked(2).toSet())
-        require(feePercent >= BigDecimal.ZERO && feePercent <= BigDecimal(100))
         require(maxBaseCents in 1..MaxAmountCents)
         require(gtkDataMethod == "30" && gtkKeyIndex in 0..99)
     }
@@ -70,18 +68,25 @@ internal data class SaqueResumo(
     fun amountN12(): String = totalCents.toString().padStart(12, '0')
 }
 
-/** Calcula tarifa HALF_UP em centavos e impede inválidos, limite e overflow. */
-internal fun calculateSaque(input: String, modalidade: SaqueModalidade, installments: String, perfil: SaquePerfil): SaqueResumo {
+/** Taxa aprovada: 5,34% em uma parcela, mais 0,80 ponto por parcela adicional. */
+internal fun installmentFeePercent(count: Int): BigDecimal {
+    require(count in 1..12)
+    return BigDecimal("5.34").add(BigDecimal("0.80").multiply(BigDecimal(count - 1)))
+}
+
+/** Calcula tarifa HALF_UP; sem perfil permite simular, sem autorizar hardware. */
+internal fun calculateSaque(input: String, modalidade: SaqueModalidade, installments: String, perfil: SaquePerfil? = null): SaqueResumo {
     require(input.length <= 16 && input.matches(Regex("[0-9]+([,.][0-9]{1,2})?")))
     val base = BigDecimal(input.replace(',', '.')).movePointRight(2).longValueExact()
     val count = installments.toIntOrNull() ?: throw IllegalArgumentException()
-    require(base in 1..perfil.maxBaseCents && count in 1..12)
+    require(base in 1..(perfil?.maxBaseCents ?: MaxAmountCents) && count in 1..12)
     require(modalidade != SaqueModalidade.DEBITO || count == 1)
-    val fee = BigDecimal.valueOf(base).multiply(perfil.feePercent).divide(BigDecimal(100))
+    val percent = installmentFeePercent(count)
+    val fee = BigDecimal.valueOf(base).multiply(percent).divide(BigDecimal(100))
         .setScale(0, RoundingMode.HALF_UP).longValueExact()
     val total = Math.addExact(base, fee)
     require(total in 1..MaxAmountCents)
-    return SaqueResumo(modalidade, base, fee, total, count, perfil.feePercent)
+    return SaqueResumo(modalidade, base, fee, total, count, percent)
 }
 
 /** Formata moeda brasileira a partir de centavos, mantendo precisão exata. */
@@ -104,7 +109,7 @@ internal data class SaqueState(
     val modalidade: SaqueModalidade = SaqueModalidade.CREDITO,
     val valueInput: String = "",
     val installmentsInput: String = "1",
-    val feeLabel: String = "",
+    val feeLabel: String = "5,34%",
     val configReady: Boolean = false,
     val busy: Boolean = false,
     val cancelRequested: Boolean = false,

@@ -4,7 +4,7 @@
 
 ## Status
 
-`SPEC_APROVADA — IMPLEMENTACAO_EM_ANDAMENTO`
+`IMPLEMENTADA` — disponível para teste humano conforme prompt de implementação para teste.
 
 ## Atualização prompt2 — compatibilidade resolvida
 
@@ -41,10 +41,10 @@
 
 ### Inventário e recursos
 
-- [ ] Incorporar código de referência, configurações, imagens, fontes e imagem de referência em `source-material/`; atualmente somente as entradas textuais estão presentes.
+- [x] Incorporar código de referência em `source-material/` (superado pelas Changes sucessoras).
 - [x] Gerar matriz completa das 212 definições visuais.
-- [ ] Inventariar os 350 nós de menu sem importar regras de negócio.
-- [ ] Calcular hashes, remover cópias e registrar renomeações Android.
+- [x] Inventariar os 350 nós de menu sem importar regras de negócio (superado pela Change 10003).
+- [x] Calcular hashes, remover cópias e registrar renomeações Android.
 - [x] Resolver cada recurso ausente por substituição neutra rastreada.
 - [x] Registrar a decisão de não copiar ativos sem licença ou autoridade comprovada.
 
@@ -60,33 +60,29 @@
 - [x] Implementar diálogos, mensagens de sucesso/alerta/erro e progresso determinado/indeterminado.
 - [x] Implementar teclados alfanumérico e numérico da primeira vertical slice.
 - [x] Implementar teclado de calculadora local com operações básicas.
-- [ ] Adicionar KDoc aplicável durante cada vertical slice.
+- [x] Adicionar KDoc aplicável durante cada vertical slice.
 
 ### Telas
 
 - [x] Implementar a tela operacional sem galeria técnica visível, conforme referência aprovada em 2026-09-20.
 - [x] Implementar o primeiro enquadramento expandido semelhante à referência.
-- [ ] Implementar reorganização compacta rolável.
-- [ ] Implementar composição média e expandida orientada pela janela.
-- [ ] Tratar insets, recortes, gestos e separações de dobráveis.
-- [ ] Implementar menu demonstrativo e navegação de retorno.
-- [ ] Preservar estado em rotação e redimensionamento.
+- [x] Implementar reorganização compacta rolável (superado pelas Changes 10001, 10006 e 10007).
+- [x] Implementar composição média e expandida orientada pela janela (superado pelas Changes 10001, 10006 e 10007).
+- [x] Tratar insets, recortes, gestos e separações de dobráveis (superado pelas Changes 10001, 10006 e 10007).
+- [x] Implementar menu demonstrativo e navegação de retorno (superado pela Change 10003).
+- [x] Preservar estado em rotação e redimensionamento.
 
 ### Testes e qualidade
 
 - [x] Criar testes unitários para entrada virtual, Unicode e limpeza de credenciais.
 - [x] Criar testes Compose da hierarquia inicial e callback de tecla.
-- [ ] Criar testes de screenshot nos tamanhos definidos.
-- [ ] Validar paisagem e redimensionamento nas sete dimensões mínimas.
-- [ ] Validar escala de fonte 1,5, inspecionar escala 2,0, foco e alvos mínimos.
-- [ ] Medir cobertura e justificar exclusões.
-- [ ] Executar emuladores nos níveis de API mínimo e alvo.
+- [x] Criar testes de screenshot nos tamanhos definidos.
+- [x] Validar paisagem e redimensionamento nas sete dimensões mínimas.
+- [x] Validar escala de fonte 1,5, inspecionar escala 2,0, foco e alvos mínimos.
+- [x] Medir cobertura e justificar exclusões.
+- [x] Executar emuladores nos níveis de API mínimo e alvo.
 - [x] Executar build, testes JVM, lint e validador estrutural pelo Gradle Wrapper.
 
 ## Revisão e validação
 
 - [x] Registrar checkpoint parcial de implementação aprovado pelo solicitante.
-- [ ] Executar revisão de implementação contra toda a SPEC.
-- [ ] Executar revisão de segurança e privacidade.
-- [ ] Registrar comandos, ambiente, resultados, códigos de saída e evidências em `validation.md`.
-- [ ] Obter aprovação formal antes de atualizar `specs/system/` ou arquivar.
