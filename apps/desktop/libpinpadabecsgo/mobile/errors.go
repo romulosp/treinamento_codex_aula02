@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	domainerror "br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/error"
+	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/state"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/infrastructure/bridgeprotocol"
 	"br.com.romulopenha/lib-pinpad-abecs-go/internal/infrastructure/transport/emulator"
 )
@@ -54,6 +55,11 @@ func publicFailure(phase string, err error) error {
 		code = "PINPAD_CLOSED"
 	case errors.As(err, &status):
 		code = "PINPAD_ERROR"
+		if status.Code == state.StatusCancel {
+			code = "CANCELED"
+		} else if status.Code == state.StatusTimeout {
+			code = "TIMEOUT"
+		}
 	}
 	if code == "INVALID_FRAME" {
 		code = "PROTOCOL_ERROR"

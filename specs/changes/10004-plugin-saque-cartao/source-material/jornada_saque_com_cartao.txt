@@ -1,0 +1,62 @@
+vamos fazer a funcionalidade agora saca com cartão, 
+vamos ter o layout base como anexo, 
+vamos criar as sequencias que temos na jornada de leitura do cartão, com todas as fases
+
+1- TELA DE MODALIDADE DE COMPRA, SELECIONA SE E CREDITO OU DEBITO INFORMA O VALOR,
+NESTA TELA IRA TER CAMPO EDITAVEL, VALOR COMPRA, COMBO BOX COM AS OPÇÕES DE PARCELA COM LABEL QUANTIDADE,
+CAMPO NÃO EDITAVEL VALOR TOTAL COMPRA QUE MOSTRA O CALCULO EM TEMPO REAL COM A VALOR COMPRA * TAXA/100  EM RELAÇÃO AO VALOR DA COMPRA,
+
+2- CONFIRMAÇÃO DA COMPRA NO PINPAD 
+
+TELA usuario, CONFIRME OS DADOS NO PINPAD( sugere algo melhor para esse ceário)
+
+
+MOSTRAR NA TELA DO PINPAD AS INFORMAÇÕES 
+
+VALOR TOTAL COMPRA 
+QUANTIDADE DE VEZES (1 ATÉ 12)
+VALOR TOTAL TARIFA
+CANCELA/CONFIRMA 
+
+3-LEITURA DE CARTÃO 
+
+TELA usuario, PASSE/INSIRA OU APROXIME O CARTÃO PARA LEITURA( sugere algo melhor para esse ceário)
+
+
+SERÁ HABILITADO LEITURA COM CHIP, TARJA E CONTACTLESS 
+PESQUISAR A OPÇÃO QUE FOI SELECIONADA NA TELA 1- DEBITO OU CREDITO 
+PESQUISAR AS APLICAÇÕES COM AID EXTENDIDO E COM AID BASE
+IDENTIFICAR O MODO DE UTILIZAÇÃO 
+Permitido eventos fallback
+
+GCX 
+GTK
+
+
+4- digitação de senha
+
+TELA usuario, Digite a senha para proceguir a transação( sugere algo melhor para esse ceário)
+
+PINPAD
+GOX
+GPN ( PARA QUANDO FOR LEITURA COM TARJA MAGNETICA)
+
+
+5- FINALISA TRANSAÇÃO
+
+CASO O CARTÃO FOI INSERIDO chip modo de entrada identificado no passo1,
+chamar a função para finalizar a transação 
+
+esse cenário pode ser utilizado nos casos 
+
+sucesso tem um indicador documentação ABECS 2.12
+negada tem um indicador documentação ABECS 2.12
+Erro tem um indicador documentação ABECS 2.12
+
+utilizar conforme o cenário 
+
+FCX
+
+
+AGORA GOSTARIA QUE VC JUSTIFICA-SE TODOS OS LAYOUTS QUE VC FEZ PARA REVISAR COM OUTRA LLM PARA VER SE CONSEGUE SUGERIR NO FINAL COLOCA SUA IDENTIFICAÇÃO QUAL SEU NOME/MODELO VERSÃO ATUAL
+

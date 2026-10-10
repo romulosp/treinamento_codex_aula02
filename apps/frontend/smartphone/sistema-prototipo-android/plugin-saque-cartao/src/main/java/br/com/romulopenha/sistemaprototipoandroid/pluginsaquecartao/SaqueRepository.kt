@@ -1,0 +1,195 @@
+package br.com.romulopenha.sistemaprototipoandroid.pluginsaquecartao
+
+import android.content.Context
+import android.content.pm.ApplicationInfo
+import br.com.romulopenha.libpinpadabecsgo.mobile.Client
+import br.com.romulopenha.libpinpadabecsgo.mobile.Mobile
+import java.io.File
+import java.math.BigDecimal
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
+
+/** Dimensões reais consultadas no pinpad, não inferidas pelo modelo do aparelho. */
+internal data class SaqueDisplay(val lines: Int, val columns: Int)
+
+/** Falha sanitizada; mensagens arbitrárias do driver nunca chegam à UI. */
+internal class SaqueFailure(val code: String) : Exception(code)
+
+/** Porta main-safe para a jornada; protocolo, parsers e cartão ficam no Go. */
+internal interface SaqueRepository {
+    /** Lê e valida somente configuração privada DES do host debug, sem hardware. */
+    suspend fun loadProfile(): SaquePerfil
+    /** Cria cliente, confirma Bridge e abre sessão real; pode falhar sem avançar. */
+    suspend fun open(profile: SaquePerfil, operationId: String)
+    /** Consulta dimensões de display antes de preparar a confirmação. */
+    suspend fun displayCapabilities(operationId: String): SaqueDisplay
+    /** Encaminha o array externo para validação e carga completas no Go. */
+    suspend fun loadTable(profile: SaquePerfil, operationId: String)
+    /** Exibe texto DEX que já cabe nas capacidades reais. */
+    suspend fun displayText(operationId: String, message: String)
+    /** Exibe duas linhas de no máximo 16 caracteres sem truncamento. */
+    suspend fun displayPage(operationId: String, first: String, second: String)
+    /** Aguarda tecla real; 0 confirma e 13 cancela. */
+    suspend fun waitKey(operationId: String, timeoutSeconds: Int): Int
+    /** Inicia GCX filtrado; devolve apenas o tipo físico de cartão. */
+    suspend fun capture(profile: SaquePerfil, summary: SaqueResumo, operationId: String): String
+    /** Captura PIN DUKPT tipo 3/08 com PAN retido no dispositivo. */
+    suspend fun capturePin(operationId: String)
+    /** Solicita GTK criptografado e descarta o summary que contém apenas comprimentos. */
+    suspend fun tracks(profile: SaquePerfil, operationId: String)
+    /** Continua EMV; devolve a decisão segura 0, 1 ou 2. */
+    suspend fun continueEmv(profile: SaquePerfil, summary: SaqueResumo, operationId: String): Char
+    /** Finaliza somente online no cenário explícito; devolve decisão 0 ou 1. */
+    suspend fun finalizeEmv(profile: SaquePerfil, operationId: String): Char
+    /** Cancela explicitamente a operação no core; coroutine sozinha não cancela hardware. */
+    suspend fun cancel(operationId: String)
+    /** Encerra sessão mesmo após falha, com o timeout limitado do cliente. */
+    suspend fun close(operationId: String)
+}
+
+/** Adapter fino gomobile. JSON EMV fica nesta camada e nunca integra estado Compose. */
+internal class GoSaqueRepository(
+    private val context: Context,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+) : SaqueRepository {
+    @Volatile private var client: Client? = null
+    private var tableJson: String = ""
+
+    override suspend fun loadProfile(): SaquePerfil = withContext(ioDispatcher) {
+        try {
+            require(context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0)
+            val dir = File(context.filesDir, "saque-cartao")
+            val profileJson = readPrivateFile(File(dir, "perfil.json"), 65536)
+            tableJson = readPrivateFile(File(dir, "emv.json"), 1048576)
+            parseSaqueProfile(profileJson).also(SaquePerfil::validate)
+        } catch (_: Exception) {
+            tableJson = ""
+            throw SaqueFailure("CONFIGURATION")
+        }
+    }
+
+    override suspend fun open(profile: SaquePerfil, operationId: String) = goCall {
+        profile.validate()
+        val created = Mobile.newClient(profile.host, profile.port, profile.timeoutMillis)
+        client = created
+        created.ping(operationId)
+        created.open(operationId)
+    }
+
+    override suspend fun displayCapabilities(operationId: String): SaqueDisplay = goCall {
+        val json = JSONObject(requireClient().getDisplayCapabilitiesJSON(operationId))
+        SaqueDisplay(json.getInt("TextLines"), json.getInt("TextCols"))
+    }
+
+    override suspend fun loadTable(profile: SaquePerfil, operationId: String) = goCall {
+        require(tableJson.isNotEmpty())
+        requireClient().loadFormattedEMVTableJSON(operationId, profile.tableAcquirer, profile.tableVersion, tableJson)
+    }
+
+    override suspend fun displayText(operationId: String, message: String) = goCall {
+        requireClient().displayDEX(operationId, message)
+    }
+
+    override suspend fun displayPage(operationId: String, first: String, second: String) = goCall {
+        require(first.length <= 16 && second.length <= 16)
+        requireClient().displayDSP(operationId, first, second)
+    }
+
+    override suspend fun waitKey(operationId: String, timeoutSeconds: Int): Int = goCall {
+        requireClient().waitForKeyPress(operationId, timeoutSeconds).toInt()
+    }
+
+    override suspend fun capture(profile: SaquePerfil, summary: SaqueResumo, operationId: String): String = goCall {
+        val now = LocalDateTime.now()
+        val json = requireClient().purchaseGCXFilteredSummaryJSON(
+            operationId, summary.amountN12(), now.format(DateTimeFormatter.ofPattern("yyMMdd")),
+            now.format(DateTimeFormatter.ofPattern("HHmmss")), true, false, 1,
+            profile.tableAcquirer, profile.applicationTypes(summary.modalidade), "", profile.timeoutSeconds,
+        )
+        val type = JSONObject(json).getString("cardType")
+        require(type in setOf("00", "03", "05", "06"))
+        type
+    }
+
+    override suspend fun capturePin(operationId: String) = goCall {
+        requireClient().capturePINDUKPT(operationId, 8, "", "DIGITE SUA SENHA")
+    }
+
+    override suspend fun tracks(profile: SaquePerfil, operationId: String) = goCall {
+        requireClient().getTracksSummaryJSON(operationId, "0111", "30", 0, profile.gtkKeyIndex, "", "", "", "")
+        Unit
+    }
+
+    override suspend fun continueEmv(profile: SaquePerfil, summary: SaqueResumo, operationId: String): Char = goCall {
+        val json = requireClient().continueEMVSummaryJSON(
+            operationId, profile.tableAcquirer, "3", 8, "", "\u0001", summary.amountN12(), "", "", "01000",
+            "", "", "", "", profile.timeoutSeconds,
+        )
+        decision(json, 6, "012")
+    }
+
+    override suspend fun finalizeEmv(profile: SaquePerfil, operationId: String): Char = goCall {
+        val json = requireClient().finalizeEMVSummaryJSON(
+            operationId, profile.scenario.options, profile.scenario.arc, "", "", profile.timeoutSeconds,
+        )
+        decision(json, 3, "01")
+    }
+
+    override suspend fun cancel(operationId: String) = goCall { client?.cancel(operationId); Unit }
+
+    override suspend fun close(operationId: String) = goCall {
+        val closing = client
+        client = null
+        tableJson = ""
+        closing?.close(operationId)
+        Unit
+    }
+
+    /** Executa binding bloqueante fora da main e expõe só categoria pública conhecida. */
+    private suspend fun <T> goCall(action: () -> T): T = withContext(ioDispatcher) {
+        try {
+            action()
+        } catch (error: Exception) {
+            throw SaqueFailure(Mobile.errorCode(error.message.orEmpty()))
+        } catch (_: LinkageError) {
+            throw SaqueFailure("BINDING_ERROR")
+        }
+    }
+
+    /** Exige cliente da sessão atual, sem criar sessão implícita ou replay. */
+    private fun requireClient(): Client = client ?: throw SaqueFailure("PINPAD_CLOSED")
+}
+
+/** Lê arquivo limitado; não inclui conteúdo, caminhos ou erros de parser nas mensagens. */
+private fun readPrivateFile(file: File, maxBytes: Long): String {
+    require(file.isFile && file.length() in 1..maxBytes)
+    return file.readText(Charsets.UTF_8)
+}
+
+/** Analisa schema explícito, sem defaults de taxa, filtros, cenário ou chave DATA. */
+internal fun parseSaqueProfile(raw: String): SaquePerfil {
+    val json = JSONObject(raw)
+    require(json.getInt("schemaVersion") == 1)
+    val fee = json.get("feePercent").toString()
+    require(fee.length <= 32 && fee.matches(Regex("[0-9]+(\\.[0-9]+)?")))
+    return SaquePerfil(
+        json.getString("environment"), json.getString("host"), json.getInt("port"),
+        json.getLong("timeoutMillis"), json.getInt("timeoutSeconds"), json.getString("tableAcquirer"),
+        json.getString("tableVersion"), json.getString("creditApplicationTypes"), json.getString("debitApplicationTypes"),
+        BigDecimal(fee), json.getLong("maxBaseCents"), json.getString("gtkDataMethod"), json.getInt("gtkKeyIndex"),
+        SaqueCenario.valueOf(json.getString("scenario")),
+    ).also(SaquePerfil::validate)
+}
+
+/** Confirma o tamanho/decisão da resposta resumida; JSON incompleto não implica aprovação. */
+private fun decision(raw: String, length: Int, allowed: String): Char {
+    val json = JSONObject(raw)
+    require(json.getString("schemaVersion") == "1")
+    val result = json.getString("result")
+    require(result.length == length && result.first() in allowed)
+    return result.first()
+}

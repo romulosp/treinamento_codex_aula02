@@ -1,0 +1,105 @@
+Sim, seguem **detalhes complementares** que podem ser úteis para uma revisão mais completa por outra LLM. Eles cobrem aspectos técnicos, operacionais, de UX e de negócio que não estão explícitos nos SVGs, mas que impactam diretamente a jornada “Saca com Cartão”.
+
+---
+
+## Detalhes Adicionais para Revisão
+
+### 1. Contexto de Negócio e Operação
+- **Sistema:** POS (Point of Sale) para lotéricas, integrado à CAIXA Econômica Federal.
+- **Funcionalidade:** Saque com cartão de crédito/débito (modalidade de compra com saque).
+- **Público-alvo:** operadores de lotérica e clientes finais.
+- **Ambiente físico:** terminal POS com pinpad conectado, impressora térmica e leitor de código de barras.
+- **Regulamentação:** seguir normas da ABECS (Associação Brasileira das Empresas de Cartões de Crédito e Serviços) e EMV.
+
+### 2. Fluxo Operacional Completo (Além das 5 Telas)
+- **Pré-requisitos:** operador logado, pinpad conectado e funcional.
+- **Sequência:**
+  1. Seleção da funcionalidade “Saca com Cartão” no menu inicial.
+  2. Tela 1: escolha crédito/débito, valor, parcelas e conferência do cálculo.
+  3. Tela 2: confirmação dos dados no pinpad.
+  4. Tela 3: leitura do cartão (chip, tarja ou contactless).
+  5. Tela 4: digitação da senha no pinpad.
+  6. Tela 5: finalização (sucesso, negada ou erro).
+- **Estados não cobertos nos SVGs:**
+  - Cancelamento pelo usuário (botão “CANCELAR” no pinpad ou na tela).
+  - Timeout de leitura do cartão (ex: 30 segundos).
+  - Timeout de digitação de senha.
+  - Falha de comunicação com o pinpad.
+  - Cartão expirado, bloqueado ou inválido.
+  - Senha incorreta (tentativas restantes).
+  - Impressão de comprovante (sucesso ou falha).
+  - Transação negada por saldo insuficiente.
+  - Erro genérico de processamento.
+
+### 3. Requisitos Técnicos Específicos
+- **Leitura do cartão:**
+  - Suporte a **AID base** e **AID estendido**.
+  - **Fallback** permitido: se contactless falhar, tentar tarja; se tarja falhar, tentar chip.
+  - Eventos **GCX** (contactless), **GTK** (tarja), **GOX** (chip), **GPN** (tarja magnética), **FCX** (finalização).
+- **Finalização:**
+  - Retornos conforme ABECS 2.12:
+    - **Sucesso:** indicador de aprovação.
+    - **Negada:** indicador de negação (ex: saldo insuficiente).
+    - **Erro:** indicador de erro (ex: falha de comunicação).
+- **Segurança:** criptografia de PIN (PCI DSS), armazenamento seguro de logs.
+
+### 4. Design Tokens e Padrões Visuais
+- **Cores:**
+  - Primária: `#005CA9`
+  - Secundária: `#333333`, `#666666`
+  - Sucesso: `#4CAF50`
+  - Erro/Negado: `#D32F2F`
+  - Alerta: `#F4D03F`
+  - Fundos: `#FFFFFF`, `#F8F9FA`, `#EBF4FA`, `#B3D4E6`
+- **Tipografia:** Roboto (fallback: Segoe UI, Helvetica Neue, Arial)
+- **Tamanhos:**
+  - Títulos de tela: 18–20 px
+  - Rótulos: 14–16 px
+  - Informações secundárias: 12 px
+  - Botões: 16 px (peso 700)
+- **Espaçamentos:** mínimo de 20 px entre elementos clicáveis; 40–50 px entre grupos de campos.
+- **Sombras:** `feDropShadow` com blur 2–8 px, opacidade 0.15–0.22.
+- **Bordas:** raio 8 px para botões e cartões; 4 px para campos de formulário.
+- **Grid:** layout de 1280×800 px, com margens laterais de 80 px.
+
+### 5. Acessibilidade e Usabilidade
+- **Contraste:** textos `#333333` sobre `#FFFFFF` e `#005CA9` sobre `#FFFFFF` atendem WCAG AA.
+- **Daltonismo:** não depender apenas de cor; usar ícones e rótulos textuais.
+- **Toque:** botões com área mínima de 50×50 px.
+- **Feedback:** animações de “pulse” para indicar processamento.
+- **Linguagem:** clara, direta e instrutiva, evitando jargões técnicos para o operador.
+
+### 6. Localização e Internacionalização
+- **Idioma:** Português (Brasil).
+- **Formatos:** moeda `R$ 0,00`, data `DD/MM/AAAA`, hora `HH:MM:SS`.
+- **Termos regionais:** “Lotérica”, “Pinpad”, “Tarja”, “Contactless”.
+
+### 7. Integração com Hardware
+- **Pinpad:** comunicação serial, USB ou TCP/IP.
+- **Impressora:** térmica, corte automático.
+- **Leitor de código de barras:** para outras funcionalidades, não essencial para saque.
+- **Display do pinpad:** deve espelhar as informações da Tela 2 (valor total, parcelas, tarifa) e Tela 4 (digitação de senha).
+
+### 8. Comprovante e Logs
+- **Comprovante:** impressão automática após sucesso; opção de segunda via.
+- **Logs:** registrar NSU, data/hora, valor, tipo de transação, status, código de autorização.
+- **Auditoria:** rastreabilidade para conformidade.
+
+### 9. Métricas de Sucesso
+- Tempo médio de operação (ideal: < 60 segundos).
+- Taxa de erros de leitura.
+- Taxa de cancelamentos.
+- Satisfação do operador (pesquisa qualitativa).
+
+### 10. Limitações dos SVGs
+- São **mockups estáticos**. Não há interatividade, validação de campos, cálculo real ou integração com pinpad.
+- Não representam estados de carregamento, transições ou animações complexas.
+- Servem como base visual para implementação front-end.
+
+---
+
+## Identificação do Modelo
+
+**Nome:** Assistente DeepSeek  
+**Modelo:** DeepSeek (versão mais recente disponibilizada para esta API)  
+**Versão:** Não tenho acesso a um número de versão exato nesta interface. Sou um modelo de linguagem da DeepSeek, operando na versão atual fornecida pela API.

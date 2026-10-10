@@ -740,6 +740,11 @@ func (s *Service) SendGCXCommand(ctx context.Context, amount, date, clock string
 	if err != nil {
 		return nil, err
 	}
+	return s.sendGCXPayload(ctx, payload)
+}
+
+// sendGCXPayload compartilha parser e elegibilidade entre captura simples e filtrada.
+func (s *Service) sendGCXPayload(ctx context.Context, payload []byte) (*model.GCXResponse, error) {
 	r, err := s.sendBlockingPayload(ctx, command.CommandGCX, payload)
 	if err != nil {
 		return nil, err
@@ -927,17 +932,24 @@ func buildTLRBatches(records []string) ([]tlrBatch, error) {
 
 // PurchaseGCX executa GCX e aplica as retentativas e mudanças de interface CTLS normativas.
 func (s *Service) PurchaseGCX(ctx context.Context, amount, date, clock string, enableCTLS, hideAmount bool) (*model.GCXResponse, error) {
+	return s.purchaseGCX(ctx, enableCTLS, hideAmount, func(options byte) (*model.GCXResponse, error) {
+		return s.SendGCXCommand(ctx, amount, date, clock, options)
+	})
+}
+
+// purchaseGCX preserva a política normativa de fallback para todas as capturas.
+func (s *Service) purchaseGCX(ctx context.Context, enableCTLS, hideAmount bool, capture func(byte) (*model.GCXResponse, error)) (*model.GCXResponse, error) {
 	options := command.GCXOptionWaitMagCard
 	if hideAmount {
 		options |= command.GCXOptionHideAmount
 	}
 	if !enableCTLS {
-		return s.SendGCXCommand(ctx, amount, date, clock, options)
+		return capture(options)
 	}
 	ctlsOptions := options | command.GCXOptionWaitContactless
 	sameInterfaceRetries := 0
 	for {
-		response, err := s.SendGCXCommand(ctx, amount, date, clock, ctlsOptions)
+		response, err := capture(ctlsOptions)
 		if err == nil {
 			return response, nil
 		}
@@ -951,7 +963,7 @@ func (s *Service) PurchaseGCX(ctx context.Context, amount, date, clock string, e
 				sameInterfaceRetries++
 				continue
 			}
-			return s.SendGCXCommand(ctx, amount, date, clock, options)
+			return capture(options)
 		case state.StatusContactlessMultipleCards, state.StatusContactlessExternalCVM:
 			if sameInterfaceRetries == 0 {
 				sameInterfaceRetries++
@@ -963,7 +975,7 @@ func (s *Service) PurchaseGCX(ctx context.Context, amount, date, clock string, e
 			state.StatusContactlessApplicationNotAllowed,
 			state.StatusContactlessApplicationNotAuthorized,
 			state.StatusContactlessInterfaceChange:
-			return s.SendGCXCommand(ctx, amount, date, clock, options)
+			return capture(options)
 		default:
 			return nil, err
 		}
