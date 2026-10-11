@@ -3,8 +3,11 @@
 **Autor:** Rômulo Penha
 
 ## Status
-`SPEC_APROVADA` — revisão de 2026-10-10 em
-[REV-005](reviews/2026-10-10-spec-review-implementacao.md). A baseline anterior
+`SPEC_APROVADA` — revisões de 2026-10-10 em
+[REV-005](reviews/2026-10-10-spec-review-implementacao.md),
+[REV-006](reviews/2026-10-10-spec-review-layout.md),
+[REV-007](reviews/2026-10-10-spec-review-primeira-tela.md) e
+[REV-008](reviews/2026-10-10-spec-review-pagamento-cartao.md). A baseline anterior
 permanece histórica em `references/baseline-2026-09-25/`.
 
 ## Objetivo
