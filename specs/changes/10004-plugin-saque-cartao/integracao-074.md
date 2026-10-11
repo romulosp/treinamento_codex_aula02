@@ -24,16 +24,21 @@ Chamadas abaixo correspondem a `apps/desktop/libpinpadabecsgo/mobile/`.
 
 ## Operações existentes a consumir
 
+REV-015: criação do cliente, abertura, capacidades e carga da tabela ocorrem
+na entrada da View do plugin, sob tela de espera, antes do formulário.
+Depois de AVANÇAR, reutilizar a sessão e iniciar confirmação/cancelamento.
+Discovery e infraestrutura genérica do host não realizam essa inicialização.
+
 | Momento | Método Go mobile | Dados enviados pela jornada |
 | --- | --- | --- |
 | Criar cliente | `NewClient` | Host, porta e timeout do laboratório; localhost com reverse por padrão. |
 | Verificar Bridge | `Ping` | operationID não vazio; não confirma OPN. |
 | Abrir sessão | `Open` | operationID não vazio; só avançar após abertura real. |
 | Consultar display | `GetDisplayCapabilitiesJSON` | operationID; usar apenas capacidades retornadas. |
-| Carga EMV | `LoadCompleteEMVTable` | operationID, adquirente N2, versão A10 e registros no formato aceito pelo core. |
+| Carga EMV | `LoadFormattedEMVTableJSON` (extensão aprovada ADR-10004-01) | operationID, adquirente N2, versão A10 e JSON dos registros completos, preservando TAB_LEN. |
 | Exibir resumo | `DisplayDEX` ou `DisplayDSP` | operationID e texto de total/parcelas/tarifa adequado ao display. |
 | Confirmar/cancelar | `WaitForKeyPress` ou `DisplayMNU` | operationID e timeout; MNU também recebe título/opções. Validar tecla/índice, não somente ausência de erro. |
-| Capturar cartão | `PurchaseGCXSummaryJSON` | operationID, total em centavos N12, data AAMMDD, hora HHMMSS, enableCTLS e hideAmount. |
+| Capturar cartão | `PurchaseGCXFilteredSummaryJSON` (extensão aprovada ADR-10004-01) | operationID, total N12, data/hora, opções, tipo de transação, adquirente, modalidade APPTYPE, lista AID vazia e timeout. |
 | Processar EMV/PIN | `ContinueEMVSummaryJSON` | Parâmetros GOX detalhados abaixo; somente após leitura EMV elegível. |
 | PIN de tarja | `CapturePINDUKPT` | operationID, índice 8, PAN vazio e mensagem. Sob condições aplicáveis, executar antes de GTK. |
 | Obter dados resumidos | `GetTracksSummaryJSON` | Seleção de trilhas, método de dados, dígitos abertos e parâmetros do perfil; resultado somente resumido. |
@@ -100,3 +105,38 @@ restringir a contratos efetivamente ausentes/incompatíveis:
 Detalhes de inspeção em [perfil DES](perfil-homologacao-des.md). PRD e conteúdo
 criptográfico não foram copiados para a Change. Nenhuma chamada física foi
 executada nesta documentação do contrato consumidor.
+
+## Conferência da fonte canônica — 2026-10-11
+
+Por orientação do solicitante, parâmetros e operações são encaminhados à stack
+da SPEC 074 já aprovada. A 10004 é consumidora dessa stack e das extensões
+aditivas aprovadas no mesmo módulo, sem duplicar protocolo no Android.
+
+| Origem | Parâmetro encaminhado | Contrato Go/ABECS |
+| --- | --- | --- |
+| Tela 1: Crédito = 1 / Débito = 2 | `applicationTypes = "01" / "02"` | SPE_APPTYPE 0011h, tipos T1_APPTYPE da tabela AID; manual p. 35/129/243. |
+| Resumo confirmado da tela | `amount = total` em centavos N12 | SPE_AMOUNT; inclui taxa aplicada. |
+| Relógio da operação | `date`, `clock` | AAMMDD e HHMMSS. |
+| Tabela DES externa | `acquirerReference = "04"` | SPE_ACQREF; extraído dos 36 registros, não da modalidade. Correção da anotação anterior 01. |
+| Jornada saque aprovada | `transactionType = 1` | SPE_TRNTYPE byte 01h; independente de APPTYPE. |
+| Captura filtrada aprovada | `aidReferences = ""` | Sem SPE_AIDLIST, que sobreporia ACQREF/APPTYPE. |
+| Perfil da operação | `timeoutSeconds` | Prazo explícito dos comandos bloqueantes, conforme 074 §5.2. |
+| Ambiente Windows | `PORTA_PINPAD` | Obrigatória, validada e usada pelo Bridge, sem COM fixa; 074 §4.1. |
+| Stack 074 §4.1/4.2 | Baudrate 19200, timeout serial 30s, host localhost, porta 39100 | Defaults normativos preservados, com overrides válidos do ambiente. |
+
+A 074 define os contratos de TLI/GTK/GOX/FCX e seus formatos; não contém um
+valor de versão A10 desta tabela externa nem escolhe uma resposta de autorização
+FCX da jornada. O laboratório Android de diagnóstico possui timeout de cliente
+10000 ms em BuildConfig; esse default não substitui automaticamente o prazo
+explícito de uma captura bloqueante. Não converter fixtures TEST000001 em
+identificador aprovado da tabela real. Aprovação da SPEC da stack não é evidência
+de execução física da jornada 10004. Os parâmetros disponíveis são reutilizados;
+valores de homologação ainda ausentes permanecem documentados no
+[modelo pendente](perfil-laboratorio-pendente.md), sem exigir novamente filtros
+que a tela já fornece.
+
+Atualização REV-014: pendências do perfil resolvidas pela proposta concreta e
+escolha APPROVE do solicitante. Perfil externo reutilizável salvo e provisionado
+junto à tabela privada; valores efetivos no documento acima. Não altera a SPEC
+074 nem declara execução física da jornada. Referência do adquirente corrigida
+para 04 mediante validação dos 36 registros reais.

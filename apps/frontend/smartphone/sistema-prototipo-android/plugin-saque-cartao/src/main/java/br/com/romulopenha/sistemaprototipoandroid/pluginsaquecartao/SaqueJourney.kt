@@ -21,27 +21,67 @@ internal class SaqueJourney(
     private val scope: CoroutineScope,
     private val onReturn: () -> Unit,
 ) {
-    private val mutableState = MutableStateFlow(SaqueState())
+    private val mutableState = MutableStateFlow(SaqueState(step = 0, busy = true,
+        message = "Preparando o terminal..."))
     /** Snapshot somente de dados permitidos; não contém respostas brutas do pinpad. */
     val state = mutableState.asStateFlow()
     private var profile: SaquePerfil? = null
+    /** Capacidades obtidas na preparação, reutilizadas sem nova consulta em Begin. */
+    private var display: SaqueDisplay? = null
+    /** Impede repetição da abertura/carga por nova chamada ou reattach desta View. */
+    private var initializationStarted = false
     private var operation: Job? = null
     private var activeId: String? = null
     private var disposed = false
     private var cancelSent = false
 
-    /** Lê configuração sem hardware; falha impede início e não cria defaults. */
+    /**
+     * Prepara uma vez por proprietário: valida perfil/tabela, abre sessão,
+     * consulta display e carrega EMV antes de expor o formulário. A sessão
+     * permanece aberta para a confirmação; falha parcial fecha o cliente.
+     */
     fun load() {
-        scope.launch {
+        if (disposed || initializationStarted) return
+        initializationStarted = true
+        val id = UUID.randomUUID().toString()
+        activeId = id
+        operation = scope.launch {
+            var openingAttempted = false
+            var prepared = false
             try {
                 val loaded = repository.loadProfile()
-                if (!disposed) {
-                    profile = loaded
-                    update(state.value.copy(configReady = true))
-                    edit { this }
-                }
-            } catch (_: Exception) {
-                update(state.value.copy(message = "Configuração de homologação incompleta."))
+                checkpoint()
+                profile = loaded
+                openingAttempted = true
+                update(state.value.copy(message = "Abrindo comunicação com o pinpad..."))
+                repository.open(loaded, id)
+                checkpoint()
+                val capabilities = repository.displayCapabilities(id)
+                checkpoint()
+                update(state.value.copy(message = "Carregando tabela EMV..."))
+                repository.loadTable(loaded, id)
+                checkpoint()
+                display = capabilities
+                prepared = true
+                update(state.value.copy(step = 1, busy = false, configReady = true,
+                    failureCode = null, failurePhase = null))
+                edit { this }
+            } catch (failure: Exception) {
+                val failed = if (openingAttempted) cleanup(id) else false
+                val code = (failure as? SaqueFailure)?.code
+                    ?: if (openingAttempted) "BINDING_ERROR" else "CONFIGURATION"
+                val phase = (failure as? SaqueFailure)?.phase
+                    ?: if (openingAttempted) "command" else "preflight"
+                profile = null
+                display = null
+                update(state.value.copy(busy = false, configReady = false,
+                    failureCode = code, failurePhase = phase, cleanupFailed = failed,
+                    message = if (!openingAttempted) configurationMessage(code)
+                    else if (failed) "Não foi possível confirmar o encerramento da sessão. Verifique o terminal."
+                    else "Não foi possível preparar o pinpad. Saia e tente novamente."))
+            } finally {
+                if (!prepared) activeId = null
+                if (disposed) scope.cancel()
             }
         }
     }
@@ -50,13 +90,13 @@ internal class SaqueJourney(
     fun onEvent(event: SaqueEvent) {
         if (disposed) return
         when (event) {
-            is SaqueEvent.Value -> edit { copy(valueInput = event.value.take(32)) }
-            is SaqueEvent.Installments -> edit { copy(installmentsInput = event.value.take(3)) }
+            is SaqueEvent.Value -> edit { copy(valueInput = normalizePurchaseInput(event.value)) }
+            is SaqueEvent.Installments -> edit { copy(installmentsInput = event.value.filter(Char::isDigit).take(2)) }
             is SaqueEvent.Modalidade -> edit { copy(modalidade = event.value,
                 installmentsInput = if (event.value == SaqueModalidade.DEBITO) "1" else installmentsInput) }
             SaqueEvent.Begin -> begin()
             SaqueEvent.Cancel -> cancel()
-            SaqueEvent.Return -> if (!state.value.busy) onReturn()
+            SaqueEvent.Return -> if (!state.value.busy) { dispose(); onReturn() }
         }
     }
 
@@ -74,44 +114,51 @@ internal class SaqueJourney(
     private fun edit(change: SaqueState.() -> SaqueState) {
         if (state.value.step != 1 || state.value.busy) return
         val edited = state.value.change()
+        val installments = edited.installmentsInput.toIntOrNull() ?: 0
         val summary = runCatching {
-            calculateSaque(edited.valueInput, edited.modalidade, edited.installmentsInput, profile)
+            calculateSaque(purchaseCents(edited.valueInput), edited.modalidade, installments, profile)
         }.getOrNull()
-        val feeLabel = runCatching { installmentFeePercent(edited.installmentsInput.toInt())
-            .toPlainString().replace('.', ',') + "%" }.getOrDefault("—")
-        update(edited.copy(summary = summary, feeLabel = feeLabel, message = when {
-            !edited.configReady -> "Configuração de homologação incompleta. Você pode editar a compra."
-            summary == null -> "Informe valores válidos para continuar."
-            else -> "Confira o resumo antes de avançar."
-        }))
+        update(edited.copy(summary = summary,
+            feeLabel = feeLabelFor(edited.modalidade, installments),
+            message = when {
+                !edited.configReady -> configurationMessage(edited.failureCode)
+                summary == null -> "Informe valores válidos para continuar."
+                else -> "Confira o resumo antes de avançar."
+            }))
+    }
+
+    /** Mensagem objetiva de provisionamento; não expõe caminho nem conteúdo de arquivo. */
+    private fun configurationMessage(code: String?): String = when (code) {
+        "MISSING" -> "Perfil de homologação não provisionado. Execute o launcher para provisionar perfil e tabela."
+        "TABLE_MISSING" -> "Tabela EMV não provisionada para esta homologação."
+        else -> "Configuração de homologação inválida. Revise o perfil provisionado."
     }
 
     /** Encadeia a sequência aprovada, sem avanço por animação ou replay automático. */
     private fun begin() {
+        if (state.value.step != 1 || state.value.busy || !state.value.configReady || operation?.isActive == true) return
         val config = profile ?: return
+        val capabilities = display ?: return
         val summary = state.value.summary ?: return
-        if (state.value.step != 1 || state.value.busy || operation?.isActive == true) return
         val id = UUID.randomUUID().toString()
         activeId = id
-        update(state.value.copy(step = 2, completedSteps = setOf(1), busy = true,
+        update(state.value.copy(step = 2, busy = true,
             message = "Preparando confirmação no pinpad..."))
         operation = scope.launch {
             var sentCapture = false
             var result = SaqueResultado.ERROR
+            var failureCode: String? = null
+            var failurePhase: String? = null
             try {
-                repository.open(config, id)
-                checkpoint()
-                val display = repository.displayCapabilities(id)
-                repository.loadTable(config, id)
                 checkpoint()
                 update(state.value.copy(message = "Aguardando confirmação do cliente..."))
-                confirm(display, config, summary, id)
+                confirm(capabilities, config, summary, id)
                 checkpoint()
-                update(state.value.copy(step = 3, completedSteps = setOf(1, 2), message = "Aguardando leitura do cartão..."))
+                update(state.value.copy(step = 3, message = "Aguardando leitura do cartão..."))
                 sentCapture = true
                 val type = repository.capture(config, summary, id)
                 checkpoint()
-                update(state.value.copy(step = 4, completedSteps = setOf(1, 2, 3),
+                update(state.value.copy(step = 4,
                     message = "Siga as instruções no pinpad; digite a senha se solicitada."))
                 if (type == "00") {
                     update(state.value.copy(message = "Peça ao cliente que digite a senha no pinpad."))
@@ -133,6 +180,10 @@ internal class SaqueJourney(
                 } else SaqueResultado.CAPTURED
                 checkpoint()
             } catch (failure: Exception) {
+                if (failure is SaqueFailure) {
+                    failureCode = failure.code
+                    failurePhase = failure.phase
+                }
                 result = when {
                     failure is SaqueFailure && failure.code == "CANCELED" -> SaqueResultado.CANCELED
                     sentCapture -> SaqueResultado.UNKNOWN
@@ -141,8 +192,7 @@ internal class SaqueJourney(
             } finally {
                 val failed = cleanup(id)
                 update(state.value.copy(step = 5, busy = false, result = result,
-                    completedSteps = if (result in setOf(SaqueResultado.APPROVED, SaqueResultado.DENIED, SaqueResultado.CAPTURED))
-                        state.value.completedSteps + 4 else state.value.completedSteps,
+                    failureCode = failureCode, failurePhase = failurePhase,
                     cleanupFailed = failed, message = if (failed)
                         "Não foi possível confirmar o encerramento da sessão. Verifique o terminal antes de nova operação."
                     else "Homologação de teste. Não autoriza entrega de dinheiro. Retire o cartão, se inserido."))
@@ -152,30 +202,33 @@ internal class SaqueJourney(
         }
     }
 
-    /** Confirmar exige tecla 0 real em todas as páginas; 13 cancela, demais falham. */
+    /**
+     * Confirma no pinpad com DSP de duas linhas S16 e GKY por página, conforme
+     * seções 3.3.5 e 3.3.10 do manual ABECS 2.12. Exibe valor total, parcelas,
+     * tarifa e a pergunta de confirmação; OK avança, CANCELA cancela e qualquer
+     * outra tecla encerra com falha de confirmação. Valores que não couberem em
+     * 16 colunas falham sem truncamento silencioso.
+     */
     private suspend fun confirm(display: SaqueDisplay, config: SaquePerfil, summary: SaqueResumo, id: String) {
-        val lines = listOf("TOTAL R$ ${formatCents(summary.totalCents)}", "PARCELAS ${summary.installments}",
-            "TARIFA R$ ${formatCents(summary.feeCents)}", "OK / CANCELA")
-        if (display.lines >= 4 && lines.all { it.length <= display.columns }) {
-            repository.displayText(id, lines.joinToString("\n"))
+        require(display.lines >= 2 && display.columns >= 16)
+        val pages = listOf(
+            "VALOR TOTAL" to "R$ ${formatCents(summary.totalCents)}",
+            "PARCELAS" to "${summary.installments}x",
+            "TARIFA" to "R$ ${formatCents(summary.feeCents)}",
+            "CONFIRMA?" to "CANCELA?",
+        )
+        require(pages.all { (label, value) -> label.length <= 16 && value.length <= 16 })
+        for ((label, value) in pages) {
+            checkpoint()
+            repository.displayPage(id, label, value)
             confirmed(repository.waitKey(id, config.timeoutSeconds))
-        } else {
-            require(display.lines >= 2 && display.columns >= 16)
-            val pages = listOf("TOTAL" to "R$ ${formatCents(summary.totalCents)}",
-                "PARCELAS" to "${summary.installments}", "TARIFA" to "R$ ${formatCents(summary.feeCents)}")
-            require(pages.all { it.second.length <= 16 })
-            for ((label, value) in pages) {
-                checkpoint()
-                repository.displayPage(id, label, value)
-                confirmed(repository.waitKey(id, config.timeoutSeconds))
-            }
         }
     }
 
-    /** Não trata tecla inesperada como confirmação. */
+    /** Não trata tecla inesperada como confirmação nem omite a categoria local. */
     private fun confirmed(key: Int) {
         if (key == 13) throw SaqueFailure("CANCELED")
-        require(key == 0)
+        if (key != 0) throw SaqueFailure("CONFIRMATION_ERROR", "command")
     }
 
     /** Interrompe entre fases após pedido; confirmação de cancelamento vem do core. */

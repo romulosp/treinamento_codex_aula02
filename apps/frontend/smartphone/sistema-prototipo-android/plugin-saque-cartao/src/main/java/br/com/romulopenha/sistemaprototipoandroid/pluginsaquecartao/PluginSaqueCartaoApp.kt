@@ -25,7 +25,7 @@ class PluginSaqueCartaoApp : IPluginNegocioApp {
     private val owners = ConcurrentHashMap<SaqueJourney, CoroutineScope>()
     override val manifest = PluginManifest(
         pluginId = PluginId,
-        displayName = "Saque Cartão",
+        displayName = "Pagamento com Cartão",
         pluginVersion = "1.1.0",
         requiredSharedApiMajor = 1,
         requiredSharedApiMinor = 1,
@@ -33,10 +33,10 @@ class PluginSaqueCartaoApp : IPluginNegocioApp {
         capabilities = setOf("business-menu"),
     )
 
-    override val businessMenuItems = listOf(BusinessMenuItem("saque-cartao", "Saque Cartão", "saque-cartao", 100))
+    override val businessMenuItems = listOf(BusinessMenuItem("pagamento-cartao", "Pagamento com Cartão", "pagamento-cartao", 100))
 
     /** Declara a posição da funcionalidade no menu montado pelo host. */
-    override fun getCaminhoMenu(): String = "Principal > Outros Serviços > Saque Cartão"
+    override fun getCaminhoMenu(): String = "Principal > Outros Serviços > Pagamento com Cartão"
 
     override fun onLoad(host: PluginHostContext) = Unit
     override fun onAttach(registry: IUIRegistry, router: IPluginRouter) {
@@ -49,7 +49,11 @@ class PluginSaqueCartaoApp : IPluginNegocioApp {
         router = null
     }
 
-    /** Cria proprietário por View; detach cancela/fecha, composição só observa snapshots. */
+    /**
+     * Cria proprietário por View; somente attach inicia a preparação EMV deste
+     * plugin. Discovery/criação sem exibição não abre hardware; detach fecha
+     * sessão e composição apenas observa snapshots, sem alterar a infra do host.
+     */
     override fun createBusinessScreen(context: Context): View = ComposeView(context).apply {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
         val owner = SaqueJourney(GoSaqueRepository(context), scope) {
@@ -57,13 +61,12 @@ class PluginSaqueCartaoApp : IPluginNegocioApp {
         }
         owners[owner] = scope
         addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-            override fun onViewAttachedToWindow(view: View) = Unit
+            override fun onViewAttachedToWindow(view: View) { owner.load() }
             override fun onViewDetachedFromWindow(view: View) {
                 owner.dispose()
                 owners.remove(owner)
             }
         })
-        owner.load()
         setContent {
             val state by owner.state.collectAsStateWithLifecycle()
             SaqueCartaoScreen(state, owner::onEvent)

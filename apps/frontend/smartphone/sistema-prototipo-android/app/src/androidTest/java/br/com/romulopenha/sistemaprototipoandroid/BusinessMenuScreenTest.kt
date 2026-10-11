@@ -50,7 +50,7 @@ class BusinessMenuScreenTest {
         var selected: String? = null
         composeRule.setContent {
             BusinessMenuScreen(
-                items = listOf(br.com.romulopenha.sistemaprototipoandroid.sharedapi.BusinessMenuItem("saque", "Saque Cartão", "saque", 1)),
+                items = listOf(br.com.romulopenha.sistemaprototipoandroid.sharedapi.BusinessMenuItem("pagamento", "Pagamento com Cartão", "pagamento", 1)),
                 fatalMessage = null,
                 logoutInProgress = false,
                 onItemSelected = { selected = it },
@@ -59,8 +59,8 @@ class BusinessMenuScreenTest {
             )
         }
 
-        composeRule.onNodeWithText("Saque Cartão").performClick()
-        composeRule.runOnIdle { assertEquals("saque", selected) }
+        composeRule.onNodeWithText("Pagamento com Cartão").performClick()
+        composeRule.runOnIdle { assertEquals("pagamento", selected) }
     }
 
     @Test

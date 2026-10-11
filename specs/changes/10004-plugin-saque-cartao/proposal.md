@@ -6,12 +6,27 @@
 `SPEC_APROVADA` — revisões de 2026-10-10 em
 [REV-005](reviews/2026-10-10-spec-review-implementacao.md),
 [REV-006](reviews/2026-10-10-spec-review-layout.md),
-[REV-007](reviews/2026-10-10-spec-review-primeira-tela.md) e
-[REV-008](reviews/2026-10-10-spec-review-pagamento-cartao.md). A baseline anterior
+[REV-007](reviews/2026-10-10-spec-review-primeira-tela.md),
+[REV-008](reviews/2026-10-10-spec-review-pagamento-cartao.md),
+[REV-009](reviews/2026-10-10-spec-review-remocao-indicador.md) e
+[REV-010](reviews/2026-10-10-spec-review-integracao-075.md). A baseline anterior
 permanece histórica em `references/baseline-2026-09-25/`.
 
 ## Objetivo
-Entregar APK independente de saque por cartão, compilado para o contrato mínimo
+REV-016 aprovada: remover cancelamento visível durante a preparação do plugin,
+preservando cleanup interno e cancelamento nas etapas de transação.
+
+REV-015 aprovada pelo solicitante: preparar sessão e carregar EMV ao entrar no
+plugin, exibindo espera; depois mostrar tela 1. AVANÇAR inicia confirmação,
+sem repetir carga. [Contrato](reviews/2026-10-11-spec-review-inicializacao-emv.md).
+
+Correção aprovada de conformidade do provisionamento em
+[REV-013](reviews/2026-10-11-spec-review-provisionamento.md): preservar o comando
+remoto dentro do run-as e conferir hashes privados antes de abrir o host.
+REV-014: perfil DES proposto aceito pelo solicitante com APPROVE simulado;
+parâmetros e limitações na mesma revisão de provisionamento.
+
+Entregar APK independente de pagamento com cartão, compilado para o contrato mínimo
 `shared-api` 1.1 e sem dependência do host. O plugin permanece compatível com o
 host 1.2 porque a capacidade `business-menu` aceita a mesma major e uma minor
 requerida menor ou igual à minor do host.
@@ -23,7 +38,7 @@ ao componente ABECS da [074](../074-pinpad-android-bridge-stack/spec.md).
 O Bridge Go deve subir antes da aplicação Android.
 
 Manter módulo, manifesto, descritor de serviço, API mínima 1.1 e item
-`Principal > Outros Serviços > Saque Cartão`. A execução humana ocorre
+`Principal > Outros Serviços > Pagamento com Cartão`. A execução humana ocorre
 exclusivamente pelo `:app`: login, descoberta dinâmica, clique e renderização
 da View pelo host. Substituir o fluxo local por modalidade/valores,
 confirmação no pinpad, leitura, processamento/PIN e finalização.
@@ -83,3 +98,22 @@ por parcela adicional (1..12); débito em uma parcela. Total = compra + tarifa
 HALF_UP em centavos. Perfil fornece limites e filtros de aplicação distintos,
 não a taxa. AVANÇAR exige perfil válido. Testar cálculo, edição, seleção enviada
 à captura, retorno e layout; preservar animações já implementadas.
+
+
+## Correções de conformidade — REV-011
+
+[REV-011](reviews/2026-10-11-spec-review-correcoes.md) aprova a validação local
+gomobile ValidateFormattedEMVTableJSON antes da prontidão da UI, reutilizando
+regras Go sem transporte. Entrada monetária inválida/excessiva é bloqueada sem
+truncamento; débito tem tarifa fixa R$ 1,00. Testar arquivos privados sintéticos,
+zero cliente/hardware em preflight e colagem/edição real. AAR será regenerado
+com proveniência; Bridge e comandos permanecem compatíveis.
+
+
+## Modalidade da tela — REV-012
+
+[REV-012](reviews/2026-10-11-spec-review-modalidade.md): modalidade/compra vêm
+da tela 1. Para a tabela DES indicada, o domínio mapeia crédito→01 e débito→02,
+conforme seus tipos/rótulos, não por bandeira. Filtros externos no perfil
+não são exigidos e são ignorados. Resumo congelado determina filtro e total
+enviados ao Go. Versão/limite/prazos/cenário continuam no perfil do laboratório.

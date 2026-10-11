@@ -21,6 +21,20 @@ dos dados sensíveis e das regras ABECS.
 
 ## Estado e lifecycle
 
+REV-016: etapa técnica 0 em processamento não renderiza ações; cancelamento
+de lifecycle continua interno. Botão CANCELAR é exclusivo das etapas 2..4.
+
+REV-015: SaqueJourney possui preparação técnica na etapa 0. Um Job por View
+abre cliente/sessão, consulta display e carrega tabela; a sessão e capacidades
+ficam no proprietário, fora do estado UI. configReady só é publicado após
+carga real confirmada. Begin reutiliza sessão/display e inicia confirmação.
+Composição apenas observa snapshots; etapa 0 usa spinner e AnimatedContent.
+
+Provisionamento REV-013: Base64 em memória enviado via adb shell -T, argumento
+sh -c com aspas simples preservadas pelo parsing Windows, decodificação direta
+sob run-as. SHA-256 remoto comparado ao Get-FileHash local, sem emitir conteúdo
+ou criar arquivo intermediário público.
+
 Um proprietário da jornada mantém etapa, resumo congelado, ação, conectividade,
 estado da sessão, operationID e resultado seguro. Renderização separada em
 `SaqueCartaoScreen(state, onEvent, modifier)`; a rota compõe dependências e menu.
@@ -56,9 +70,13 @@ builder TLR. Perfil e evidências em [perfil DES](perfil-homologacao-des.md).
 ## Layout e launcher
 
 Ver [REV-006](reviews/2026-10-10-spec-review-layout.md): os SVGs Gemini são a
-referência visual principal. Conteúdo do plugin: título, indicador,
-formulário/resumo e instrução/aguardo; duas colunas quando couber e rolagem
-em janela reduzida/fonte grande. Não expor comandos/protocolo ao operador.
+referência visual principal. Conteúdo do plugin: título, formulário/resumo e
+instrução/aguardo; duas colunas quando couber e rolagem em janela reduzida/fonte
+grande. A [REV-009](reviews/2026-10-10-spec-review-remocao-indicador.md) removeu
+o indicador de etapas para não forçar rolagem sob o cabeçalho do host. A
+[REV-010](reviews/2026-10-10-spec-review-integracao-075.md) exige perfil e
+tabela provisionados para iniciar, confirma no pinpad por DSP032 + GKY e mostra
+código/fase sanitizados da falha. Não expor comandos/protocolo ao operador.
 
 Etapa 1: painéis equivalentes de formulário branco e resumo #F8FAFC, total
 em #EBF4FF. Etapas seguintes: cartão central limitado a 600–700 dp, com
@@ -102,3 +120,22 @@ por parcela adicional (1..12); débito em uma parcela. Total = compra + tarifa
 HALF_UP em centavos. Perfil fornece limites e filtros de aplicação distintos,
 não a taxa. AVANÇAR exige perfil válido. Testar cálculo, edição, seleção enviada
 à captura, retorno e layout; preservar animações já implementadas.
+
+
+## Correções de conformidade — REV-011
+
+[REV-011](reviews/2026-10-11-spec-review-correcoes.md) aprova a validação local
+gomobile ValidateFormattedEMVTableJSON antes da prontidão da UI, reutilizando
+regras Go sem transporte. Entrada monetária inválida/excessiva é bloqueada sem
+truncamento; débito tem tarifa fixa R$ 1,00. Testar arquivos privados sintéticos,
+zero cliente/hardware em preflight e colagem/edição real. AAR será regenerado
+com proveniência; Bridge e comandos permanecem compatíveis.
+
+
+## Modalidade da tela — REV-012
+
+[REV-012](reviews/2026-10-11-spec-review-modalidade.md): modalidade/compra vêm
+da tela 1. Para a tabela DES indicada, o domínio mapeia crédito→01 e débito→02,
+conforme seus tipos/rótulos, não por bandeira. Filtros externos no perfil
+não são exigidos e são ignorados. Resumo congelado determina filtro e total
+enviados ao Go. Versão/limite/prazos/cenário continuam no perfil do laboratório.

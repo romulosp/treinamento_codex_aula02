@@ -24,8 +24,9 @@ N2 01..98 (1..10); ou referências AARR (até 128, adquirente 01..99,
 índice de registro 01..ZZ). Rejeitar mistura, vazio, duplicatas e dados
 inválidos. As referências pertencem à tabela, não são AIDs hexadecimais.
 O kernel pesquisa AID base/estendido dentre os candidatos. A seleção crédito
-ou débito usa filtros distintos fornecidos pelo perfil, nunca inferidos pelo
-nome da bandeira. Retorno seguro igual ao GCX resumido existente.
+ou débito selecionada na tela usa os tipos do domínio DES (01/02), conforme
+REV-012, nunca inferidos pelo nome da bandeira. Retorno seguro igual ao GCX
+resumido existente.
 
 ### Importação da tabela
 
@@ -46,40 +47,54 @@ Arquivo JSON UTF-8 `saque-cartao/perfil.json` no armazenamento privado do
 processo host, e tabela `saque-cartao/emv.json` no mesmo diretório. Provisionar
 somente no build debug por launcher/ADB `run-as`, com nomes fixos validados,
 sem conteúdo no console, sem tabela no APK/repositório. Ler pelo Context host
-fornecido à View, mantendo tabelas fora de estado UI. Perfil ausente/inválido
-bloqueia comandos físicos e informa configuração de homologação incompleta.
+fornecido à View, mantendo tabelas fora de estado UI. Perfil ou tabela
+ausente/inválido bloqueia comandos físicos e informa o motivo específico
+(REV-010); não há perfil sintético de fallback.
 
 Schema versão 1: `environment="DES"`, `host` local (localhost/127.0.0.1 ou
 override 10.0.2.2), `port` 1..65535, `timeoutMillis` 100..120000,
 `timeoutSeconds` 1..120, `tableAcquirer` N2 01..99, `tableVersion` A10,
-`creditApplicationTypes`, `debitApplicationTypes` nos formatos acima,
 `maxBaseCents` inteiro positivo até N12,
 `gtkDataMethod` e `gtkKeyIndex` definidos separadamente do PIN,
-`scenario` APPROVE/DENY/COMMUNICATION_ERROR. Validar filtros não vazios e
-diferentes. Configuração de PIN fixa: método 3, índice 8, WK vazia.
+`scenario` APPROVE/DENY/COMMUNICATION_ERROR. Os filtros crédito/débito são
+gerados pelo domínio conforme REV-012; campos legados são ignorados.
+Configuração de PIN fixa: método 3, índice 8, WK vazia.
 O formato GTK será restrito ao método DUKPT TDES DAT#1 ECB `30` do manual local,
 sem PAN/trilhas em claro, openDigits 0 e sem material WK/RSA/IV externo.
 O índice DATA deve ser explicitamente informado; não deduzir índice 8.
 
-Taxa definida pelo solicitante em REV-007: 5,34% + 0,80 ponto percentual
-por parcela adicional (1..12). O campo legado `feePercent` é ignorado.
-Formulário e cálculo funcionam sem perfil; iniciar hardware exige perfil. Cálculo:
-tarifa = base × taxa / 100, HALF_UP em centavos; total = base + tarifa.
-Validar limite configurado e N12 também após somar tarifa. Crédito 1..12,
-débito 1 parcela nesta homologação; sem alegação de juros/condições reais.
+Taxa do crédito: 5,34% + 0,80 ponto percentual por parcela adicional (1..12).
+Débito: uma parcela e tarifa fixa R$ 1,00 (REV-008). `feePercent` legado é
+ignorado. Tarifa de crédito = base × taxa / 100, HALF_UP em centavos;
+total = base + tarifa em ambas as modalidades. Validar limite e N12 após a soma.
+Formulário calcula sem perfil; iniciar hardware exige perfil e tabela válidos.
+A função local Go ValidateFormattedEMVTableJSON valida antes da prontidão,
+sem criar cliente ou executar I/O, conforme ADR-10004-02/REV-011.
 
 ## Sequência física e resultados
+
+REV-015 supersede a ordem abaixo quanto à entrada: ao attach da View deste
+plugin, espera → perfil/tabela validados → NewClient/Ping/Open → capacidades →
+carga TLI/TLR/TLE confirmada → tela 1. A infraestrutura do host não inicia essa
+carga para outros APKs. Sessão/capacidades permanecem no proprietário.
+AVANÇAR só inicia confirmação DSP/GKY e depois captura/processamento, sem
+reabrir cliente nem repetir carga. Falha de preparação mantém formulário
+ausente; cancelar/detach/saída fecha a sessão parcial ou preparada.
 
 NewClient → Ping → Open (sessão clássica suportada; E2E da seção 5.4 não
 significa obrigatoriamente OpenSecure) → consulta capacidades → carga EMV →
 resumo pinpad → confirmação real → GCX filtrado → processamento → cleanup.
 
-Display de pelo menos 4 linhas e largura suficiente: DEX com total, parcelas,
-tarifa e instrução OK/CANCELA. Displays pequenos: DSP mostra três páginas,
-com GKY OK para cada uma (total; quantidade; tarifa); somente o último OK
-confirma o resumo completo. Cancelar em qualquer página cancela jornada;
-outras teclas encerram com erro de confirmação, sem avançar. Valores devem
-caber, sem truncamento silencioso.
+Confirmação no pinpad por `DSP032` com duas linhas S16 e `GKY` por página
+(REV-010, seções 3.3.5 e 3.3.10 do manual ABECS 2.12): quatro páginas exibem
+valor total, parcelas (1..12), tarifa e confirmação/cancelamento; cada página
+exige tecla, OK avança e CANCELA cancela a jornada. Valores que não couberem em
+16 colunas falham sem truncamento silencioso. O caminho DEX não é mais usado.
+
+Falhas da jornada expõem código e fase sanitizados, no padrão do diagnóstico
+075: `Mobile.errorCode`/`errorPhase` para as categorias do core, mais os códigos
+locais `MISSING`, `TABLE_MISSING`, `CONFIGURATION` e `CONFIRMATION_ERROR`. Nenhum
+texto livre, caminho, parâmetro ou conteúdo de cartão é exibido.
 
 Tarja: GCX → GPN DUKPT(PAN vazio) → GTK criptografado resumido. CTLS simulando
 tarja: GTK, sem impor GPN. ICC/CTLS EMV: GTK resumido → GOX → FCX somente
@@ -115,3 +130,12 @@ Referência normativa: [manual local fornecido pelo solicitante](../../../docs/P
 e [ABECS 2.12](https://api.abecs.org.br/wp-content/uploads/2021/08/Pinpad-Abecs-Protocolo-de-Comunica%C3%A7%C3%A3o-e-Funcionamento-v212190411.pdf),
 seções 3.7.1, 3.5.2/3.5.3, 3.3.11 e 5.4. Evidências da revisão anterior
 permanecem históricas; este contrato resolve o escopo das extensões.
+
+
+## Modalidade da tela — REV-012
+
+[REV-012](reviews/2026-10-11-spec-review-modalidade.md): modalidade/compra vêm
+da tela 1. Para a tabela DES indicada, o domínio mapeia crédito→01 e débito→02,
+conforme seus tipos/rótulos, não por bandeira. Filtros externos no perfil
+não são exigidos e são ignorados. Resumo congelado determina filtro e total
+enviados ao Go. Versão/limite/prazos/cenário continuam no perfil do laboratório.

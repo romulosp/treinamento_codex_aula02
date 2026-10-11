@@ -1,6 +1,5 @@
 package br.com.romulopenha.sistemaprototipoandroid.pluginsaquecartao
 
-import java.math.BigDecimal
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runCurrent
@@ -11,20 +10,40 @@ import org.junit.Test
 /** Cenários sintéticos: não representam evidência de hardware. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class SaqueJourneyTest {
-    @Test fun `edicao sem perfil recalcula e carregamento aplica limite externo`() = runTest {
+    @Test fun `colagem invalida nao vira compra positiva ou truncada`() = runTest {
         val fake = FakeSaqueRepository()
         val owner = SaqueJourney(fake, backgroundScope) {}
-        owner.onEvent(SaqueEvent.Value("100"))
+        owner.load(); runCurrent()
+        val preparationCalls = fake.calls.toList()
+        for (input in listOf("-10000", "abc10000", "1234567890123")) {
+            owner.onEvent(SaqueEvent.Value(input))
+            assertEquals(input, owner.state.value.valueInput)
+            assertNull(owner.state.value.summary)
+            owner.onEvent(SaqueEvent.Begin); runCurrent()
+            assertEquals(preparationCalls, fake.calls)
+        }
+        owner.onEvent(SaqueEvent.Value("00100,00"))
+        assertEquals("10000", owner.state.value.valueInput)
+        assertEquals(10534L, owner.state.value.summary!!.totalCents)
+    }
+
+    @Test fun `formulario so recebe edicao apos preparacao e respeita limite externo`() = runTest {
+        val fake = FakeSaqueRepository()
+        val owner = SaqueJourney(fake, backgroundScope) {}
+        owner.onEvent(SaqueEvent.Value("10000"))
+        owner.onEvent(SaqueEvent.Installments("2"))
+        assertNull(owner.state.value.summary)
+        assertEquals(0, owner.state.value.step)
+        owner.load(); runCurrent()
+        owner.onEvent(SaqueEvent.Value("10000"))
         owner.onEvent(SaqueEvent.Installments("2"))
         assertEquals(10614L, owner.state.value.summary!!.totalCents)
         assertEquals("6,14%", owner.state.value.feeLabel)
-        owner.onEvent(SaqueEvent.Value("2000"))
-        assertNotNull(owner.state.value.summary)
-        owner.load(); runCurrent()
+        owner.onEvent(SaqueEvent.Value("200000"))
         assertNull(owner.state.value.summary)
-        owner.onEvent(SaqueEvent.Value("200"))
+        owner.onEvent(SaqueEvent.Value("20000"))
         assertEquals(21228L, owner.state.value.summary!!.totalCents)
-        assertTrue(fake.calls.isEmpty())
+        assertEquals(listOf("open", "capabilities", "table"), fake.calls)
     }
 
     @Test fun `modalidade congelada e total seguem para captura com filtro correto`() = runTest {
@@ -32,11 +51,12 @@ class SaqueJourneyTest {
             val fake = FakeSaqueRepository()
             val owner = SaqueJourney(fake, backgroundScope) {}
             owner.load(); runCurrent()
-            owner.onEvent(SaqueEvent.Value("100"))
+            owner.onEvent(SaqueEvent.Value("10000"))
             owner.onEvent(SaqueEvent.Modalidade(mode))
             owner.onEvent(SaqueEvent.Begin); runCurrent()
             assertEquals(mode, fake.capturedSummary!!.modalidade)
-            assertEquals("000000010534", fake.capturedSummary!!.amountN12())
+            assertEquals(if (mode == SaqueModalidade.CREDITO) "000000010534" else "000000010100",
+                fake.capturedSummary!!.amountN12())
             assertEquals(if (mode == SaqueModalidade.CREDITO) "01" else "02", fake.capturedApplicationTypes)
         }
     }
@@ -45,20 +65,24 @@ class SaqueJourneyTest {
         val fake = FakeSaqueRepository()
         val owner = SaqueJourney(fake, backgroundScope) {}
         owner.load(); runCurrent()
-        owner.onEvent(SaqueEvent.Value("150,00"))
+        owner.onEvent(SaqueEvent.Value("15000"))
         owner.onEvent(SaqueEvent.Begin); owner.onEvent(SaqueEvent.Begin)
         runCurrent()
         assertEquals(SaqueResultado.CAPTURED, owner.state.value.result)
         assertEquals(15801L, owner.state.value.summary!!.totalCents)
-        assertEquals(listOf("open", "capabilities", "table", "display", "key", "capture", "pin", "tracks", "cancel", "close"), fake.calls)
-        assertEquals(1, fake.ids.distinct().size)
+        assertEquals(listOf("open", "capabilities", "table",
+            "page", "key", "page", "key", "page", "key", "page", "key",
+            "capture", "pin", "tracks", "cancel", "close"), fake.calls)
+        assertEquals(2, fake.ids.distinct().size)
+        assertEquals(1, fake.ids.take(3).distinct().size)
+        assertEquals(1, fake.ids.drop(3).distinct().size)
         assertTrue(fake.ids.all { it.isNotBlank() })
     }
 
     @Test fun `EMV online usa FCX e decisao real`() = runTest {
         val fake = FakeSaqueRepository(type = "03", gox = '2', fcx = '1')
         val owner = SaqueJourney(fake, backgroundScope) {}
-        owner.load(); runCurrent(); owner.onEvent(SaqueEvent.Value("10")); owner.onEvent(SaqueEvent.Begin); runCurrent()
+        owner.load(); runCurrent(); owner.onEvent(SaqueEvent.Value("100")); owner.onEvent(SaqueEvent.Begin); runCurrent()
         assertEquals(SaqueResultado.DENIED, owner.state.value.result)
         assertFalse(fake.calls.contains("pin"))
         assertEquals(listOf("tracks", "gox", "fcx", "cancel", "close"), fake.calls.takeLast(5))
@@ -68,35 +92,53 @@ class SaqueJourneyTest {
         for (type in listOf("03", "05", "06")) {
             val fake = FakeSaqueRepository(type = type, gox = '0')
             val owner = SaqueJourney(fake, backgroundScope) {}
-            owner.load(); runCurrent(); owner.onEvent(SaqueEvent.Value("10")); owner.onEvent(SaqueEvent.Begin); runCurrent()
+            owner.load(); runCurrent(); owner.onEvent(SaqueEvent.Value("100")); owner.onEvent(SaqueEvent.Begin); runCurrent()
             assertFalse(fake.calls.contains("fcx")); assertFalse(fake.calls.contains("pin"))
             assertEquals(if (type == "06") SaqueResultado.CAPTURED else SaqueResultado.APPROVED, owner.state.value.result)
         }
     }
 
-    @Test fun `display pequeno exige tres confirmacoes reais`() = runTest {
-        val fake = FakeSaqueRepository(display = SaqueDisplay(2, 16))
-        val owner = SaqueJourney(fake, backgroundScope) {}
-        owner.load(); runCurrent(); owner.onEvent(SaqueEvent.Value("10")); owner.onEvent(SaqueEvent.Begin); runCurrent()
-        assertEquals(3, fake.calls.count { it == "page" }); assertEquals(3, fake.calls.count { it == "key" })
-        assertEquals(SaqueResultado.CAPTURED, owner.state.value.result)
+    @Test fun `confirmacao usa quatro paginas DSP com GKY em qualquer display`() = runTest {
+        for (display in listOf(SaqueDisplay(2, 16), SaqueDisplay(8, 40))) {
+            val fake = FakeSaqueRepository(display = display)
+            val owner = SaqueJourney(fake, backgroundScope) {}
+            owner.load(); runCurrent(); owner.onEvent(SaqueEvent.Value("10000")); owner.onEvent(SaqueEvent.Begin); runCurrent()
+            assertEquals(4, fake.calls.count { it == "page" })
+            assertEquals(4, fake.calls.count { it == "key" })
+            assertFalse(fake.calls.contains("display"))
+            assertEquals(SaqueResultado.CAPTURED, owner.state.value.result)
+            assertEquals(listOf("VALOR TOTAL", "PARCELAS", "TARIFA", "CONFIRMA?"), fake.pages.map { it.first })
+            assertEquals(listOf("R$ 105,34", "1x", "R$ 5,34", "CANCELA?"), fake.pages.map { it.second })
+        }
     }
 
-    @Test fun `tecla inesperada nao captura e cancelamento precoce nao conclui etapas`() = runTest {
+    @Test fun `cancelar na primeira pagina cancela sem capturar cartao`() = runTest {
+        val fake = FakeSaqueRepository(key = 13)
+        val owner = SaqueJourney(fake, backgroundScope) {}
+        owner.load(); runCurrent(); owner.onEvent(SaqueEvent.Value("10000")); owner.onEvent(SaqueEvent.Begin); runCurrent()
+        assertEquals(1, fake.calls.count { it == "page" })
+        assertFalse(fake.calls.contains("capture"))
+        assertEquals(SaqueResultado.CANCELED, owner.state.value.result)
+        assertEquals("CANCELED", owner.state.value.failureCode)
+    }
+
+    @Test fun `tecla inesperada nao captura e cancelamento precoce nao segue a jornada`() = runTest {
         for (key in listOf(4, 13)) {
             val fake = FakeSaqueRepository(key = key)
             val owner = SaqueJourney(fake, backgroundScope) {}
-            owner.load(); runCurrent(); owner.onEvent(SaqueEvent.Value("10")); owner.onEvent(SaqueEvent.Begin); runCurrent()
+            owner.load(); runCurrent(); owner.onEvent(SaqueEvent.Value("100")); owner.onEvent(SaqueEvent.Begin); runCurrent()
             assertFalse(fake.calls.contains("capture"))
-            assertEquals(setOf(1), owner.state.value.completedSteps)
+            assertEquals(5, owner.state.value.step)
+            assertFalse(owner.state.value.busy)
             assertEquals(if (key == 13) SaqueResultado.CANCELED else SaqueResultado.ERROR, owner.state.value.result)
+            assertEquals(if (key == 13) "CANCELED" else "CONFIRMATION_ERROR", owner.state.value.failureCode)
         }
     }
 
     @Test fun `falha apos envio e cleanup mantem indeterminado`() = runTest {
         val fake = FakeSaqueRepository(captureFailure = SaqueFailure("TIMEOUT"), closeFailure = true)
         val owner = SaqueJourney(fake, backgroundScope) {}
-        owner.load(); runCurrent(); owner.onEvent(SaqueEvent.Value("10")); owner.onEvent(SaqueEvent.Begin); runCurrent()
+        owner.load(); runCurrent(); owner.onEvent(SaqueEvent.Value("100")); owner.onEvent(SaqueEvent.Begin); runCurrent()
         assertEquals(SaqueResultado.UNKNOWN, owner.state.value.result)
         assertTrue(owner.state.value.cleanupFailed)
         assertFalse(fake.calls.contains("tracks"))
@@ -107,7 +149,7 @@ class SaqueJourneyTest {
     @Test fun `cancelar atinge repository bloqueado e detach descarta resposta tardia`() = runTest {
         val fake = FakeSaqueRepository(pendingCapture = CompletableDeferred())
         val owner = SaqueJourney(fake, backgroundScope) {}
-        owner.load(); runCurrent(); owner.onEvent(SaqueEvent.Value("10")); owner.onEvent(SaqueEvent.Begin); runCurrent()
+        owner.load(); runCurrent(); owner.onEvent(SaqueEvent.Value("100")); owner.onEvent(SaqueEvent.Begin); runCurrent()
         assertEquals(3, owner.state.value.step)
         owner.onEvent(SaqueEvent.Cancel); runCurrent()
         assertTrue(fake.calls.contains("cancel"))
@@ -116,20 +158,122 @@ class SaqueJourneyTest {
         assertFalse(fake.calls.contains("gox")); assertTrue(fake.calls.contains("close"))
     }
 
-    @Test fun `perfil ausente bloqueia hardware e debito recalcula parcela`() = runTest {
-        val missing = FakeSaqueRepository(profileFailure = true)
-        val owner = SaqueJourney(missing, backgroundScope) {}
-        owner.load(); runCurrent(); owner.onEvent(SaqueEvent.Value("10")); owner.onEvent(SaqueEvent.Begin); runCurrent()
-        assertFalse(owner.state.value.configReady); assertTrue(missing.calls.isEmpty())
-        assertEquals(1053L, owner.state.value.summary!!.totalCents)
+    @Test fun `configuracao ausente ou invalida bloqueia inicio com codigo sanitizado`() = runTest {
+        val expected = listOf(
+            Triple("MISSING", "Perfil de homologação não provisionado", 10534L),
+            Triple("TABLE_MISSING", "Tabela EMV não provisionada", 10534L),
+            Triple("CONFIGURATION", "Configuração de homologação inválida", 10534L),
+        )
+        for ((code, message, total) in expected) {
+            val fake = FakeSaqueRepository(profileFailure = code)
+            val owner = SaqueJourney(fake, backgroundScope) {}
+            owner.load(); runCurrent()
+            assertFalse(owner.state.value.configReady)
+            assertEquals(code, owner.state.value.failureCode)
+            assertEquals("preflight", owner.state.value.failurePhase)
+            owner.onEvent(SaqueEvent.Value("10000"))
+            owner.onEvent(SaqueEvent.Begin); runCurrent()
+            assertTrue("hardware não deve ser alcançado", fake.calls.isEmpty())
+            assertNull(owner.state.value.summary)
+            assertEquals(0, owner.state.value.step)
+            assertTrue(owner.state.value.message, owner.state.value.message.startsWith(message))
+        }
+        val ready = FakeSaqueRepository()
+        val owner = SaqueJourney(ready, backgroundScope) {}
+        owner.load(); runCurrent()
+        assertTrue(owner.state.value.configReady)
+        assertNull(owner.state.value.failureCode)
+        assertNull(owner.state.value.failurePhase)
+    }
+
+    @Test fun `debito mantem uma parcela com tarifa fixa e retorno e propagado`() = runTest {
         val fake = FakeSaqueRepository()
         var returned = false
         val ready = SaqueJourney(fake, backgroundScope) { returned = true }
-        ready.load(); runCurrent(); ready.onEvent(SaqueEvent.Value("10")); ready.onEvent(SaqueEvent.Installments("12"))
+        ready.load(); runCurrent()
+        ready.onEvent(SaqueEvent.Value("10000")); ready.onEvent(SaqueEvent.Installments("12"))
         ready.onEvent(SaqueEvent.Modalidade(SaqueModalidade.DEBITO))
         assertEquals(1, ready.state.value.summary!!.installments)
+        assertEquals(10100L, ready.state.value.summary!!.totalCents)
+        assertEquals("R$ 1,00", ready.state.value.feeLabel)
         ready.onEvent(SaqueEvent.Value("0")); assertNull(ready.state.value.summary)
-        ready.onEvent(SaqueEvent.Return); assertTrue(returned)
+        ready.onEvent(SaqueEvent.Return); runCurrent(); assertTrue(returned)
+        assertEquals(listOf("cancel", "close"), fake.calls.takeLast(2))
+    }
+
+    @Test fun `carga acontece na entrada e avancar inicia confirmacao sem repetir preparacao`() = runTest {
+        val tableReady = CompletableDeferred<Unit>()
+        val fake = FakeSaqueRepository(pendingTable = tableReady)
+        val owner = SaqueJourney(fake, backgroundScope) {}
+        owner.load(); owner.load(); runCurrent()
+        assertEquals(listOf("open", "capabilities", "table"), fake.calls)
+        assertEquals(0, owner.state.value.step)
+        assertTrue(owner.state.value.busy)
+        assertFalse(owner.state.value.configReady)
+        owner.onEvent(SaqueEvent.Value("10000")); owner.onEvent(SaqueEvent.Begin); runCurrent()
+        assertNull(owner.state.value.summary)
+        assertFalse(fake.calls.contains("page"))
+        tableReady.complete(Unit); runCurrent()
+        assertEquals(1, owner.state.value.step)
+        assertTrue(owner.state.value.configReady)
+        assertFalse(owner.state.value.busy)
+        owner.load(); runCurrent()
+        owner.onEvent(SaqueEvent.Value("10000")); owner.onEvent(SaqueEvent.Begin); runCurrent()
+        assertEquals("page", fake.calls[3])
+        assertEquals(1, fake.calls.count { it == "open" })
+        assertEquals(1, fake.calls.count { it == "table" })
+        assertEquals(1, fake.calls.count { it == "capabilities" })
+    }
+
+    @Test fun `falha de carga fecha sessao e nao libera formulario ou captura`() = runTest {
+        val fake = FakeSaqueRepository(tableFailure = SaqueFailure("PINPAD_ERROR", "command"))
+        val owner = SaqueJourney(fake, backgroundScope) {}
+        owner.load(); runCurrent()
+        assertEquals(listOf("open", "capabilities", "table", "cancel", "close"), fake.calls)
+        assertEquals(0, owner.state.value.step)
+        assertFalse(owner.state.value.configReady)
+        assertFalse(owner.state.value.busy)
+        assertEquals("PINPAD_ERROR", owner.state.value.failureCode)
+        owner.onEvent(SaqueEvent.Begin); runCurrent()
+        assertFalse(fake.calls.contains("capture"))
+    }
+
+    @Test fun `falha de abertura nao carrega tabela e faz cleanup parcial`() = runTest {
+        val fake = FakeSaqueRepository(openFailure = SaqueFailure("SERIAL_UNAVAILABLE", "serial"))
+        val owner = SaqueJourney(fake, backgroundScope) {}
+        owner.load(); runCurrent()
+        assertEquals(listOf("open", "cancel", "close"), fake.calls)
+        assertFalse(owner.state.value.configReady)
+        assertEquals("SERIAL_UNAVAILABLE", owner.state.value.failureCode)
+    }
+
+    @Test fun `cancelamento durante carga impede prontidao e fecha sessao`() = runTest {
+        val tableReady = CompletableDeferred<Unit>()
+        val fake = FakeSaqueRepository(pendingTable = tableReady)
+        val owner = SaqueJourney(fake, backgroundScope) {}
+        owner.load(); runCurrent()
+        owner.onEvent(SaqueEvent.Cancel); runCurrent()
+        assertTrue(fake.calls.contains("cancel"))
+        tableReady.complete(Unit); runCurrent()
+        assertEquals(0, owner.state.value.step)
+        assertFalse(owner.state.value.configReady)
+        assertFalse(owner.state.value.busy)
+        assertEquals("CANCELED", owner.state.value.failureCode)
+        assertTrue(fake.calls.contains("close"))
+    }
+
+    @Test fun `detach durante carga descarta resposta tardia e fecha sessao`() = runTest {
+        val tableReady = CompletableDeferred<Unit>()
+        val fake = FakeSaqueRepository(pendingTable = tableReady)
+        val owner = SaqueJourney(fake, backgroundScope) {}
+        owner.load(); runCurrent()
+        val beforeDetach = owner.state.value
+        owner.dispose(); runCurrent(); tableReady.complete(Unit); runCurrent()
+        assertEquals(beforeDetach, owner.state.value)
+        assertTrue(fake.calls.contains("close"))
+        assertFalse(fake.calls.contains("page"))
+        owner.load(); owner.onEvent(SaqueEvent.Begin); runCurrent()
+        assertEquals(1, fake.calls.count { it == "table" })
     }
 }
 
@@ -141,20 +285,34 @@ internal class FakeSaqueRepository(
     private val type: String = "00", private val gox: Char = '2', private val fcx: Char = '0',
     private val key: Int = 0, private val display: SaqueDisplay = SaqueDisplay(4, 32),
     private val captureFailure: Exception? = null, private val closeFailure: Boolean = false,
-    private val profileFailure: Boolean = false,
+    private val profileFailure: String? = null,
+    private val openFailure: Exception? = null,
+    private val tableFailure: Exception? = null,
+    val pendingTable: CompletableDeferred<Unit>? = null,
     val pendingCapture: CompletableDeferred<String>? = null,
 ) : SaqueRepository {
     val calls = mutableListOf<String>()
     val ids = mutableListOf<String>()
+    val pages = mutableListOf<Pair<String, String>>()
     var capturedSummary: SaqueResumo? = null
     var capturedApplicationTypes: String? = null
     private fun record(name: String, id: String) { calls += name; ids += id }
-    override suspend fun loadProfile(): SaquePerfil { if (profileFailure) throw SaqueFailure("CONFIGURATION"); return testProfile() }
-    override suspend fun open(profile: SaquePerfil, operationId: String) { record("open", operationId) }
+    override suspend fun loadProfile(): SaquePerfil {
+        profileFailure?.let { throw SaqueFailure(it, "preflight") }
+        return testProfile()
+    }
+    override suspend fun open(profile: SaquePerfil, operationId: String) { record("open", operationId); openFailure?.let { throw it } }
     override suspend fun displayCapabilities(operationId: String): SaqueDisplay { record("capabilities", operationId); return display }
-    override suspend fun loadTable(profile: SaquePerfil, operationId: String) { record("table", operationId) }
+    override suspend fun loadTable(profile: SaquePerfil, operationId: String) {
+        record("table", operationId)
+        tableFailure?.let { throw it }
+        pendingTable?.await()
+    }
     override suspend fun displayText(operationId: String, message: String) { record("display", operationId) }
-    override suspend fun displayPage(operationId: String, first: String, second: String) { record("page", operationId) }
+    override suspend fun displayPage(operationId: String, first: String, second: String) {
+        pages += first to second
+        record("page", operationId)
+    }
     override suspend fun waitKey(operationId: String, timeoutSeconds: Int): Int { record("key", operationId); return key }
     override suspend fun capture(profile: SaquePerfil, summary: SaqueResumo, operationId: String): String {
         capturedSummary = summary

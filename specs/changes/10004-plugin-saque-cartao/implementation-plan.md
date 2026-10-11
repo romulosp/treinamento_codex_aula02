@@ -1,5 +1,25 @@
 # Plano técnico
 
+## Espera sem ação de cancelamento — REV-016
+
+Restringir botão CANCELAR às etapas 2..4 e afirmar ausência de CANCELAR,
+CANCELANDO e SAIR no teste existente da preparação. Executar teste UI focado
+de espera e regressão do cancelamento transacional, build/lint e instalar host.
+
+## Ordem da jornada autorizada REV-015
+
+Mover Open/capacidades/carga para load, guardar capacidades e manter sessão
+até Begin/saída. Criar espera técnica anterior ao formulário e tratar falha
+com cleanup. Testar ordem, duplicação, carga pausada/falha/cancel/detach,
+spinner/transição; executar gates Gradle, instrumentação e atualizar APK host.
+
+## Correção autorizada REV-013 — 2026-10-11
+
+Corrigir quoting remoto no launcher e validar hashes sob run-as. Executar
+provisionamento privado da tabela real com comparação de hash, Parser PowerShell
+e ValidateOnly; sem recompilar APK ou reiniciar Bridge, pois não há mudança
+Kotlin/Go. Perfil candidato permanece local até escolha explícita do cenário.
+
 ## Plano autorizado em 2026-10-10
 
 Entrada: proposal.md e spec.md em SPEC_APROVADA por REV-005. Saída desta
@@ -16,12 +36,17 @@ execução: IMPLEMENTADA para teste humano, sem fases posteriores.
    reais no display, capturar cartão com filtros, executar GPN antes de GTK na
    tarja, GTK criptografado e GOX/FCX condicionais. Cancelar/fechar explicitamente
    em detach, retorno ou falha, preservando causa principal e impedindo replay.
-4. UI: stepper não interativo, cartões e total destacado, ações textuais azul
-   escuro. Duas colunas quando couber; rolagem em janela/fonte ampliada. Estado
-   textual, alvos 48 dp e sem dados técnicos ou de cartão nas mensagens.
+4. UI: cartões e total destacado, ações textuais azul escuro. Duas colunas
+   quando couber; rolagem em janela/fonte ampliada. Estado textual, alvos 48 dp
+   e sem dados técnicos ou de cartão nas mensagens.
    Adendo REV-006: seguir os cinco SVGs Gemini; AnimatedContent por etapa
    com fade/deslocamento curto, spinner Material durante aguardo real e
    snapshots determinísticos para comparação visual e adaptação.
+   Adendo REV-009: sem indicador de etapas em nenhuma tela, liberando altura
+   sob o cabeçalho do host e evitando rolagem na primeira tela.
+   Adendo REV-010: confirmação por DSP032 + GKY em quatro páginas, início
+   físico condicionado a perfil e tabela provisionados e falha exibida com
+   código/fase sanitizados no padrão do diagnóstico 075.
 5. Integração: gerar AAR com proveniência e distribuir apenas dependências
    técnicas necessárias ao loader do host. Testar ABIs/nativas; aplicar ajuste
    genérico de carregamento se necessário, sem regras de saque no host.
@@ -54,3 +79,22 @@ por parcela adicional (1..12); débito em uma parcela. Total = compra + tarifa
 HALF_UP em centavos. Perfil fornece limites e filtros de aplicação distintos,
 não a taxa. AVANÇAR exige perfil válido. Testar cálculo, edição, seleção enviada
 à captura, retorno e layout; preservar animações já implementadas.
+
+
+## Correções de conformidade — REV-011
+
+[REV-011](reviews/2026-10-11-spec-review-correcoes.md) aprova a validação local
+gomobile ValidateFormattedEMVTableJSON antes da prontidão da UI, reutilizando
+regras Go sem transporte. Entrada monetária inválida/excessiva é bloqueada sem
+truncamento; débito tem tarifa fixa R$ 1,00. Testar arquivos privados sintéticos,
+zero cliente/hardware em preflight e colagem/edição real. AAR será regenerado
+com proveniência; Bridge e comandos permanecem compatíveis.
+
+
+## Modalidade da tela — REV-012
+
+[REV-012](reviews/2026-10-11-spec-review-modalidade.md): modalidade/compra vêm
+da tela 1. Para a tabela DES indicada, o domínio mapeia crédito→01 e débito→02,
+conforme seus tipos/rótulos, não por bandeira. Filtros externos no perfil
+não são exigidos e são ignorados. Resumo congelado determina filtro e total
+enviados ao Go. Versão/limite/prazos/cenário continuam no perfil do laboratório.

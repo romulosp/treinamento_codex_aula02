@@ -3,12 +3,31 @@
 **Autor:** Rômulo Penha
 
 ## Status
+REV-016 SPEC_APROVADA: espera técnica sem ação CANCELAR, CANCELANDO ou SAIR
+enquanto processa. Falha mantém SAIR; cleanup de lifecycle permanece interno.
+Ver [revisão](reviews/2026-10-11-spec-review-espera-sem-cancelar.md).
+
+Revisão vigente de ordem da jornada:
+[REV-015 SPEC_APROVADA](reviews/2026-10-11-spec-review-inicializacao-emv.md).
+Entrada → espera → validar configuração → abrir sessão → capacidades →
+carga EMV confirmada → tela 1 → AVANÇAR → confirmação/cancelamento existente.
+Falha de preparação bloqueia formulário; sair/detach fecha a sessão já aberta.
+
 `SPEC_APROVADA` — revisões de 2026-10-10 em
 [REV-005](reviews/2026-10-10-spec-review-implementacao.md),
 [REV-006](reviews/2026-10-10-spec-review-layout.md),
-[REV-007](reviews/2026-10-10-spec-review-primeira-tela.md) e
-[REV-008](reviews/2026-10-10-spec-review-pagamento-cartao.md). A baseline anterior
+[REV-007](reviews/2026-10-10-spec-review-primeira-tela.md),
+[REV-008](reviews/2026-10-10-spec-review-pagamento-cartao.md),
+[REV-009](reviews/2026-10-10-spec-review-remocao-indicador.md) e
+[REV-010](reviews/2026-10-10-spec-review-integracao-075.md). A baseline anterior
 permanece histórica em `references/baseline-2026-09-25/`.
+
+REV-013: o provisionamento privado do launcher preserva aspas da shell remota
+para executar o redirecionamento sob run-as, confere exit e SHA-256 de perfil
+e tabela contra as fontes locais antes de abrir o host. Conteúdo não é emitido.
+Ver [contrato da correção](reviews/2026-10-11-spec-review-provisionamento.md).
+REV-014: perfil DES proposto aceito com cenário APPROVE simulado para GOX=2;
+preservar as demais decisões reais do pinpad e as falhas de transporte.
 
 O módulo `:plugin-saque-cartao` tem `:shared-api` como dependência de contrato,
 implementa `IPluginNegocioApp` e declara capacidade `business-menu`. O contrato
@@ -16,8 +35,8 @@ mínimo e a minor requerida no manifesto são 1.1. O host 1.2 mantém essa vers�
 elegível pela regra `requiredSharedApiMinor <= hostMinor` para plugins de
 negócio. Seu manifesto declara
 `br.com.romulopenha.sistemaprototipoandroid.saquecartao`; o serviço declara sua
-entry class. A única folha é `Saque Cartão`, no caminho
-`Principal > Outros Serviços > Saque Cartão`.
+entry class. A única folha é `Pagamento com Cartão`, no caminho
+`Principal > Outros Serviços > Pagamento com Cartão`.
 
 O plugin exibirá cinco etapas em sua própria Compose View e consumirá o
 componente Go/ABECS da [074](../074-pinpad-android-bridge-stack/spec.md).
@@ -77,7 +96,8 @@ Oferecer crédito/débito, valor editável e quantidade de parcelas de 1 a 12.
 Mostrar separadamente valor base, taxa, tarifa e total não editável,
 recalculados ao editar. Fórmula de homologação: `tarifa = valor × taxa / 100`
 e `total = valor + tarifa`, arredondados HALF_UP para centavos.
-Taxa definida em REV-007: 5,34% + 0,80 ponto percentual por parcela adicional.
+Crédito: 5,34% + 0,80 ponto percentual por parcela adicional (REV-007).
+Débito: tarifa fixa R$ 1,00 em uma parcela (REV-008).
 
 Usar representação monetária exata; bloquear vazio, inválido, zero, negativo,
 precisão maior que dois decimais e overflow. Limite de homologação vem
@@ -92,8 +112,9 @@ para confirmação, leitura e conclusão. Não editar durante operação física
 Exibir "Peça ao cliente que confira os valores e confirme no pinpad" e o
 resumo congelado. Enviar total, parcelas e tarifa ao componente Go para
 exibição adequada às capacidades do display e aguardar confirmação ou
-cancelamento real. Usar DEX/DSP + GKY conforme sequência e capacidades
-do contrato executável. Não avançar por clique de confirmação no
+cancelamento real. Usar DSP032 (duas linhas S16) + GKY em quatro páginas
+conforme [REV-010](reviews/2026-10-10-spec-review-integracao-075.md) e a
+sequência do contrato executável. Não avançar por clique de confirmação no
 Android, por envio bem-sucedido ao display ou por tecla/índice inesperado.
 
 ## RF-003 — Leitura e seleção de aplicação
@@ -185,10 +206,13 @@ são eventos de UI e não geram comandos físicos artificiais.
 - Referência visual principal: os cinco SVGs de `source-material/gemini/`,
   escolhidos expressamente pelo solicitante em 2026-10-10 e aprovados em
   [REV-006](reviews/2026-10-10-spec-review-layout.md). Etapa 1 com dois painéis;
-  etapas 2–5 com cartão central, stepper conectado, fundo claro, azul #003366,
-  cantos arredondados, resumo e ilustrações equivalentes aos anexos.
-- Indicador não interativo de cinco etapas com número/rótulo da etapa atual.
-  Cancelamento precoce não marca passos não executados como concluídos.
+  etapas 2–5 com cartão central, fundo claro, azul #003366, cantos arredondados,
+  resumo e ilustrações equivalentes aos anexos.
+- Sem indicador de etapas: a
+  [REV-009](reviews/2026-10-10-spec-review-remocao-indicador.md) removeu os
+  círculos `1..5` com rótulos e o texto "Etapa X de 5" de todas as telas, porque
+  o elemento consumia altura sob o cabeçalho do host e forçava rolagem. A etapa
+  atual é identificada pelo conteúdo do painel e pela transição animada.
 - Cartões de entrada/resumo, total destacado e ações sólidas azul-escuro
   sem ícones. Estado sempre textual, não apenas por cor.
 - Duas colunas quando couber; coluna rolável em janela reduzida/fonte grande,
@@ -252,3 +276,38 @@ por parcela adicional (1..12); débito em uma parcela. Total = compra + tarifa
 HALF_UP em centavos. Perfil fornece limites e filtros de aplicação distintos,
 não a taxa. AVANÇAR exige perfil válido. Testar cálculo, edição, seleção enviada
 à captura, retorno e layout; preservar animações já implementadas.
+
+## Integração física no padrão 075 — REV-010
+
+Contrato aprovado em
+[REV-010](reviews/2026-10-10-spec-review-integracao-075.md), após teste humano
+com Bridge e pinpad físico. O perfil DES sintético da REV-008 é removido:
+AVANÇAR exige perfil válido **e** tabela EMV carregada, com mensagem específica
+para perfil ausente, tabela ausente e conteúdo inválido. Falhas passam a expor
+código e fase sanitizados, no padrão do diagnóstico 075
+(`Mobile.errorCode`/`errorPhase`), com códigos locais `MISSING`,
+`TABLE_MISSING`, `CONFIGURATION` e `CONFIRMATION_ERROR`. A confirmação no pinpad
+usa `DSP032` (duas linhas S16) com `GKY` em quatro páginas — valor total,
+parcelas, tarifa e confirmação/cancelamento — conforme seções 3.3.5 e 3.3.10 do
+manual ABECS 2.12; o caminho DEX deixa de ser usado. GCX filtrado pela
+modalidade, GTK, GPN DUKPT 3/08 com PAN vazio, GOX e FCX permanecem com os
+contratos vigentes, sem novo comando ou regra ABECS em Kotlin.
+
+
+## Correções de conformidade — REV-011
+
+[REV-011](reviews/2026-10-11-spec-review-correcoes.md) aprova a validação local
+gomobile ValidateFormattedEMVTableJSON antes da prontidão da UI, reutilizando
+regras Go sem transporte. Entrada monetária inválida/excessiva é bloqueada sem
+truncamento; débito tem tarifa fixa R$ 1,00. Testar arquivos privados sintéticos,
+zero cliente/hardware em preflight e colagem/edição real. AAR será regenerado
+com proveniência; Bridge e comandos permanecem compatíveis.
+
+
+## Modalidade da tela — REV-012
+
+[REV-012](reviews/2026-10-11-spec-review-modalidade.md): modalidade/compra vêm
+da tela 1. Para a tabela DES indicada, o domínio mapeia crédito→01 e débito→02,
+conforme seus tipos/rótulos, não por bandeira. Filtros externos no perfil
+não são exigidos e são ignorados. Resumo congelado determina filtro e total
+enviados ao Go. Versão/limite/prazos/cenário continuam no perfil do laboratório.

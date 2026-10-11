@@ -43,6 +43,28 @@ func (c *Client) LoadFormattedEMVTableJSON(operationID, acquirer, version, recor
 	})
 }
 
+// ValidateFormattedEMVTableJSON valida a carga localmente, sem cliente ou I/O.
+// Reutiliza os contratos do core; erros não incluem registros ou parâmetros.
+func ValidateFormattedEMVTableJSON(acquirer, version, recordsJSON string) (err error) {
+	defer recoverBinding(&err)
+	records, err := parseFormattedEMVJSON(recordsJSON)
+	if err != nil {
+		return err
+	}
+	if _, err = command.BuildTLICommand(acquirer, version); err != nil {
+		return err
+	}
+	if err = command.ValidateFormattedEMVRecords(records, acquirer); err != nil {
+		return err
+	}
+	for _, record := range records {
+		if _, err = command.BuildFormattedTLRCommand([]string{record}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func parseFormattedEMVJSON(value string) ([]string, error) {
 	if len(value) > 1024*1024 {
 		return nil, fmt.Errorf("EMV table too large")

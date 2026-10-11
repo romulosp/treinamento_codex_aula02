@@ -24,7 +24,7 @@ class BusinessPluginManagerTest {
     }
 
     @Test
-    fun descobreSaqueCartaoECriaSuaView() {
+    fun descobrePagamentoCartaoECriaSuaView() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val loaded = CountDownLatch(1)
         var items = emptyList<BusinessMenuItem>()
@@ -42,9 +42,9 @@ class BusinessPluginManagerTest {
         assertTrue("Falha fatal: $fatal", fatal == null)
         val outrosServicos = items.singleOrNull { it.titulo == "Outros Serviços" }
         assertNotNull("Caminho declarado pelo plugin não gerou o agrupador", outrosServicos)
-        val saque = requireNotNull(outrosServicos).filhos.singleOrNull { it.titulo == "Saque Cartão" }
-        assertNotNull("Saque Cartão não encontrado no menu", saque)
-        assertEquals("principal-outros-serviços-saque-cartão", requireNotNull(saque).id)
+        val saque = requireNotNull(outrosServicos).filhos.singleOrNull { it.titulo == "Pagamento com Cartão" }
+        assertNotNull("Pagamento com Cartão não encontrado no menu", saque)
+        assertEquals("principal-outros-serviços-pagamento-com-cartão", requireNotNull(saque).id)
         var view: View? = null
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
             view = manager!!.createScreen(saque.id, context)
@@ -59,6 +59,9 @@ class BusinessPluginManagerTest {
         val loader = DexClassLoader(verified.apk.absolutePath, optimized.absolutePath, native.absolutePath, context.classLoader)
         val mobile = loader.loadClass("br.com.romulopenha.libpinpadabecsgo.mobile.Mobile")
         val version = mobile.getMethod("version").invoke(null) as String
-        assertTrue("Go não inicializou na ABI do host", version.contains("revision=db23e7d"))
+        assertTrue("Go não inicializou com proveniência na ABI do host",
+            version.contains("revision=") && !version.contains("revision=unknown"))
+        mobile.getMethod("validateFormattedEMVTableJSON", String::class.java, String::class.java, String::class.java)
+            .invoke(null, "01", "TEST000001", "[\"01110101ABC\"]")
     }
 }

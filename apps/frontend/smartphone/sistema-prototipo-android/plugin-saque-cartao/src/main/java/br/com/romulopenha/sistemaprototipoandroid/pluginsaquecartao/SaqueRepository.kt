@@ -16,8 +16,14 @@ import org.json.JSONObject
 /** Dimensões reais consultadas no pinpad, não inferidas pelo modelo do aparelho. */
 internal data class SaqueDisplay(val lines: Int, val columns: Int)
 
-/** Falha sanitizada; mensagens arbitrárias do driver nunca chegam à UI. */
-internal class SaqueFailure(val code: String) : Exception(code)
+/**
+ * Falha sanitizada da jornada; mensagens arbitrárias do driver nunca chegam à UI.
+ *
+ * [code] e [phase] pertencem às whitelists do core 074 (`Mobile.errorCode` e
+ * `Mobile.errorPhase`) ou aos códigos locais de provisionamento; nenhum texto
+ * livre, caminho, parâmetro ou conteúdo de cartão é propagado.
+ */
+internal class SaqueFailure(val code: String, val phase: String = "binding") : Exception(code)
 
 /** Porta main-safe para a jornada; protocolo, parsers e cartão ficam no Go. */
 internal interface SaqueRepository {
@@ -59,16 +65,35 @@ internal class GoSaqueRepository(
     @Volatile private var client: Client? = null
     private var tableJson: String = ""
 
+    /**
+     * Lê perfil e tabela privados do host debug, sem hardware.
+     *
+     * Distingue ausência de perfil (`MISSING`), ausência de tabela
+     * (`TABLE_MISSING`) e conteúdo inválido (`CONFIGURATION`); nenhum desses
+     * casos é substituído por configuração sintética.
+     */
     override suspend fun loadProfile(): SaquePerfil = withContext(ioDispatcher) {
         try {
             require(context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0)
             val dir = File(context.filesDir, "saque-cartao")
-            val profileJson = readPrivateFile(File(dir, "perfil.json"), 65536)
-            tableJson = readPrivateFile(File(dir, "emv.json"), 1048576)
-            parseSaqueProfile(profileJson).also(SaquePerfil::validate)
+            val profileFile = File(dir, "perfil.json")
+            if (!profileFile.isFile) throw SaqueFailure("MISSING", "preflight")
+            val tableFile = File(dir, "emv.json")
+            if (!tableFile.isFile) throw SaqueFailure("TABLE_MISSING", "preflight")
+            val profileJson = readPrivateFile(profileFile, 65536)
+            tableJson = readPrivateFile(tableFile, 1048576)
+            parseSaqueProfile(profileJson).also { profile ->
+                Mobile.validateFormattedEMVTableJSON(profile.tableAcquirer, profile.tableVersion, tableJson)
+            }
+        } catch (failure: SaqueFailure) {
+            tableJson = ""
+            throw failure
+        } catch (_: LinkageError) {
+            tableJson = ""
+            throw SaqueFailure("BINDING_ERROR", "preflight")
         } catch (_: Exception) {
             tableJson = ""
-            throw SaqueFailure("CONFIGURATION")
+            throw SaqueFailure("CONFIGURATION", "preflight")
         }
     }
 
@@ -151,16 +176,17 @@ internal class GoSaqueRepository(
         Unit
     }
 
-    /** Executa binding bloqueante fora da main e expõe só categoria pública conhecida. */
+    /** Executa binding bloqueante fora da main e expõe só categoria e fase públicas. */
     private suspend fun <T> goCall(action: () -> T): T = withContext(ioDispatcher) {
         try {
             action()
         } catch (canceled: CancellationException) {
             throw canceled
         } catch (error: Exception) {
-            throw SaqueFailure(Mobile.errorCode(error.message.orEmpty()))
+            val message = error.message.orEmpty()
+            throw SaqueFailure(Mobile.errorCode(message), Mobile.errorPhase(message))
         } catch (_: LinkageError) {
-            throw SaqueFailure("BINDING_ERROR")
+            throw SaqueFailure("BINDING_ERROR", "binding")
         }
     }
 
@@ -174,14 +200,14 @@ private fun readPrivateFile(file: File, maxBytes: Long): String {
     return file.readText(Charsets.UTF_8)
 }
 
-/** Analisa perfil físico; taxa é regra de domínio e o campo legado é ignorado. */
+/** Perfil físico; taxa/modalidade são domínio e seus campos legados são ignorados. */
 internal fun parseSaqueProfile(raw: String): SaquePerfil {
     val json = JSONObject(raw)
     require(json.wholeNumber("schemaVersion") == 1L)
     return SaquePerfil(
         json.getString("environment"), json.getString("host"), Math.toIntExact(json.wholeNumber("port")),
         json.wholeNumber("timeoutMillis"), Math.toIntExact(json.wholeNumber("timeoutSeconds")), json.getString("tableAcquirer"),
-        json.getString("tableVersion"), json.getString("creditApplicationTypes"), json.getString("debitApplicationTypes"),
+        json.getString("tableVersion"), SaqueModalidade.CREDITO.applicationType, SaqueModalidade.DEBITO.applicationType,
         json.wholeNumber("maxBaseCents"), json.getString("gtkDataMethod"), Math.toIntExact(json.wholeNumber("gtkKeyIndex")),
         SaqueCenario.valueOf(json.getString("scenario")),
     ).also(SaquePerfil::validate)

@@ -6,8 +6,9 @@ comandos, ambiente, resultados e limitações em [validation.md](../validation.m
 - [Capturas das cinco etapas e janela compacta](layout/cinco-etapas.png).
 - Capturas individuais: `layout/layout-10004/01-valores.png` até
   `05-etapa.png`; `06-compacto-fonte150.png` mostra a ação após rolagem.
-- `technical/`: logs finais, XML de 19 testes host, relatório JaCoCo
-  (181/188 linhas), cobertura Go e resultado `OK (5 tests)` da UI/parser.
+- `technical/`: logs finais da revisão anterior à REV-007, XML de 19 testes
+  host, relatório JaCoCo (181/188 linhas), cobertura Go e `OK (5 tests)` da
+  UI/parser. Os resultados vigentes estão em `rev-008/`.
 
 Os artefatos binários, XML e logs são locais e ignorados pela política de
 `.gitignore`; este índice e validation.md são os registros textuais. Dados de
@@ -43,7 +44,9 @@ O encerramento confere PID, executável e horário da instância antes de parar
 o processo. Não procura nem encerra outros Bridges.
 
 
-REV-007: primeira tela corrigida em [01-valores](layout/layout-10004/01-valores.png)
-e [edição sem perfil](layout/layout-10004/07-primeira-tela-sem-perfil.png).
-Montagem cinco-etapas preservada como histórica da REV-006; consultar as
-capturas individuais atuais para taxas e botão SAIR.
+REV-009: conjunto atual em [01-valores](layout/layout-10004/01-valores.png) e
+[edição sem perfil padrão](layout/layout-10004/07-primeira-tela-sem-perfil.png);
+logs de teste, build e cobertura em `rev-009/`. O indicador de etapas não aparece
+em nenhuma tela. Conjuntos REV-008 e REV-007 preservados em `rev-008/` e
+`rev-007/`; a montagem cinco-etapas continua histórica da REV-006. Hashes
+vigentes e anteriores em [capturas-sha256.md](capturas-sha256.md).

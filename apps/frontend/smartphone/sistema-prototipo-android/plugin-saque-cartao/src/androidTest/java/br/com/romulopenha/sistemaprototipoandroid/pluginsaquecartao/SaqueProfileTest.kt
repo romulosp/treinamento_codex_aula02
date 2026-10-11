@@ -14,6 +14,10 @@ class SaqueProfileTest {
         val withoutFee = profile.replace("\"feePercent\":\"5.00\",", "")
         assertEquals(parseSaqueProfile(profile), parseSaqueProfile(withoutFee))
         assertEquals(parseSaqueProfile(profile), parseSaqueProfile(profile.replace("5.00", "-1")))
+        val withoutFilters = profile.replace("\"creditApplicationTypes\":\"01\",\"debitApplicationTypes\":\"02\",", "")
+        assertEquals(parseSaqueProfile(profile), parseSaqueProfile(withoutFilters))
+        assertEquals("01", parseSaqueProfile(withoutFilters).applicationTypes(SaqueModalidade.CREDITO))
+        assertEquals("02", parseSaqueProfile(withoutFilters).applicationTypes(SaqueModalidade.DEBITO))
         for (invalid in listOf(profile.replace("DES", "PRD"),
             profile.replace("\"gtkKeyIndex\":7,", ""),
             profile.replace("\"port\":39100", "\"port\":39100.5"),

@@ -1,11 +1,14 @@
 package br.com.romulopenha.sistemaprototipoandroid.pluginsaquecartao
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
@@ -21,6 +24,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,8 +41,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -50,9 +56,10 @@ private val Blue = Color(0xFF3B82F6)
 private val Green = Color(0xFF078457)
 
 /**
- * Conteúdo puro das cinco etapas, conforme SVGs Gemini. Estado e callbacks são
+ * Conteúdo puro da preparação e cinco etapas, conforme SVGs Gemini. Estado e callbacks são
  * fornecidos pelo proprietário; transições e spinner nunca produzem comandos.
- * A etapa define a identidade da animação, preservando o snapshot de saída.
+ * A etapa define a identidade da animação, preservando o snapshot de saída;
+ * a troca combina deslocamento, desvanecimento e escala para ser percebida.
  */
 @Composable
 internal fun SaqueCartaoScreen(state: SaqueState, onEvent: (SaqueEvent) -> Unit, modifier: Modifier = Modifier) {
@@ -64,12 +71,13 @@ internal fun SaqueCartaoScreen(state: SaqueState, onEvent: (SaqueEvent) -> Unit,
             val gutter = if (expanded) 64.dp else 20.dp
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = gutter, vertical = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(24.dp)) {
-                Text("Saque por cartão", Modifier.fillMaxWidth(), color = Navy, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                SaqueStepper(state, Modifier.widthIn(max = 640.dp).fillMaxWidth())
-                AnimatedContent(targetState = state, contentKey = { it.step }, label = "etapa-saque",
+                Text("Pagamento com cartão", Modifier.fillMaxWidth(), color = Navy, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                AnimatedContent(targetState = state, contentKey = { it.step }, label = "etapa-pagamento",
                     transitionSpec = {
-                        ((fadeIn(tween(280)) + slideInVertically(tween(280, easing = FastOutSlowInEasing)) { it / 16 })
-                            togetherWith (fadeOut(tween(180)) + slideOutVertically(tween(220)) { -it / 20 }))
+                        ((fadeIn(tween(320)) + slideInVertically(tween(320, easing = FastOutSlowInEasing)) { it / 8 }
+                            + scaleIn(initialScale = 0.90f, animationSpec = tween(320, easing = FastOutSlowInEasing)))
+                            togetherWith (fadeOut(tween(200)) + slideOutVertically(tween(240)) { -it / 10 }
+                                + scaleOut(targetScale = 0.94f, animationSpec = tween(240))))
                             .using(SizeTransform(clip = false))
                     }) { target ->
                     if (target.step == 1) {
@@ -88,46 +96,7 @@ internal fun SaqueCartaoScreen(state: SaqueState, onEvent: (SaqueEvent) -> Unit,
     }
 }
 
-/** Stepper decorativo conectado; só etapas realmente concluídas recebem marca. */
-@Composable
-private fun SaqueStepper(state: SaqueState, modifier: Modifier = Modifier) {
-    val labels = listOf("Valores", "Confirmação", "Leitura", "Senha", "Fim")
-    val success = state.result in setOf(SaqueResultado.APPROVED, SaqueResultado.CAPTURED)
-    val accent = if (success) Green else Navy
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Box(Modifier.fillMaxWidth()) {
-            Canvas(Modifier.fillMaxWidth().height(32.dp)) {
-                val spacing = size.width / 5
-                for (index in 0..3) drawLine(
-                    if (index + 1 in state.completedSteps && index + 2 in state.completedSteps) accent else Color(0xFFCBD5E1),
-                    Offset(spacing * (index + .5f), size.height / 2),
-                    Offset(spacing * (index + 1.5f), size.height / 2), 4.dp.toPx(), StrokeCap.Round)
-            }
-            Row(Modifier.fillMaxWidth()) {
-                labels.forEachIndexed { index, label ->
-                    val step = index + 1
-                    val completed = step in state.completedSteps
-                    val current = state.step == step
-                    Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        Box(Modifier.size(32.dp).clip(CircleShape).background(if (completed || current) accent else Color(0xFFCBD5E1))
-                            .semantics { contentDescription = "$label: ${if (completed) "concluída" else if (current) "etapa atual" else "pendente"}" },
-                            contentAlignment = Alignment.Center) {
-                            Text(if (completed) "✓" else "$step", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
-            }
-        }
-        Row(Modifier.fillMaxWidth()) {
-            labels.forEachIndexed { index, label -> Text(label, Modifier.weight(1f), textAlign = TextAlign.Center,
-                fontSize = 12.sp, fontWeight = if (state.step == index + 1) FontWeight.Bold else FontWeight.Medium,
-                color = if (state.step == index + 1) accent else Muted) }
-        }
-        Text("Etapa ${state.step} de 5", Modifier.fillMaxWidth(), color = Muted, textAlign = TextAlign.Center, fontSize = 12.sp)
-    }
-}
-
-/** Painel Gemini editável sem hardware, com taxa calculada por parcela. */
+/** Painel Gemini editável sem hardware, com compra monetária e parcelamento em combobox. */
 @Composable
 private fun ValuesPanel(state: SaqueState, onEvent: (SaqueEvent) -> Unit, modifier: Modifier = Modifier) {
     Surface(modifier, shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 5.dp) {
@@ -148,24 +117,56 @@ private fun ValuesPanel(state: SaqueState, onEvent: (SaqueEvent) -> Unit, modifi
             }
             Spacer(Modifier.height(4.dp))
             FieldCaption("VALOR DA COMPRA")
-            OutlinedTextField(state.valueInput, { onEvent(SaqueEvent.Value(it)) }, Modifier.fillMaxWidth(),
+            OutlinedTextField(formatPurchaseDigits(state.valueInput), { onEvent(SaqueEvent.Value(it)) }, Modifier.fillMaxWidth(),
                 enabled = !state.busy, label = { Text("Valor da compra") }, prefix = { Text("R$ ") },
-                singleLine = true, shape = RoundedCornerShape(8.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                singleLine = true, shape = RoundedCornerShape(8.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
             FieldCaption("PARCELAMENTO")
-            OutlinedTextField(state.installmentsInput, { onEvent(SaqueEvent.Installments(it)) }, Modifier.fillMaxWidth(),
-                enabled = !state.busy && state.modalidade == SaqueModalidade.CREDITO,
-                label = { Text(if (state.modalidade == SaqueModalidade.DEBITO) "Débito: 1 parcela" else "Parcelas (1 a 12)") },
-                suffix = { Text("x") }, singleLine = true, shape = RoundedCornerShape(8.dp),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+            InstallmentsPicker(state, onEvent)
             FieldCaption("TAXA APLICADA")
             Text(state.feeLabel.ifEmpty { "Não configurada" }, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Ink)
         }
     }
 }
 
-/** Painel de resumo com total não editável e avanço condicionado ao cálculo válido. */
+/**
+ * Combobox de parcelas: crédito oferece 1x a 12x; débito permanece fixo em 1x
+ * (à vista) e não abre lista. A seleção só é emitida por toque explícito.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun InstallmentsPicker(state: SaqueState, onEvent: (SaqueEvent) -> Unit) {
+    val credit = state.modalidade == SaqueModalidade.CREDITO
+    val open = credit && !state.busy
+    val options = if (credit) (1..12).map(Int::toString) else listOf("1")
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(expanded = expanded && open, onExpandedChange = { expanded = open && it },
+        modifier = Modifier.fillMaxWidth()) {
+        OutlinedTextField(if (credit) state.installmentsInput else "1x (À vista)", {},
+            Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
+            enabled = open, readOnly = true, singleLine = true, shape = RoundedCornerShape(8.dp),
+            label = { Text(if (credit) "Parcelas (1 a 12)" else "Parcelas (débito)") },
+            suffix = if (credit) ({ Text("x") }) else null,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded && open) })
+        ExposedDropdownMenu(expanded = expanded && open, onDismissRequest = { expanded = false }) {
+            options.forEach { option ->
+                DropdownMenuItem(text = { Text(if (option == "1") "1x (À vista)" else "${option}x") },
+                    onClick = { onEvent(SaqueEvent.Installments(option)); expanded = false })
+            }
+        }
+    }
+}
+
+/**
+ * Painel de resumo com total não editável e avanço condicionado ao cálculo.
+ *
+ * AVANÇAR exige sessão preparada/carga EMV confirmada, resumo e ausência de operação em curso; o
+ * grupo de ações entra com deslocamento, desvanecimento e escala percebíveis.
+ */
 @Composable
 private fun SummaryPanel(state: SaqueState, onEvent: (SaqueEvent) -> Unit, modifier: Modifier = Modifier) {
+    var appeared by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { appeared = true }
     Surface(modifier, shape = RoundedCornerShape(16.dp), color = Pale, border = androidx.compose.foundation.BorderStroke(1.dp, Border), shadowElevation = 4.dp) {
         Column(Modifier.padding(32.dp).heightIn(min = 450.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
             Text("Resumo da transação", color = Navy, fontSize = 22.sp, fontWeight = FontWeight.Bold)
@@ -190,19 +191,34 @@ private fun SummaryPanel(state: SaqueState, onEvent: (SaqueEvent) -> Unit, modif
                 }
             }
             Text(state.message, color = Muted, fontSize = 14.sp)
-            PrimaryAction("AVANÇAR", { onEvent(SaqueEvent.Begin) }, state.configReady && state.summary != null && !state.busy)
-            PrimaryAction("SAIR", { onEvent(SaqueEvent.Return) }, !state.busy, Color(0xFFB42318))
+            FailureNote(state)
+            AnimatedVisibility(visible = appeared,
+                enter = fadeIn(tween(320)) + slideInVertically(tween(320, easing = FastOutSlowInEasing)) { it / 3 }
+                    + scaleIn(initialScale = 0.92f, animationSpec = tween(320, easing = FastOutSlowInEasing)),
+                label = "acoes-primeira-tela") {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    PrimaryAction("AVANÇAR", { onEvent(SaqueEvent.Begin) },
+                        state.configReady && state.summary != null && !state.busy)
+                    PrimaryAction("SAIR", { onEvent(SaqueEvent.Return) }, !state.busy, Color(0xFFB42318))
+                }
+            }
         }
     }
 }
 
-/** Cartão central das etapas físicas; resultado e instruções refletem o estado real. */
+/** Cartão da preparação e etapas físicas; resultado/instruções refletem estado real. */
 @Composable
 private fun StagePanel(state: SaqueState, onEvent: (SaqueEvent) -> Unit, modifier: Modifier = Modifier) {
     Surface(modifier, shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 5.dp) {
         Column(Modifier.padding(32.dp).heightIn(min = 430.dp), horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(24.dp)) {
             when (state.step) {
+                0 -> {
+                    StageHeading(if (state.busy) "Aguarde, processando" else "Não foi possível preparar o terminal",
+                        if (state.busy) "Preparando o pinpad para pagamento com cartão." else "Saia e tente novamente após verificar o terminal.")
+                    WaitingState(state.message, state.busy)
+                    FailureNote(state)
+                }
                 2 -> {
                     StageHeading("Confirmação no terminal", "Peça ao cliente que confira os valores e confirme no pinpad.")
                     Receipt(state.summary)
@@ -240,11 +256,13 @@ private fun StagePanel(state: SaqueState, onEvent: (SaqueEvent) -> Unit, modifie
                     Text(state.result?.title ?: "Resultado indisponível", color = color, fontSize = 28.sp,
                         fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
                     Text(state.message, color = Muted, textAlign = TextAlign.Center)
+                    FailureNote(state)
                     Receipt(state.summary)
                 }
             }
-            if (state.step in 2..4) PrimaryAction(if (state.cancelRequested) "CANCELANDO..." else "CANCELAR",
+            if (state.step in 2..4 || (state.step == 0 && state.busy)) PrimaryAction(if (state.cancelRequested) "CANCELANDO..." else "CANCELAR",
                 { onEvent(SaqueEvent.Cancel) }, state.busy && !state.cancelRequested)
+            if (state.step == 0 && !state.busy) PrimaryAction("SAIR", { onEvent(SaqueEvent.Return) }, true, Color(0xFFB42318))
             if (state.step == 5) PrimaryAction("VOLTAR AO MENU INICIAL", { onEvent(SaqueEvent.Return) }, !state.busy)
         }
     }
@@ -297,6 +315,18 @@ private fun PrimaryAction(text: String, onClick: () -> Unit, enabled: Boolean, c
 
 @Composable
 private fun FieldCaption(text: String) { Text(text, color = Muted, fontSize = 14.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp) }
+
+/**
+ * Código e fase sanitizados da última falha, no padrão do diagnóstico 075.
+ * Exibe somente categorias da whitelist do core ou códigos locais de
+ * provisionamento; nenhum texto livre do driver chega à tela.
+ */
+@Composable
+private fun FailureNote(state: SaqueState) {
+    val code = state.failureCode ?: return
+    Text("Falha: $code · fase ${state.failurePhase ?: "binding"}", color = Color(0xFFB42318),
+        fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+}
 
 /** Placeholder indica ausência de cálculo; não transforma configuração ausente em zero. */
 private fun money(cents: Long?): String = cents?.let { "R$ ${formatCents(it)}" } ?: "—"
