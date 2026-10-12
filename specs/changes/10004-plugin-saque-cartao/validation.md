@@ -604,7 +604,7 @@ preservados com os mesmos hashes de REV-014.
 | `adb -s emulator-5554 shell am instrument -w br.com.romulopenha.sistemaprototipoandroid.pluginsaquecartao.test/androidx.test.runner.AndroidJUnitRunner` | OK (15 tests), 131,535s; espera/formulário, falha de preparação/SAIR e regressões da UI, spinner e parser. | 0 |
 | `adb -s emulator-5554 shell am instrument -w -e class br.com.romulopenha.sistemaprototipoandroid.platform.BusinessPluginManagerTest br.com.romulopenha.sistemaprototipoandroid.test/androidx.test.runner.AndroidJUnitRunner` | OK (1 test), 2,406s; discovery/View não anexada e Go nativo. Não reexecutados os 20 do host. | 0 |
 | Projeto Android: `./gradlew.bat :app:assembleDebug --console=plain` após comentários KDoc finais | BUILD SUCCESSFUL; host final instalado e MainActivity aberta para login. | 0 |
-| `adb ... pull .../layout-10004/00-preparacao-emv.png evidence/rev-015/` | PNG inspecionado visualmente; espera/spinner/CANCELAR, sem formulário. | 0 |
+| `adb ... pull .../layout-10004/00-preparacao-emv.png evidence/rev-015/` | PNG inspecionado visualmente; espera/spinner/CANCELAR, sem formulário. A ação CANCELAR desta captura foi removida por REV-016 em `evidence/rev-016/`. | 0 |
 | `adb ... run-as ... sha256sum files/saque-cartao/perfil.json files/saque-cartao/emv.json` | Perfil 54ec1a3113c3d604c0343236968a6ef212a2d7ce798836e034895e0d106bef12 e tabela 873d94fa1ec3be17d5a58d130f1ab07b82367eee01c05b4745218c14ebad0ab2 preservados. | 0 |
 
 Unitários pausam a carga com CompletableDeferred: etapa 0 e edição/Begin bloqueados
@@ -624,3 +624,308 @@ Logs/XML/PNG locais em evidence/rev-015/. Carga física ao entrar no plugin e
 confirmação/cancelamento com cartão/PIN requerem avaliação humana. Nenhuma
 simulação constitui evidência de TLE/GCX físicos aceitos; revisão formal,
 validação formal, aprovação final, archive e commit permanecem pendentes.
+
+## Espera sem ação de cancelamento — REV-016 — 2026-10-11
+
+SPEC_APROVADA pela solicitação explícita do solicitante de não existir
+possibilidade de cancelar na tela "Aguarde, processando" da preparação.
+Estado IMPLEMENTADA, entregue para revisão formal/teste humano. Escopo
+limitado ao plugin Pagamento com Cartão, seus testes e documentos da Change;
+nenhuma alteração em host, carregador, Go, Bridge ou outros plugins.
+
+A etapa técnica 0 em `busy` renderiza somente título, instrução, spinner e
+mensagem real: a condição de `SaqueCartaoScreen` que exibia CANCELAR/CANCELANDO
+nessa fase foi restringida às etapas transacionais 2..4, onde existe operação
+confirmada no pinpad. A falha de preparação continua oferecendo SAIR e segue
+sem formulário. O cleanup por detach/dispose permanece interno ao proprietário
+e não é exposto como ação na espera.
+
+Arquivos alterados: `SaqueCartaoScreen.kt` (condição de renderização e KDoc do
+`StagePanel`), `SaqueCartaoScreenTest.kt` (asserções de ausência de
+CANCELAR/CANCELANDO/SAIR na espera e na falha) e documentos da Change
+(`spec.md`, `DESIGN.md`, `tasks.md`, `implementation-plan.md`, esta validação).
+
+Ambiente: Windows/PowerShell, JBR 25.0.3 e target Java 17, Gradle Wrapper do
+projeto, SDK `D:/desenvolvimento/ferramentas_android/Sdk`, emulator-5554 API 35
+(Medium_Tablet AVD). AAR da REV-012 preservado, sem novo gomobile bind.
+Arquivos privados do host preservados; nenhum hardware físico executado.
+
+| Diretório / comando | Resultado | Exit |
+| --- | --- | ---: |
+| Raiz: `python .agents/skills/android-native-engineering/scripts/validate_android_project.py apps/frontend/smartphone/sistema-prototipo-android` | Rejeitou `local.properties` preexistente (mesma limitação registrada em REV-015); nenhum artefato local foi removido ou alterado. | 1 |
+| Projeto Android: `./gradlew.bat :plugin-saque-cartao:compileDebugAndroidTestKotlin --console=plain` | BUILD SUCCESSFUL; somente avisos preexistentes de depreciação (`MenuAnchorType`, `createComposeRule`). | 0 |
+| Projeto Android: `./gradlew.bat :plugin-saque-cartao:testDebugUnitTest :plugin-saque-cartao:lintDebug --console=plain` | BUILD SUCCESSFUL; 24 unitários, zero falhas; lint sem erro novo. | 0 |
+| Projeto Android: `./gradlew.bat :plugin-saque-cartao:saqueCoverageVerify :plugin-saque-cartao:assembleDebug :plugin-saque-cartao:assembleDebugAndroidTest --console=plain` | BUILD SUCCESSFUL; cobertura 239/245 linhas = 97,6% (LINE missed=6, covered=239), sem regressão frente a REV-015. | 0 |
+| Projeto Android: `./gradlew.bat :plugin-saque-cartao:connectedDebugAndroidTest "-Pandroid.testInstrumentationRunnerArguments.class=...SaqueCartaoScreenTest" --console=plain` | BUILD SUCCESSFUL; 13/13 testes instrumentados, `failures="0" errors="0"`. Primeira execução expôs asserção minha incorreta (SAIR do formulário já entrando durante a transição animada); corrigida antes do resultado final. | 0 |
+| `adb -s emulator-5554 shell am instrument -w -e class ...SaqueCartaoScreenTest br.com.romulopenha.sistemaprototipoandroid.pluginsaquecartao.test/androidx.test.runner.AndroidJUnitRunner` | OK (13 tests), 135,168s; espera sem ações, falha de preparação com SAIR e cancelamento transacional das etapas 2..4 preservado. | 0 |
+| `adb -s emulator-5554 pull .../layout-10004/00-preparacao-emv.png evidence/rev-016/00-preparacao-emv-REV016.png` | PNG inspecionado visualmente: "Aguarde, processando", instrução, spinner e "Carregando tabela EMV...", sem qualquer botão de ação. | 0 |
+| Projeto Android: `./gradlew.bat :app:assembleDebug --console=plain` e `adb -s emulator-5554 install -r app-debug.apk` | BUILD SUCCESSFUL e `Success`; host reinstalado com o plugin atualizado embutido para o teste humano. | 0 |
+
+O asset embutido no host é idêntico ao APK do plugin corrigido, com SHA-256
+`BB4BBDFFD374F5A9B4184F42DA64E0BC453686A7104627D463AD792DEF578EA4`.
+
+Hashes dos artefatos desta revisão:
+
+- Plugin (`plugin-saque-cartao-debug.apk`): BB4BBDFFD374F5A9B4184F42DA64E0BC453686A7104627D463AD792DEF578EA4.
+- Host (`app-debug.apk`): 7610FEDEEC1F82CAE07F06B9A24525ABB1D15768D7590A1BD816B5C55BB73300.
+- PNG da espera: 2BF404A0914578D3CAEAF7466AB4A8C3FE874722203131FE4C81E9A6EB68BEC6.
+
+Evidência local em `evidence/rev-016/`: captura 2560x1600 (Medium_Tablet API 35)
+e relatório XML dos 13 testes instrumentados (SHA-256
+`069335992592E4240FABFD46B88C1F58791E0595C639918166E1DF73F2B5D122`). A imagem
+confirma o comportamento observado no emulador, que não substitui a avaliação
+humana da carga física ao entrar no plugin. Limitação herdada: o validador
+estrutural continua reprovando por `local.properties` preexistente, condição de
+ambiente já registrada em REV-015 e não causada por esta mudança. Revisão
+formal, validação formal, aprovação final, atualização de `specs/system/`,
+archive e commit permanecem pendentes.
+
+## Confirmação com DEX único + GKY — REV-017 — 2026-10-11
+
+SPEC_APROVADA pela solicitação explícita do solicitante: a confirmação no pinpad
+deixa de ser "DSP032 em quatro páginas + GKY por página" e passa a **um único
+DEX com as quatro informações + um único GKY**. Estado IMPLEMENTADA, entregue
+para teste humano. Escopo limitado ao plugin Pagamento com Cartão, seus testes e
+documentos da Change; nenhuma alteração em host, carregador, Go, Bridge, AAR ou
+outros plugins.
+
+Mensagem DEX (português, latin1, ≤160 bytes) com quebra de linha `\r` e **todas
+as linhas centralizadas** na largura de `SaqueDisplay.columns`:
+
+```text
+  VALOR TOTAL  \r  R$ 105,34  \r VALOR COMPRA \r  R$ 100,00  \r VALOR TARIFA \r  R$ 5,34  \r QUANTIDADE \r     1x     \r CANCELA/CONFIRMA
+```
+
+- `VALOR TOTAL` → `totalCents`; `VALOR COMPRA` → `baseCents`;
+  `VALOR TARIFA` → `feeCents`; `QUANTIDADE` → `installments`;
+  `CANCELA/CONFIRMA` → GKY. Todas as linhas centralizadas em `columns`.
+- Tecla 0x00 = CONFIRMA, 0x0D = CANCELA; demais teclas = `CONFIRMATION_ERROR`.
+- Timeout do GKY permanece `config.timeoutSeconds` do perfil.
+
+Alterações: `SaqueJourney.kt` (`confirm()` agora chama `displayText` + um único
+`waitKey`; adicionados `confirmationMessage()` e `center()`; removido o loop DSP
+e o `require` de 16 colunas), `SaqueJourneyTest.kt` (fake registra a mensagem
+DEX; testes atualizados para DEX único + um GKY com centralização), `spec.md`,
+`DESIGN.md` e a revisão
+`reviews/2026-10-11-spec-review-confirmacao-dex-gky.md`. `SaqueRepository.kt`
+não mudou: `displayText` (DEX) já existia; `displayPage` (DSP) permanece
+disponível na fachada sem chamador na jornada.
+
+Ambiente: Windows/PowerShell, JBR 25.0.3 e target Java 17, Gradle Wrapper do
+projeto, SDK `D:/desenvolvimento/ferramentas_android/Sdk`, emulator-5554 API 35.
+
+| Diretório / comando | Resultado | Exit |
+| --- | --- | ---: |
+| Projeto Android: `./gradlew.bat :plugin-saque-cartao:testDebugUnitTest :plugin-saque-cartao:lintDebug :plugin-saque-cartao:saqueCoverageVerify --console=plain` | BUILD SUCCESSFUL; 24 unitários, zero falhas; lint sem erro; cobertura 242/248 linhas = 97,6%. | 0 |
+| Projeto Android: `./gradlew.bat :app:assembleDebug :plugin-saque-cartao:assembleDebugAndroidTest --console=plain` | BUILD SUCCESSFUL; host regerado com o plugin atualizado embutido. | 0 |
+| Projeto Android: `./gradlew.bat :plugin-saque-cartao:connectedDebugAndroidTest --console=plain` | BUILD SUCCESSFUL; 13/13 testes instrumentados, `failures="0"`, 2m29s no emulador. | 0 |
+
+Unitários que cobrem a nova confirmação: `confirmacao usa DEX unico com
+informacoes e um GKY` (ordem, conteúdo e centralização da mensagem em dois
+displays), `cancelar na confirmacao cancela sem capturar cartao` (0x0D) e as
+regressões de captura/EMV/cleanup. A mensagem DEX é verificada com os valores
+congelados (`R$ 105,34`, `R$ 100,00`, `R$ 5,34`, `1x`) e `VALOR TOTAL` centralizado.
+
+Hashes dos artefatos desta revisão:
+
+- Plugin (`plugin-saque-cartao-debug.apk`): BE6ED33A86590BA96E39CFAEEAF6237EE12EC3803AA3EA231718DC21E34DD0AA.
+- Host (`app-debug.apk`): 79F4E092ABD746A933F477BF1CAD484C8FBD9BC9379B24DDDBE9A5FE0501D3A5.
+- Asset embutido no host (`plugins/business/plugin-saque-cartao.apk`): BE6ED33A86590BA96E39CFAEEAF6237EE12EC3803AA3EA231718DC21E34DD0AA (idêntico ao APK do plugin).
+
+Pendência física obrigatória: confirmar no pinpad real que o DEX apresenta as
+informações na ordem pedida e que as teclas 0x00 (CONFIRMA) e 0x0D (CANCELA)
+chegam com a ordem DEX→GKY registrada no log serial. A separação por `\r` e a
+centralização de todas as linhas (espaços na largura de `SaqueDisplay.columns`)
+dependem de validação no hardware; nenhum emulador/fake substitui essa
+evidência. Revisão formal, validação formal, aprovação final, atualização de
+`specs/system/`, archive e commit permanecem pendentes.
+
+## Consolidação documental da centralização no pinpad — 2026-10-11
+
+RF-002 reúne o contrato vigente REV-017 para centralização dos rótulos, valores
+ e CANCELA/CONFIRMA. O contrato complementar referencia essa seção e remove a
+instrução conflitante DSP/GKY. Revisão: `reviews/2026-10-11-spec-review-centralizacao-pinpad.md`.
+
+Ambiente: Windows, PowerShell, Python, raiz `D:/desenvolvimento/ia/aula02`.
+
+| Comando | Resultado | Exit |
+| --- | --- | ---: |
+| `git diff --check` | Sem erros de whitespace; avisos de normalização LF/CRLF em arquivos já modificados. | 0 |
+| `python -c` com leitura UTF-8 e assertions de RF-002/contrato complementar | PASS: cinco rótulos, largura, limite DEX e GKY único presentes; instruções antigas removidas. | 0 |
+
+Atualização exclusivamente documental; testes Android não se aplicam a esta
+edição. Evidências técnicas da REV-017 permanecem registradas acima; a
+centralização e as teclas no pinpad físico continuam pendentes de validação.
+
+## Ajuste pontual do SVG de confirmação — 2026-10-11
+
+Solicitante esclareceu que o alvo é somente o bloco de informações em
+`source-material/gemini/2_CONFIRMACAO_COMPRA_PINPAD.svg`. Centralizados os seis
+textos em x=640, com rótulos e valores em linhas distintas, dentro do painel
+existente. Inventário SHA-256 atualizado. Revisão:
+`reviews/2026-10-11-spec-review-svg-confirmacao-centralizado.md`.
+
+Ambiente: Windows/PowerShell, Python 3.14, raiz do workspace.
+
+| Comando | Resultado | Exit |
+| --- | --- | ---: |
+| `python -` (ElementTree, assertions de quantidade, x, text-anchor e conteúdo, SHA-256) | PASS: XML válido, seis textos centralizados, valores preservados, hash atualizado. | 0 |
+| `git diff --check -- specs/changes/10004-plugin-saque-cartao/source-material` | Sem erros. | 0 |
+
+Primeira execução da atualização do inventário encontrou BOM UTF-8 (exit 1);
+leitura corrigida para utf-8-sig, preservando o BOM. Testes Android não se
+aplicam ao ajuste de SVG. Sem nova evidência de hardware.
+
+## Retificação do alvo — display físico do pinpad — 2026-10-11
+
+O solicitante esclareceu que deseja centralização na tela física do pinpad.
+Desfeito integralmente o ajuste do SVG e restaurado seu hash original.
+Ambiente: Windows/PowerShell, Python 3.14. Comando: `python -` com restauração
+pontual e assertion SHA-256. Resultado PASS, exit 0.
+
+Inspeção de `SaqueJourney.confirmationMessage()` mostra centralização por
+espaços em `SaqueDisplay.columns` antes de `displayText()` (DEX). Essa inspeção
+não comprova alinhamento no hardware. Modelo do dispositivo e aparência do
+texto solicitados para identificar a causa antes de alterar o envio.
+
+## REV-018 — Layout da confirmação DEX/GIX — 2026-10-11
+
+Estado: IMPLEMENTADA, revisão técnica em
+`reviews/2026-10-11-implementation-review-layout-dex-gix.md`.
+Implementado somente no consumidor Android da confirmação física. SVG Gemini
+continua com o SHA-256 original; nenhuma nova alteração de UI nesta revisão.
+
+Ambiente: Windows/PowerShell; Python 3.14; JBR em
+`D:/desenvolvimento/ferramentas_android/Nova pasta/AndroidStudio/jbr`, target
+Java 17; SDK local já configurado. Diretório Gradle:
+`apps/frontend/smartphone/sistema-prototipo-android`.
+
+| Diretório/comando | Resultado | Exit |
+| --- | --- | ---: |
+| Raiz: `python .agents/skills/android-native-engineering/scripts/validate_android_project.py apps/frontend/smartphone/sistema-prototipo-android` | Reprovado por local.properties preexistente, conforme limitação já registrada. | 1 |
+| Projeto Android: `./gradlew.bat :plugin-saque-cartao:testDebugUnitTest :plugin-saque-cartao:lintDebug :plugin-saque-cartao:saqueCoverageVerify :app:assembleDebug --console=plain` com JAVA_HOME acima | BUILD SUCCESSFUL; 25 testes, zero falhas; lint passou; cobertura 250/256 linhas (97,66%); host e plugin compilados. | 0 |
+| Raiz: `python -` lendo XML de testes e JaCoCo | Confirmou contagem, falhas e cobertura. | 0 |
+| Raiz: `git diff --check -- specs/changes/10004-plugin-saque-cartao apps/frontend/smartphone/sistema-prototipo-android/plugin-saque-cartao` | Sem erros de whitespace; avisos LF/CRLF. | 0 |
+
+Vetores de confirmação para grades sintéticas 16x16 e 16x40: 117 e 154 bytes,
+respectivamente. Mesmo tamanho gráfico 320x240 nos dois cenários prova que
+pixels não substituem colunas. Grade inválida, altura insuficiente, largura
+insuficiente ou excesso de 160 bytes falham antes de DEX/GKY/captura.
+
+Fontes: manual ABECS 2.12 local, páginas 40 e 70, texto extraído com PyMuPDF.
+Consulta oficial externa identificou DEX_OPTIONS na versão 2.20
+(https://abecs.org.br/storage/pages/01JP0P3T089VNH5HW6HA81NEAY.pdf);
+RESEARCH_CANDIDATE, não incorporado pois o contrato vigente é 2.12.
+
+Limitações: nenhum teste instrumentado adicional (UI não alterada); nenhum
+comando físico executado nesta revisão. Conferir no PPP100 real as dimensões
+GIX, centralização visual e CONFIRMA/CANCELA. Sem aprovação final, archive,
+atualização de specs/system ou commit nesta entrega.
+
+## Reversão da REV-018 por regressão — 2026-10-11
+
+Autorização explícita do solicitante: voltar ao funcionamento anterior após
+CONFIRMATION_ERROR no pinpad. REV-018 revogada; REV-017 restaurada no código,
+adapter, testes e contrato vigente. Removidos agrupamento de campos, CR
+iniciais e bloqueios novos por dimensões/altura/tamanho; restaurada a mensagem
+original e seu preenchimento. Alterações preexistentes de UI preservadas.
+A imagem enviada evidencia erro de confirmação; não se afirma diagnóstico
+físico definitivo nem funcionamento validado no hardware após esta reversão.
+
+Ambiente: Windows/PowerShell; JBR em
+`D:/desenvolvimento/ferramentas_android/Nova pasta/AndroidStudio/jbr`, Java
+17 target; projeto `apps/frontend/smartphone/sistema-prototipo-android`.
+
+| Comando | Resultado | Exit |
+| --- | --- | ---: |
+| `./gradlew.bat :plugin-saque-cartao:testDebugUnitTest :plugin-saque-cartao:lintDebug :plugin-saque-cartao:saqueCoverageVerify :app:assembleDebug --console=plain` | BUILD SUCCESSFUL; 24 testes, zero falhas; lint e cobertura passaram; host recompilado com plugin revertido. | 0 |
+| `git diff --check -- specs/changes/10004-plugin-saque-cartao apps/frontend/smartphone/sistema-prototipo-android/plugin-saque-cartao` | Sem erros, avisos LF/CRLF. | 0 |
+| `python -` lendo XML de testes | 24 testes, zero falhas. | 0 |
+
+APK gerado em `app/build/outputs/apk/debug/app-debug.apk`. Não instalado nem
+executado no dispositivo nesta revisão. Evidências REV-018 acima são históricas
+e não representam o contrato ou a implementação vigente.
+
+## Recuperação operacional da versão anterior — 2026-10-11
+
+Solicitação do usuário: recuperar a versão estável que chegava à senha.
+Código REV-017 já restaurado; nenhuma nova mudança de produção. Identidade
+binária confirmada contra os hashes da REV-017 registrados nesta Change:
+
+- Host SHA-256: 79F4E092ABD746A933F477BF1CAD484C8FBD9BC9379B24DDDBE9A5FE0501D3A5.
+- Plugin SHA-256: BE6ED33A86590BA96E39CFAEEAF6237EE12EC3803AA3EA231718DC21E34DD0AA.
+
+Ambiente: Windows/PowerShell, Python 3.14, Android SDK local,
+emulator-5554/Medium_Tablet API 35. Revisão:
+`reviews/2026-10-11-recuperacao-versao-estavel.md`.
+
+| Comando/ação | Resultado | Exit |
+| --- | --- | ---: |
+| `Get-FileHash` dos APKs host/plugin | Hashes idênticos aos da REV-017. | 0 |
+| `adb -s emulator-5554 emu kill` | Encerramento do emulador travado. | 0 |
+| `Start-Process emulator.exe` com `-avd Medium_Tablet -no-snapshot-load -qt-hide-window -grpc-use-token -idle-grpc-timeout 300`, WindowStyle Hidden | Reinício frio sem wipe-data; BOOT_COMPLETED confirmado. | 0 |
+| `adb -s emulator-5554 install -r apps/frontend/smartphone/sistema-prototipo-android/app/build/outputs/apk/debug/app-debug.apk` | Success. | 0 |
+| `python -` Hello/Ping PBRG em 127.0.0.1:39100 | PASS, sem comando físico. | 0 |
+| `adb -s emulator-5554 reverse tcp:39100 tcp:39100` | Reverse criado. | 0 |
+| `adb -s emulator-5554 shell am start -W -n br.com.romulopenha.sistemaprototipoandroid/.MainActivity` | Status ok; COLD; TotalTime 1308 ms. | 0 |
+| `adb -s emulator-5554 shell uiautomator dump /sdcard/recovery-window.xml` | UI real de login presente. | 0 |
+| `python -` com SHA-256 do APK instalado, XML da UI, pidof e test -s dos arquivos privados | PASS: APK correto instalado, login visível, PID 3648, perfil/tabela preservados. | 0 |
+
+Primeira leitura Python da UI usou encoding local CP1252 e falhou (exit 1);
+repetição UTF-8 passou. Antes do reinício, am start/dumpsys/reboot não responderam;
+recovery usou encerramento do emulador e boot sem snapshot. Aplicação deixada
+aberta no login. Nenhum teste físico de cartão/PIN feito nesta execução.
+
+## REV-019 — DEX/GKY, texto final e entrega no emulador — 2026-10-11
+
+Estado: IMPLEMENTADA, revisão técnica aprovada em
+`reviews/2026-10-11-implementation-review-dex-gky-texto-final.md`.
+Contrato vigente: `reviews/2026-10-11-spec-review-dex-gky-texto-final.md`.
+
+Mensagem DEX em nove linhas: VALOR TOTAL/total, VALOR TARIFA/tarifa,
+VALOR COMPRA/base, QUANTIDADE/Nx e CANCELA/CONFIRMA. Somente o primeiro rótulo
+recebe espaços iniciais opcionais conforme colunas GIX, com fallback simples
+quando não couber em 160 bytes. Sem padding global, CR iniciais ou validação de
+altura que impeça GKY. Captura segue somente após 0x00; 0x0D cancela; LIMPA/F1..F4
+falham sem captura. Go, Bridge, AAR, tela Android e SVGs não alterados.
+
+Fontes verificadas: manual local ABECS 2.12 páginas 40 (GIX) e 80 (GKY),
+extraído por PyMuPDF; exemplo CLI main.go opções 8/10; core WaitForKeyPress
+com ParseGKYStatus. Retornos GKY 000 e 013 mapeiam 0x00/0x0D. DSI exibe imagens,
+não consulta dimensões. GIX existente basta para tentativa opcional de alinhamento;
+fonte/pixels do DEX não são configuráveis no contrato 2.12. Não usada versão 2.20.
+
+Ambiente: Windows/PowerShell, Python 3.14; Gradle Wrapper, JAVA_HOME em
+`D:/desenvolvimento/ferramentas_android/Nova pasta/AndroidStudio/jbr`, target Java
+17; Go 1.26.5; Medium_Tablet/emulator-5554 API 35, SDK local.
+
+| Diretório/comando | Resultado | Exit |
+| --- | --- | ---: |
+| Raiz: `python .agents/skills/android-native-engineering/scripts/validate_android_project.py apps/frontend/smartphone/sistema-prototipo-android` | Reprovado por local.properties preexistente, limitação herdada. | 1 |
+| Projeto Android: `./gradlew.bat :plugin-saque-cartao:testDebugUnitTest :plugin-saque-cartao:lintDebug :plugin-saque-cartao:saqueCoverageVerify :app:assembleDebug --console=plain` | BUILD SUCCESSFUL; 27 testes, zero falhas; lint passou; cobertura 243/249 linhas = 97,59%. | 0 |
+| Módulo Go: `go test ./internal/domain/parser ./internal/application/service -run 'GKY\|MenuAnd' -count=1` | Pacotes parser e service passaram nos testes filtrados GKY. | 0 |
+| Raiz: `python -` comparando hashes do AAR e fontes service/parser/fachada com provenance.json | PASS; AAR e implementação GKY correspondem à proveniência. | 0 |
+| Raiz: `python -` conferindo XML unitários/JaCoCo e asset ZIP do host | PASS; contagens/cobertura acima, asset idêntico ao APK plugin novo. | 0 |
+| `adb -s emulator-5554 shell am force-stop br.com.romulopenha.sistemaprototipoandroid` e `adb -s emulator-5554 emu kill` | Versão atual encerrada; emulador fechado. | 0 |
+| `Start-Process emulator.exe` com `-avd Medium_Tablet -no-snapshot-load -qt-hide-window -grpc-use-token -idle-grpc-timeout 300`, WindowStyle Hidden | Reinício sem snapshot e sem wipe-data; BOOT_COMPLETED. | 0 |
+| `python -` Hello/Ping PBRG para 127.0.0.1:39100 | PASS; Bridge existente pronto, sem OPN ou outro comando físico. | 0 |
+| `adb -s emulator-5554 install -r apps/frontend/smartphone/sistema-prototipo-android/app/build/outputs/apk/debug/app-debug.apk` | Success; dados preservados. | 0 |
+| `adb -s emulator-5554 reverse tcp:39100 tcp:39100` | Reverse reposto e conferido. | 0 |
+| `adb -s emulator-5554 shell am start -W -n br.com.romulopenha.sistemaprototipoandroid/.MainActivity` | Status ok; COLD; TotalTime 3947 ms. | 0 |
+| `python -` conferindo SHA-256 do APK instalado, UI via uiautomator, pidof, reverse e test -s dos arquivos privados | PASS; versão nova, login visível, PID 2836, perfil/tabela preservados sem leitura de conteúdo. | 0 |
+| `git diff --check -- specs/changes/10004-plugin-saque-cartao apps/frontend/smartphone/sistema-prototipo-android/plugin-saque-cartao` | Sem erros; avisos de normalização LF/CRLF. | 0 |
+
+Hashes finais:
+
+- Plugin: 2b83cb12b728788557a387601c5a717645616a1212704e9f91777199c71ef8c9.
+- Host instalado: 80c60e52638e83c8bc8513ea40cc9b781a27615fb19b917c8b4c11ac73b0f7bf.
+- Asset plugin embutido no host: idêntico ao hash do plugin acima.
+
+Novas evidências JVM cobrem DEX pendente antes de GKY, DEX falhando sem tecla ou
+captura, mensagens em 16/40 colunas e dimensões inválidas, 12 parcelas/valores
+altos com fallback S160, cancelar e todos os retornos LIMPA/F1..F4. Não há teste
+instrumentado adicional de UI porque ela não foi alterada nesta revisão; abertura
+real foi conferida no emulador. Sessão serial histórica redigida não comprova
+comandos novos. Verificação física de layout/CONFIRMA/CANCELA e jornada até PIN
+permanece para operador; nenhum cartão ou PIN usado nesta execução. Sem aprovação
+final, archive, specs/system ou commit nesta entrega.

@@ -13,6 +13,9 @@
 permanece histórica em `references/baseline-2026-09-25/`.
 
 ## Objetivo
+REV-019 aprovada: preservar DEX → GKY real e corrigir mensagem física conforme
+[contrato](reviews/2026-10-11-spec-review-dex-gky-texto-final.md), sem alterar
+captura/PIN. Reiniciar emulador e instalar/abrir host ao final.
 REV-016 aprovada: remover cancelamento visível durante a preparação do plugin,
 preservando cleanup interno e cancelamento nas etapas de transação.
 

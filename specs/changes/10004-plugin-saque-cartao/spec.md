@@ -3,6 +3,16 @@
 **Autor:** Rômulo Penha
 
 ## Status
+REV-019 SPEC_APROVADA: DEX informativo único seguido de GKY; somente VALOR TOTAL
+recebe alinhamento opcional GIX, com fallback sem alinhamento e limite de 160
+bytes. Substitui layout da REV-017. Ver
+[contrato vigente](reviews/2026-10-11-spec-review-dex-gky-texto-final.md).
+REV-017 SPEC_APROVADA: confirmação no pinpad com DEX único (VALOR TOTAL,
+VALOR COMPRA, VALOR TARIFA, QUANTIDADE, CANCELA/CONFIRMA, todas as linhas
+centralizadas) seguido de um único GKY, substituindo as quatro páginas DSP de
+REV-010. Ver
+[revisão](reviews/2026-10-11-spec-review-confirmacao-dex-gky.md).
+
 REV-016 SPEC_APROVADA: espera técnica sem ação CANCELAR, CANCELANDO ou SAIR
 enquanto processa. Falha mantém SAIR; cleanup de lifecycle permanece interno.
 Ver [revisão](reviews/2026-10-11-spec-review-espera-sem-cancelar.md).
@@ -110,12 +120,32 @@ para confirmação, leitura e conclusão. Não editar durante operação física
 ## RF-002 — Confirmação no pinpad
 
 Exibir "Peça ao cliente que confira os valores e confirme no pinpad" e o
-resumo congelado. Enviar total, parcelas e tarifa ao componente Go para
-exibição adequada às capacidades do display e aguardar confirmação ou
-cancelamento real. Usar DSP032 (duas linhas S16) + GKY em quatro páginas
-conforme [REV-010](reviews/2026-10-10-spec-review-integracao-075.md) e a
-sequência do contrato executável. Não avançar por clique de confirmação no
-Android, por envio bem-sucedido ao display ou por tecla/índice inesperado.
+resumo congelado. Conforme
+[REV-019](reviews/2026-10-11-spec-review-dex-gky-texto-final.md), enviar ao
+componente Go uma única mensagem DEX com as linhas abaixo, nesta ordem:
+
+| Rótulo | Linha de valor do resumo congelado |
+| --- | --- |
+| VALOR TOTAL | `totalCents`, formatado como `R$ 105,34` |
+| VALOR TARIFA | `feeCents`, formatado como `R$ 5,34` |
+| VALOR COMPRA | `baseCents`, formatado como `R$ 100,00` |
+| QUANTIDADE | `installments` (1..12), formatado como `1x` |
+| CANCELA/CONFIRMA | Última linha; aguardar a tecla no pinpad. |
+
+Os valores acima são exemplos de formatação; os valores efetivos vêm do
+resumo congelado. Conforme REV-019, centralizar apenas `VALOR TOTAL` com espaços
+iniciais conforme `SaqueDisplay.columns`, se disponíveis/válidas e a mensagem
+completa couber em 160 bytes. Caso contrário, enviar sem alinhamento. Demais
+linhas não recebem preenchimento; preservar valores e rótulos sem truncamento.
+Cada rótulo/valor ocupa sua própria linha; separar por `\r` (0x0D), em latin1.
+Não usar a altura da grade textual como bloqueio do DEX, nem CR iniciais.
+
+Após o DEX, executar **um único GKY** com `config.timeoutSeconds` do perfil:
+0x00 confirma, 0x0D cancela e qualquer outra tecla resulta em
+`CONFIRMATION_ERROR`, sem iniciar captura. Este contrato substitui as quatro
+páginas DSP/GKY da REV-010. Não avançar por clique de confirmação no Android
+ou por envio bem-sucedido ao display. Comprovar apresentação e centralização
+no pinpad físico, além da ordem DEX → GKY e das teclas de confirmação/cancelamento.
 
 ## RF-003 — Leitura e seleção de aplicação
 
@@ -289,9 +319,12 @@ código e fase sanitizados, no padrão do diagnóstico 075
 `TABLE_MISSING`, `CONFIGURATION` e `CONFIRMATION_ERROR`. A confirmação no pinpad
 usa `DSP032` (duas linhas S16) com `GKY` em quatro páginas — valor total,
 parcelas, tarifa e confirmação/cancelamento — conforme seções 3.3.5 e 3.3.10 do
-manual ABECS 2.12; o caminho DEX deixa de ser usado. GCX filtrado pela
-modalidade, GTK, GPN DUKPT 3/08 com PAN vazio, GOX e FCX permanecem com os
-contratos vigentes, sem novo comando ou regra ABECS em Kotlin.
+manual ABECS 2.12; o caminho DEX deixa de ser usado. **Substituído por REV-017:
+a confirmação passa a usar DEX único (VALOR TOTAL, VALOR COMPRA, VALOR TARIFA,
+QUANTIDADE, CANCELA/CONFIRMA, todas as linhas centralizadas) seguido de um único
+GKY.** GCX filtrado pela modalidade, GTK, GPN DUKPT 3/08 com PAN vazio, GOX e
+FCX permanecem com os contratos vigentes, sem novo comando ou regra ABECS em
+Kotlin.
 
 
 ## Correções de conformidade — REV-011

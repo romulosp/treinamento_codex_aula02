@@ -23,6 +23,7 @@ class SaqueCartaoScreenTest {
     @get:Rule val compose = createComposeRule()
     private val summary = calculateSaque(15000, SaqueModalidade.CREDITO, 1)
 
+    /** Preparação busy (REV-016): somente espera, sem CANCELAR/CANCELANDO/SAIR. */
     @Test fun preparacaoExibeEsperaESoDepoisMostraFormulario() {
         var events = 0
         var state by mutableStateOf(SaqueState(step = 0, busy = true, message = "Carregando tabela EMV..."))
@@ -31,10 +32,12 @@ class SaqueCartaoScreenTest {
         compose.onNodeWithText("Carregando tabela EMV...").assertIsDisplayed()
         compose.onNodeWithText("MODALIDADE").assertDoesNotExist()
         compose.onNodeWithText("AVANÇAR").assertDoesNotExist()
+        assertSemAcaoNaEspera()
         compose.mainClock.autoAdvance = false
         compose.mainClock.advanceTimeBy(500)
         assertEquals(0, events)
         capture("00-preparacao-emv")
+        // A transição animada mantém o snapshot de saída; a troca é medida com tempo controlado.
         compose.runOnIdle { state = state.copy(step = 1, busy = false, configReady = true,
             message = "Informe valores válidos para continuar.") }
         compose.mainClock.advanceTimeBy(1000)
@@ -45,6 +48,7 @@ class SaqueCartaoScreenTest {
         assertEquals(0, events)
     }
 
+    /** A falha de preparação continua oferecendo SAIR, mesmo sem formulário. */
     @Test fun falhaDePreparacaoMantemFormularioAusenteEPermiteSair() {
         var last: SaqueEvent? = null
         compose.setContent { SaqueCartaoScreen(SaqueState(step = 0, busy = false,
@@ -54,6 +58,8 @@ class SaqueCartaoScreenTest {
         compose.onNodeWithText("Falha: PINPAD_ERROR · fase command").assertIsDisplayed()
         compose.onNodeWithText("MODALIDADE").assertDoesNotExist()
         compose.onNodeWithText("AVANÇAR").assertDoesNotExist()
+        compose.onNodeWithText("CANCELAR").assertDoesNotExist()
+        compose.onNodeWithText("CANCELANDO...").assertDoesNotExist()
         compose.onNodeWithText("SAIR").performClick()
         assertEquals(SaqueEvent.Return, last)
     }
@@ -197,6 +203,13 @@ class SaqueCartaoScreenTest {
         assertTrue("SAIR fora da janela: $sair em $root", sair.bottom <= root.bottom)
         compose.onNodeWithText("AVANÇAR").assertIsDisplayed()
         compose.onNodeWithText("SAIR").assertIsDisplayed()
+    }
+
+    /** A espera da preparação não expõe ação alguma, conforme REV-016. */
+    private fun assertSemAcaoNaEspera() {
+        listOf("CANCELAR", "CANCELANDO...", "SAIR", "VOLTAR AO MENU INICIAL").forEach {
+            compose.onNodeWithText(it).assertDoesNotExist()
+        }
     }
 
     /** O indicador de etapas foi removido por REV-009 em todas as telas. */

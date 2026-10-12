@@ -203,26 +203,37 @@ internal class SaqueJourney(
     }
 
     /**
-     * Confirma no pinpad com DSP de duas linhas S16 e GKY por página, conforme
-     * seções 3.3.5 e 3.3.10 do manual ABECS 2.12. Exibe valor total, parcelas,
-     * tarifa e a pergunta de confirmação; OK avança, CANCELA cancela e qualquer
-     * outra tecla encerra com falha de confirmação. Valores que não couberem em
-     * 16 colunas falham sem truncamento silencioso.
+     * Confirma no pinpad com um único DEX informativo seguido de um único GKY,
+     * conforme REV-019. O DEX apresenta total, tarifa, compra, quantidade e ações.
+     * Somente VALOR TOTAL pode receber alinhamento opcional; a tecla decide a jornada:
+     * 0x00 confirma, 0x0D cancela e qualquer outra encerra com falha de confirmação.
+     * O texto permanece em português e cabe nos 160 bytes do DEX.
      */
     private suspend fun confirm(display: SaqueDisplay, config: SaquePerfil, summary: SaqueResumo, id: String) {
-        require(display.lines >= 2 && display.columns >= 16)
-        val pages = listOf(
-            "VALOR TOTAL" to "R$ ${formatCents(summary.totalCents)}",
-            "PARCELAS" to "${summary.installments}x",
-            "TARIFA" to "R$ ${formatCents(summary.feeCents)}",
-            "CONFIRMA?" to "CANCELA?",
+        checkpoint()
+        repository.displayText(id, confirmationMessage(summary, display.columns))
+        confirmed(repository.waitKey(id, config.timeoutSeconds))
+    }
+
+    /**
+     * Mantém nove linhas DEX sem padding global e preserva valores do resumo.
+     * Alinha apenas o título por colunas GIX válidas se couber no S160 Latin-1;
+     * caso contrário, usa texto simples. Altura/pixels não bloqueiam confirmação.
+     */
+    private fun confirmationMessage(summary: SaqueResumo, columns: Int): String {
+        val title = "VALOR TOTAL"
+        val lines = listOf(
+            title, "R$ ${formatCents(summary.totalCents)}",
+            "VALOR TARIFA", "R$ ${formatCents(summary.feeCents)}",
+            "VALOR COMPRA", "R$ ${formatCents(summary.baseCents)}",
+            "QUANTIDADE", "${summary.installments}x",
+            "CANCELA/CONFIRMA",
         )
-        require(pages.all { (label, value) -> label.length <= 16 && value.length <= 16 })
-        for ((label, value) in pages) {
-            checkpoint()
-            repository.displayPage(id, label, value)
-            confirmed(repository.waitKey(id, config.timeoutSeconds))
-        }
+        val plain = lines.joinToString("\r")
+        require(plain.toByteArray(Charsets.ISO_8859_1).size <= 160)
+        if (columns !in title.length..99) return plain
+        val aligned = " ".repeat((columns - title.length) / 2) + plain
+        return if (aligned.toByteArray(Charsets.ISO_8859_1).size <= 160) aligned else plain
     }
 
     /** Não trata tecla inesperada como confirmação nem omite a categoria local. */

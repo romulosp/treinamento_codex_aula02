@@ -53,7 +53,7 @@ eventuais devem se limitar ao gap confirmado de assinatura/formato.
 | --- | --- | --- |
 | Sessão | NewClient/Ping/Open/GetState/Close/Cancel | Perfil seguro e prova no processo host. |
 | Valores | Cálculo exato no plugin | Tarifa, limites e parcelas. |
-| Confirmação | DEX/DSP + GKY ou MNU | Sequência por capacidade e interpretação normativa da confirmação. |
+| Confirmação | DEX + GKY | REV-017: DEX único com VALOR TOTAL, VALOR COMPRA, VALOR TARIFA, QUANTIDADE e CANCELA/CONFIRMA (todas as linhas centralizadas), seguido de um único GKY. |
 | Leitura | PurchaseGCXSummaryJSON; GTK resumido | GCX completo/modalidade/AIDs reservado pela 074. |
 | EMV/PIN | ContinueEMVSummaryJSON; CapturePINMK/DUKPT | Perfil e GPN com PAN vazio após GCX, antes de GTK, quando normativamente aplicável. |
 | Finalização | FinalizeEMVSummaryJSON | Origem da autorização e mapeamento FCX. |
@@ -75,8 +75,10 @@ instrução/aguardo; duas colunas quando couber e rolagem em janela reduzida/fon
 grande. A [REV-009](reviews/2026-10-10-spec-review-remocao-indicador.md) removeu
 o indicador de etapas para não forçar rolagem sob o cabeçalho do host. A
 [REV-010](reviews/2026-10-10-spec-review-integracao-075.md) exige perfil e
-tabela provisionados para iniciar, confirma no pinpad por DSP032 + GKY e mostra
-código/fase sanitizados da falha. Não expor comandos/protocolo ao operador.
+tabela provisionados para iniciar, confirma no pinpad e mostra código/fase
+sanitizados da falha. A [REV-017](reviews/2026-10-11-spec-review-confirmacao-dex-gky.md)
+define a confirmação como DEX único com as quatro informações + um único GKY,
+substituindo o DSP032 em quatro páginas. Não expor comandos/protocolo ao operador.
 
 Etapa 1: painéis equivalentes de formulário branco e resumo #F8FAFC, total
 em #EBF4FF. Etapas seguintes: cartão central limitado a 600–700 dp, com
@@ -139,3 +141,12 @@ da tela 1. Para a tabela DES indicada, o domínio mapeia crédito→01 e débito
 conforme seus tipos/rótulos, não por bandeira. Filtros externos no perfil
 não são exigidos e são ignorados. Resumo congelado determina filtro e total
 enviados ao Go. Versão/limite/prazos/cenário continuam no perfil do laboratório.
+
+## REV-019 — DEX/GKY e texto final
+
+Formatação local em SaqueJourney mantém todas as informações no resumo congelado
+em nove linhas. Apenas VALOR TOTAL pode receber espaços iniciais conforme
+colunas GIX, desde que o DEX final caiba em 160 bytes Latin-1; caso contrário,
+texto sem alinhamento. Não usar altura, pixels ou campos DEX_OPTIONS inexistentes
+no contrato 2.12. Um displayText é seguido de um waitKey; confirmed(0) permite
+captura, confirmed(13) cancela, demais teclas falham. Sem mudança no adapter.

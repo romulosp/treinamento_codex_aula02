@@ -134,3 +134,34 @@ As tarefas abaixo pertencem ao fluxo local anterior e não validam hardware.
 - [x] Conferir tela de espera e transição para formulário no emulador e capturar PNG.
 - [x] Concluir 15 testes instrumentados e smoke test focado do host com APK atualizado.
 - [ ] Executar teste humano da carga física ao entrar no plugin e confirmar/cancelar.
+
+## Espera sem ação de cancelamento — REV-016
+
+- [x] Registrar em SPEC_APROVADA a ausência de CANCELAR/CANCELANDO/SAIR na espera.
+- [x] Restringir a renderização do botão CANCELAR às etapas transacionais 2..4.
+- [x] Manter SAIR exclusivamente na falha de preparação, sem formulário.
+- [x] Afirmar em teste a ausência das ações na espera e a presença de SAIR na falha.
+- [x] Confirmar cancelamento transacional das etapas 2..4 sem regressão.
+- [x] Executar unitários, lint, cobertura (239/245 linhas), builds e 13 testes instrumentados.
+- [x] Capturar a espera corrigida no emulador e instalar o host com o plugin novo.
+- [ ] Obter revisão formal, validação formal e aprovação final da Change.
+
+## Confirmação com DEX único + GKY — REV-017
+
+- [x] Registrar em SPEC_APROVADA a confirmação por DEX único + um único GKY.
+- [x] Substituir as quatro páginas DSP por DEX com VALOR TOTAL COMPRA, QUANTIDADE DE VEZES (1 ATÉ 12), VALOR TOTAL TARIFA e CANCELA/CONFIRMA.
+- [x] Manter teclas 0x00 = CONFIRMA e 0x0D = CANCELA; demais = CONFIRMATION_ERROR.
+- [x] Atualizar testes JVM para a ordem DEX→GKY e o conteúdo exato da mensagem.
+- [x] Executar 24 unitários, lint, cobertura (237/243 = 97,5%), builds e 13 testes instrumentados.
+- [x] Regenerar host com o plugin atualizado embutido (hashes idênticos).
+- [ ] Confirmar no pinpad físico a exibição do DEX, a separação `\r` e as teclas 0x00/0x0D.
+- [ ] Obter revisão formal, validação formal e aprovação final da Change.
+
+## REV-019 — Confirmação física DEX/GKY
+
+- [x] Conferir manual ABECS e exemplo CLI 8/10; aprovar contrato textual.
+- [x] Corrigir mensagem e fallback sem padding global.
+- [x] Verificar ordem DEX/GKY e retornos de confirmação/cancelamento em testes.
+- [x] Executar gates aplicáveis e registrar resultados.
+- [x] Fechar/reiniciar emulador, instalar e abrir host atualizado.
+- [ ] Conferir visual e teclas no pinpad físico com operador.

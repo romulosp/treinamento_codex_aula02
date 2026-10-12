@@ -206,7 +206,15 @@ private fun SummaryPanel(state: SaqueState, onEvent: (SaqueEvent) -> Unit, modif
     }
 }
 
-/** Cartão da preparação e etapas físicas; resultado/instruções refletem estado real. */
+/**
+ * Cartão da preparação e etapas físicas; resultado/instruções refletem estado real.
+ *
+ * A ação CANCELAR pertence somente às etapas transacionais 2..4, onde existe
+ * operação confirmada no pinpad. A preparação (etapa 0) enquanto `busy` oferece
+ * apenas instrução, progresso e spinner, sem CANCELAR, CANCELANDO ou SAIR; o
+ * encerramento de sessão dessa fase é cleanup interno de lifecycle, e SAIR
+ * aparece apenas na falha de preparação.
+ */
 @Composable
 private fun StagePanel(state: SaqueState, onEvent: (SaqueEvent) -> Unit, modifier: Modifier = Modifier) {
     Surface(modifier, shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 5.dp) {
@@ -260,7 +268,7 @@ private fun StagePanel(state: SaqueState, onEvent: (SaqueEvent) -> Unit, modifie
                     Receipt(state.summary)
                 }
             }
-            if (state.step in 2..4 || (state.step == 0 && state.busy)) PrimaryAction(if (state.cancelRequested) "CANCELANDO..." else "CANCELAR",
+            if (state.step in 2..4) PrimaryAction(if (state.cancelRequested) "CANCELANDO..." else "CANCELAR",
                 { onEvent(SaqueEvent.Cancel) }, state.busy && !state.cancelRequested)
             if (state.step == 0 && !state.busy) PrimaryAction("SAIR", { onEvent(SaqueEvent.Return) }, true, Color(0xFFB42318))
             if (state.step == 5) PrimaryAction("VOLTAR AO MENU INICIAL", { onEvent(SaqueEvent.Return) }, !state.busy)

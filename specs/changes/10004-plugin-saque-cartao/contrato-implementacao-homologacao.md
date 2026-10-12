@@ -77,7 +77,7 @@ REV-015 supersede a ordem abaixo quanto à entrada: ao attach da View deste
 plugin, espera → perfil/tabela validados → NewClient/Ping/Open → capacidades →
 carga TLI/TLR/TLE confirmada → tela 1. A infraestrutura do host não inicia essa
 carga para outros APKs. Sessão/capacidades permanecem no proprietário.
-AVANÇAR só inicia confirmação DSP/GKY e depois captura/processamento, sem
+AVANÇAR só inicia confirmação DEX/GKY e depois captura/processamento, sem
 reabrir cliente nem repetir carga. Falha de preparação mantém formulário
 ausente; cancelar/detach/saída fecha a sessão parcial ou preparada.
 
@@ -85,11 +85,11 @@ NewClient → Ping → Open (sessão clássica suportada; E2E da seção 5.4 nã
 significa obrigatoriamente OpenSecure) → consulta capacidades → carga EMV →
 resumo pinpad → confirmação real → GCX filtrado → processamento → cleanup.
 
-Confirmação no pinpad por `DSP032` com duas linhas S16 e `GKY` por página
-(REV-010, seções 3.3.5 e 3.3.10 do manual ABECS 2.12): quatro páginas exibem
-valor total, parcelas (1..12), tarifa e confirmação/cancelamento; cada página
-exige tecla, OK avança e CANCELA cancela a jornada. Valores que não couberem em
-16 colunas falham sem truncamento silencioso. O caminho DEX não é mais usado.
+Confirmação no pinpad por DEX único seguido de GKY único (REV-017), conforme
+[RF-002 da SPEC](spec.md#rf-002--confirmação-no-pinpad), fonte central do
+conteúdo, ordem, formatação e centralização de todas as linhas. O contrato
+DSP032/GKY em quatro páginas da REV-010 foi substituído. Somente a tecla de
+confirmação real permite iniciar captura.
 
 Falhas da jornada expõem código e fase sanitizados, no padrão do diagnóstico
 075: `Mobile.errorCode`/`errorPhase` para as categorias do core, mais os códigos

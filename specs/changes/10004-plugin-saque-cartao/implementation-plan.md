@@ -98,3 +98,16 @@ da tela 1. Para a tabela DES indicada, o domínio mapeia crédito→01 e débito
 conforme seus tipos/rótulos, não por bandeira. Filtros externos no perfil
 não são exigidos e são ignorados. Resumo congelado determina filtro e total
 enviados ao Go. Versão/limite/prazos/cenário continuam no perfil do laboratório.
+
+## Plano preparatório REV-019
+
+Escopo: formatador da mensagem física, testes JVM e documentos da Change.
+Remover padding global; ordenar total/tarifa/compra/quantidade/ações, preservar
+formatação monetária e Nx. Alinhar somente título com fallback; validar bytes.
+Testes: mensagens em 16/40 colunas e dimensões inválidas, limite 160, todos os
+retornos de GKY sem captura exceto confirmação, DEX concluído antes de GKY.
+Gates: validador estrutural, unitários, lint, cobertura, build host/plugin.
+Entrega: encerrar Medium_Tablet, iniciar sem snapshot, instalar host com -r,
+conferir hash do asset, PBRG/Ping, reverse e abertura; preservar arquivos privados.
+Risco: fontes do firmware DEX podem diferir da grade GIX; alinhamento opcional.
+Hardware/card/PIN exigem operador e evidência separada; não declarar fake físico.
