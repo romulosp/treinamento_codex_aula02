@@ -1,0 +1,49 @@
+// Diagnóstico temporário local: somente OPN/GIX/CLO. Não captura cartão/PIN.
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"time"
+"os"
+"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/command"
+
+	"br.com.romulopenha/lib-pinpad-abecs-go/internal/application/service"
+	"br.com.romulopenha/lib-pinpad-abecs-go/internal/domain/model"
+	"br.com.romulopenha/lib-pinpad-abecs-go/internal/infrastructure/transport/emulator"
+)
+
+func main() {
+	raw, readErr := os.ReadFile(`D:\desenvolvimento\chave_des\informacoes_critografia_pinpad.properties`)
+if readErr != nil { fmt.Println("diagnostic_source_missing"); return }
+pin, parseErr := command.ParsePaymentPINProperties(string(raw)); clear(raw)
+if parseErr != nil { fmt.Println("diagnostic_source_invalid"); return }
+ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	port, err := emulator.New(emulator.Config{Host: "127.0.0.1", Port: 39100, Timeout: 5 * time.Second})
+	if err != nil { panic("diagnostic configuration") }
+	port.SetCorrelationID("diagnostic-10015-gox042")
+	port.SetOperationContext(ctx)
+	defer port.Close()
+	cfg := model.DefaultConfig()
+	cfg.Timeout = 5*time.Second
+	s := service.New(cfg, port)
+	defer s.Shutdown()
+	if s.Open(ctx) != nil { fmt.Println("diagnostic_open_failed"); return }
+	r, err := s.GetInfoRaw(ctx)
+	if err != nil { fmt.Println("diagnostic_gix_failed") } else {
+		out := map[string]any{"status": r.StatusCode}
+		for label, tag := range map[string]uint16{"pinTDES":0x8035,"dataTDES":0x8036} {
+			value := r.RawTags[tag]
+			valid := len(value)==100
+			loaded := []int{}
+			for i, flag := range value { if flag<'0'||flag>'2' { valid=false }; if flag=='1' { loaded=append(loaded,i) } }
+			if valid { out[label] = map[string]any{"configuredIndex":pin.KeyIndex,"configuredIndexState":string(value[pin.KeyIndex]),"loadedSlotIndexes":loaded} } else { out[label]="unknown" }
+		}
+		clear(r.Data); clear(r.RawData)
+		for _, value := range r.RawTags { clear(value) }
+		data,_:=json.Marshal(out); fmt.Println(string(data))
+	}
+	if s.Close(ctx) != nil { fmt.Println("diagnostic_close_unconfirmed") } else { fmt.Println("diagnostic_close_confirmed") }
+}

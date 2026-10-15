@@ -66,4 +66,17 @@ class SaqueModelsTest {
         listOf("", "0", "00", "99", "aa", "0101", "0102030405060708091011").forEach { assertFalse(validApplicationTypes(it)) }
         assertTrue(validApplicationTypes("0198"))
     }
+
+    @Test fun `GTK pode ser em claro ou DUKPT DATA pelo perfil`() {
+        val clear = testProfile().copy(gtkDataMethod = "", gtkKeyIndex = 63)
+        clear.validate()
+        assertEquals("", clear.gtkDataMethod)
+        assertEquals(63, clear.gtkKeyIndex)
+        val encrypted = clear.copy(gtkDataMethod = "30")
+        encrypted.validate()
+        assertEquals(63, encrypted.gtkKeyIndex)
+        listOf("00", "50", "CLEAR", " ", "030").forEach { method ->
+            assertTrue(runCatching { clear.copy(gtkDataMethod = method).validate() }.isFailure)
+        }
+    }
 }

@@ -6,6 +6,17 @@ import java.math.RoundingMode
 /** Modalidade da tela e tipo T1_APPTYPE da tabela DES aprovada; não é modo de leitura. */
 internal enum class SaqueModalidade(val applicationType: String) { CREDITO("01"), DEBITO("02") }
 
+/** Modo normativo GCX; somente ICC/CTLS EMV continuam por GOX com CVM no kernel. */
+internal enum class SaqueModoCartao(val cardType: String, val emv: Boolean) {
+    TARJA("00", false), CHIP_EMV("03", true), CTLS_TARJA("05", false), CTLS_EMV("06", true);
+
+    companion object {
+        /** Tipo desconhecido não implica tarja e interrompe antes de GTK/GOX/GPN. */
+        fun fromCardType(value: String): SaqueModoCartao =
+            entries.firstOrNull { it.cardType == value } ?: throw SaqueFailure("PROTOCOL_ERROR", "command")
+    }
+}
+
 /** Cenário explícito de resposta simulada, restrito à homologação DES. */
 internal enum class SaqueCenario(val options: String, val arc: String) {
     APPROVE("0000", "00"), DENY("1000", "05"), COMMUNICATION_ERROR("2000", "")
@@ -23,9 +34,13 @@ internal data class SaquePerfil(
     val creditApplicationTypes: String,
     val debitApplicationTypes: String,
     val maxBaseCents: Long,
+    /** Método GTK da fonte: vazio retorna em claro;30 seleciona DUKPT TDES DATA. */
     val gtkDataMethod: String,
+    /** Índice DATA da fonte; preservado, mas omitido no comando GTK em claro. */
     val gtkKeyIndex: Int,
     val scenario: SaqueCenario,
+    /** Opt-in DES debug para o log privado de PIN block/KSN criptografados. */
+    val logPinResults: Boolean = false,
 ) {
     /** Rejeita perfil incompleto ou produção sem reproduzir conteúdo da configuração. */
     fun validate() {
@@ -37,7 +52,7 @@ internal data class SaquePerfil(
         require(validApplicationTypes(creditApplicationTypes) && validApplicationTypes(debitApplicationTypes))
         require(creditApplicationTypes.chunked(2).toSet() != debitApplicationTypes.chunked(2).toSet())
         require(maxBaseCents in 1..MaxAmountCents)
-        require(gtkDataMethod == "30" && gtkKeyIndex in 0..99)
+        require(gtkDataMethod in setOf("", "30") && gtkKeyIndex in 0..99)
     }
 
     /** Seleciona filtro DES gerado do domínio; não deduz modalidade pela bandeira. */

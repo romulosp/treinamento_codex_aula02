@@ -40,7 +40,8 @@ powershell -NoProfile -Command "foreach ($key in @('PORTA_PINPAD','PINPAD_BAUDRA
 echo.
 
 rem Reverse e opcional para iniciar o host; o helper informa indisponibilidade.
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0preparar_emulador.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0preparar_emulador.ps1" -ProvisionarPagamentoCartao
+if errorlevel 1 echo AVISO: pagamento Android nao preparado. Bridge iniciara para uso Windows; corrija o provisionamento antes de usar o menu de cartao.
 
 go run .\cmd\libpinpadabecsgo-bridge
 set "BRIDGE_EXIT_CODE=%ERRORLEVEL%"

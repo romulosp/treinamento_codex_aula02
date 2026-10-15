@@ -22,6 +22,7 @@ func TestPublicFailureCodesDoNotEchoCauses(t *testing.T) {
 		{"closed", "PINPAD_CLOSED", domainerror.ErrPinpadClosed}, {"status", "PINPAD_ERROR", &domainerror.StatusError{Code: "001"}},
 		{"remote", "SERIAL_UNAVAILABLE", &emulator.RemoteError{Code: "SERIAL_UNAVAILABLE", Phase: "serial_open"}},
 		{"unknown", "BINDING_ERROR", errors.New("PRIVATE_SYNTHETIC")},
+		{"PIN key missing", "PIN_KEY_MISSING", domainerror.ErrPaymentPINKeyMissing},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			err := publicFailure("command", tc.err)

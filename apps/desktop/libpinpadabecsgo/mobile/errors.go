@@ -53,6 +53,8 @@ func publicFailure(phase string, err error) error {
 		code = "PROTOCOL_ERROR"
 	case errors.Is(err, domainerror.ErrPinpadClosed):
 		code = "PINPAD_CLOSED"
+	case errors.Is(err, domainerror.ErrPaymentPINKeyMissing):
+		code = "PIN_KEY_MISSING"
 	case errors.As(err, &status):
 		code = "PINPAD_ERROR"
 		if status.Code == state.StatusCancel {
@@ -71,7 +73,7 @@ func publicFailure(phase string, err error) error {
 func ErrorCode(message string) string {
 	code, _, _ := strings.Cut(message, ":")
 	switch code {
-	case "BRIDGE_UNREACHABLE", "TIMEOUT", "PROTOCOL_ERROR", "BUSY", "OWNERSHIP_ERROR", "SERIAL_UNAVAILABLE", "CANCELED", "DISCONNECTED", "PINPAD_ERROR", "PINPAD_CLOSED":
+	case "BRIDGE_UNREACHABLE", "TIMEOUT", "PROTOCOL_ERROR", "BUSY", "OWNERSHIP_ERROR", "SERIAL_UNAVAILABLE", "CANCELED", "DISCONNECTED", "PINPAD_ERROR", "PINPAD_CLOSED", "PIN_KEY_MISSING":
 		return code
 	}
 	return "BINDING_ERROR"

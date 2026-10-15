@@ -87,9 +87,9 @@ func GCXResponseFromResponse(response *model.Response) *model.GCXResponse {
 	result.IssuerCountry = get(protocol.TagIssuerCountry)
 	result.ExpirationDate = get(protocol.TagCardExpiration)
 	result.DeviceType = get(protocol.TagDeviceType)
-	result.Track1 = get(protocol.TagTrack1)
-	result.Track2 = get(protocol.TagTrack2)
-	result.Track3 = get(protocol.TagTrack3)
+	result.Track1 = get(protocol.TagTrack1Included)
+	result.Track2 = get(protocol.TagTrack2Included)
+	result.Track3 = get(protocol.TagTrack3Included)
 	result.EMVData = append([]byte(nil), response.RawTags[uint16(protocol.TagEMVData)]...)
 	result.ParsedEMVData = map[uint32][]byte{}
 	if len(result.EMVData) == 0 {
@@ -110,6 +110,12 @@ func GCXResponseFromResponse(response *model.Response) *model.GCXResponse {
 func ValidateGCXResponse(response *model.Response) (*model.GCXResponse, error) {
 	if response == nil {
 		return nil, fmt.Errorf("missing GCX response")
+	}
+	for _, tag := range []protocol.ResponseTag{protocol.TagCardType, protocol.TagPAN, protocol.TagPANSequenceNumber,
+		protocol.TagICCStatus, protocol.TagAIDTableInfo, protocol.TagTrack1Included, protocol.TagTrack2Included, protocol.TagTrack3Included} {
+		if len(response.RawTagValues[uint16(tag)]) > 1 {
+			return nil, fmt.Errorf("duplicate GCX scalar field")
+		}
 	}
 	result := GCXResponseFromResponse(response)
 	switch result.CardType {

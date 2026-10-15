@@ -24,6 +24,7 @@ var (
 	ErrUnsupportedMedia             = errors.New("pinpad incompatible with PNG display")
 	ErrNotImplemented               = errors.New("operation is not implemented")
 	ErrInvalidCommandSequence       = errors.New("invalid pinpad command sequence")
+	ErrPaymentPINKeyMissing         = errors.New("no DUKPT TDES PIN key loaded")
 )
 
 // StatusError representa um RSP_STAT diferente de sucesso devolvido pelo pinpad.

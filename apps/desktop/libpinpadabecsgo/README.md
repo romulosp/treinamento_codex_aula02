@@ -75,10 +75,8 @@ transporte ou retry de operação física.
 
 ### Preparação do Android Emulator
 
-O helper previsto no módulo Go se chama `preparar_emulador.ps1`, em vez de
-`prepare-emulator.ps1`; sua implementação será feita separadamente. A
-interface prevista é `-EmulatorSerial` e `-BridgePort`, com seleção também
-por `ANDROID_SERIAL`. Exemplo de uso após disponibilizar o helper:
+O helper `preparar_emulador.ps1` usa `-EmulatorSerial` e `-BridgePort`, com
+seleção também por `ANDROID_SERIAL`. Sem outra opção, prepara somente reverse:
 
 ```powershell
 .\preparar_emulador.ps1 -EmulatorSerial "emulator-5554" -BridgePort 39100
@@ -86,6 +84,20 @@ por `ANDROID_SERIAL`. Exemplo de uso após disponibilizar o helper:
 $env:ANDROID_SERIAL = "emulator-5554"
 .\preparar_emulador.ps1 -BridgePort 39100
 ```
+
+O retorno criptográfico da Change10013 é aditivo: `CapturePaymentPINResult`
+e `ContinuePaymentEMVResult` devolvem `PaymentResult` privado com getters
+`PINBlock`, `KSN`, `Result` e `Clear`. PIN online DUKPT exige8/10bytes; GOX
+sem PIN online não fabrica par. APIs antigas de resumo/void mantêm descarte.
+Integração deve limpar cópias e handle em finally; nenhum PAN na assinatura.
+`ParsePaymentPINConfiguration` importa integralmente método/índice/WK da fonte,
+incluindo normalização de aspas vazias; operação não recebe valores fixos.
+
+Log solicitado em homologação: perfil externo `logPinResults: true`, apenas
+DES/debug, arquivo privado Android `no_backup/saque-cartao/pin-results.jsonl`,
+máximo64KiB. Contém PIN block/KSN criptografados após captura válida, nunca PIN
+digitado/PAN/WK; não é Logcat nem log serial Bridge. Configuração de slot não
+instala chave no pinpad. Diagnóstico GIX/GTK em14-out consta na Change10013.
 
 O launcher deve procurar ADB no PATH ou SDK configurado. Com um único emulador
 online, pode selecioná-lo; com vários, deve exigir seleção explícita. Não
@@ -107,6 +119,28 @@ ADB ausente, emulador ausente/offline ou seleção ambígua devem produzir
 `emulator_not_prepared` com orientação corretiva, mas não impedir o Bridge
 host de iniciar. Reverse é opcional para o uso somente Windows. No Emulator,
 prefira reverse com host `localhost`; `10.0.2.2` é apenas override explícito.
+
+Desde a Change 10012, `testar_bridge_pinpad.bat` também solicita o provisionamento
+de pagamento no host debug já instalado. O helper faz isso com
+`-ProvisionarPagamentoCartao`. Exige as três fontes DES em
+`D:\desenvolvimento\chave_des`: `perfil_saque_cartao_des.json`, `emv_des.json`
+e `informacoes_critografia_pinpad.properties`. Overrides de origem:
+`PINPAD_PERFIL_PATH`, `PINPAD_TABELA_PATH`, `PINPAD_CRIPTOGRAFIA_PATH`.
+`chave_des.properties` contém credenciais de outros serviços e não substitui a fonte PIN.
+
+Para recuperar `CRYPTO_MISSING` com Bridge já em execução, execute:
+
+```powershell
+.\preparar_emulador.ps1 -EmulatorSerial emulator-5554 -BridgePort 39100 -ProvisionarPagamentoCartao
+```
+
+Esse comando prepara reverse, perfil, tabela e PIN com hash; não inicia segundo
+Bridge, instala APK/chaves ou abre compra. O launcher Android também aceita
+`-ProvisionOnly`, que prepara os arquivos sem exigir COM, Java ou Go.
+`-ProvisionOnly -ValidateOnly` verifica fontes/emulador sem escrita.
+Depois de provisionar, saia da tela com falha e entre novamente no menu de
+pagamento para novo preflight. Listener TCP e reverse prontos não comprovam
+configuração privada, OPN ou chave DUKPT instalada no pinpad.
 Reverse verificado não comprova listener, COM disponível ou sessão ABECS.
 
 Antes de mostrar o menu ou iniciar o servidor, o executável imprime
@@ -254,3 +288,70 @@ e exige nova abertura explícita. Consulte o
 [README Android](../../frontend/smartphone/diagnosticopinpad/README.md) para
 o fluxo de diagnóstico. Teste scripted não comprova abertura física;
 CA-072-13 exige hardware, log e confirmação visual.
+
+## Jornada de compra com chip, contactless e tarja
+
+A Change [10011](../../../specs/changes/10011-corrigir-leitura-cartao-pinpad/spec.md)
+adiciona APIs de pagamento que mantêm o contexto de cartão no core Go.
+`CapturePaymentCardSummaryJSON` envia compra `00h`, habilita as três interfaces
+e valida candidatos da modalidade na tabela carregada. O resultado contém
+somente tipo, status ICC e referências de aplicação permitidos.
+
+Depois da captura, `GetPaymentTracksSummaryJSON` consome GTK uma
+única vez. Para chip `03` e contactless EMV `06`, use
+`ContinuePaymentEMVSummaryJSON`: o kernel controla CVM e eventual PIN. FCX é
+permitido quando GOX exige autorização online. Para tarja `00` ou contactless
+simulando tarja `05`, use `CapturePaymentPIN`; o PAN explícito necessário após
+GTK é extraído e mantido apenas no Go, sem argumento PAN no binding.
+
+Todas as fases usam o mesmo operationID e snapshot de configuração. Nova
+captura, uso repetido, troca de modalidade/valor/chave, correlação alheia,
+cancelamento ou perda da sessão interrompem a jornada. Uma nova operação exige
+encerramento e abertura explícita; falha de GTK impede a continuação.
+
+A Change 10014 mantém GTK obrigatório pelo contrato da aplicação, apesar de
+opcional no fluxo geral ABECS. O contexto privado Go retém a resposta GTK e
+PIN block/KSN/resultado EMV até invalidação ou fechamento. A futura integração
+Go com autorizador poderá usar `Service.PaymentAuthorizationSnapshot(ctx, id)`
+após GPN/GOX e antes de FCX/close. O snapshot tem getters por cópia e `Clear`;
+o consumidor deve limpar também as cópias. Não há chamada ao autorizador
+implementada, nova API JSON/gomobile ou log de trilhas/PAN. GTK011 continua
+dependente de diagnóstico/configuração física; retenção não troca método/chave.
+
+Antes de abrir o dispositivo, `ValidatePaymentPINProperties` valida os campos
+obrigatórios `TIPO_CHAVE`, `INDICE_CHAVE` e `WORKING_KEY`, com limite de 64 KiB.
+O perfil aceita método `3`, índice N2 e WK vazia, inclusive o marcador `""`.
+`PaymentPINConfigurationSummaryJSON` retorna somente método e índice após
+validar a fonte inteira. A criptografia DATA de GTK usa configuração separada;
+provisionar esse arquivo não instala nem comprova chaves no pinpad.
+
+Na Change10015, o perfil DES externo escolhe GTK: `"gtkDataMethod":""` retorna
+trilhas em claro, omitindo método/índice/WK do comando; `"gtkDataMethod":"30"`
+seleciona DUKPT TDES DATA no `gtkKeyIndex` da fonte. O índice fica reservado no
+perfil quando em claro. `00` significa MK/WK DES, não trilhas em claro.
+Campo ausente/null/método inválido não ativa fallback. Reprovisione o perfil e
+inicie nova jornada para mudar o modo. O snapshot interno identifica DATAMethod
+e DATAKeyIndex efetivamente enviado (-1 quando ausente), sem expor cartão em JSON.
+PIN continua seguindo o properties e é criptografado em ambos os modos GTK.
+
+A Change10016 adiciona `Client.ResolvePaymentPINConfiguration` após Open para
+a jornada DES. Consulta GIX8035(PIN DUKPT TDES), valida mapaA100 e sorteia
+uniformemente entre todas as posições carregadas. A escolha é congelada por
+sessão, sem nova tentativa em outro índice se GOX/GPN falhar. Ausência de chaves
+retorna `PIN_KEY_MISSING:preflight`; mapa ausente/malformado é `PROTOCOL_ERROR`.
+TIPO_CHAVE e WORKING_KEY continuam da fonte; INDICE_CHAVE é validado como campo
+legado e o índice efetivo passa a vir do GIX nesta API. O arquivo não é alterado.
+APIs antigas conservam o comportamento sem descoberta implícita. GIX não fornece
+valores secretos ou associação de chave à rede; política de sorteio é de homologação
+solicitada pelo usuário, não autorização financeira. GTK DATA é independente.
+
+O launcher Android `scripts/iniciar-saque-cartao.ps1` aceita `CriptografiaPath`
+e provisiona `criptografia.properties` apenas no armazenamento privado debug,
+com conferência de integridade. Falha no preflight invalida o snapshot PIN
+anterior no emulador selecionado; `ValidateOnly` não modifica o dispositivo.
+O launcher continua exigindo os caminhos do perfil e da tabela DES.
+
+O diagnóstico Go registra comando permitido, status N3, fase, tentativa e
+correlação, mantendo frames redigidos e a ABI de erro `CODE:phase`.
+As APIs genéricas conservam seu contrato; o uso de PAN vazio em GPN genérico
+depende das pré-condições anteriores a GTK descritas pelo protocolo.

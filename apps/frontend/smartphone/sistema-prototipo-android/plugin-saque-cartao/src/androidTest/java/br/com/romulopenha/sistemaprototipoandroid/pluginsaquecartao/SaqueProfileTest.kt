@@ -26,4 +26,19 @@ class SaqueProfileTest {
             assertTrue(runCatching { parseSaqueProfile(invalid) }.isFailure)
         }
     }
+
+    /** Em claro exige string vazia explícita; ausência/null/número não fazem downgrade. */
+    @Test fun metodoGtkExplicitoSemCoercao() {
+        assertEquals("30", parseSaqueProfile(profile).gtkDataMethod)
+        val clear = profile.replace("\"gtkDataMethod\":\"30\"", "\"gtkDataMethod\":\"\"")
+        assertEquals("", parseSaqueProfile(clear).gtkDataMethod)
+        assertEquals(7, parseSaqueProfile(clear).gtkKeyIndex)
+        for (invalid in listOf(profile.replace("\"gtkDataMethod\":\"30\",", ""),
+            profile.replace("\"gtkDataMethod\":\"30\"", "\"gtkDataMethod\":null"),
+            profile.replace("\"gtkDataMethod\":\"30\"", "\"gtkDataMethod\":30"),
+            profile.replace("\"gtkDataMethod\":\"30\"", "\"gtkDataMethod\":false"),
+            profile.replace("\"gtkDataMethod\":\"30\"", "\"gtkDataMethod\":\"00\""))) {
+            assertTrue(runCatching { parseSaqueProfile(invalid) }.isFailure)
+        }
+    }
 }

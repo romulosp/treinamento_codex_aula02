@@ -10,6 +10,50 @@ import org.junit.Test
 /** Cenários sintéticos: não representam evidência de hardware. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class SaqueJourneyTest {
+    @Test fun `GIX sem chave PIN bloqueia formulario antes de captura`() = runTest {
+        val fake = FakeSaqueRepository(openFailure = SaqueFailure("PIN_KEY_MISSING", "preflight"))
+        val owner = SaqueJourney(fake, backgroundScope) {}
+        owner.load(); runCurrent()
+        assertFalse(owner.state.value.configReady)
+        assertEquals("PIN_KEY_MISSING", owner.state.value.failureCode)
+        assertEquals("preflight", owner.state.value.failurePhase)
+        assertTrue(owner.state.value.message.contains("DUKPT TDES de PIN"))
+        assertFalse(fake.calls.contains("capture"))
+        assertEquals("close", fake.calls.last())
+    }
+    @Test fun `falha GTK impede GOX e GPN e preserva erro principal mesmo se close falhar`() = runTest {
+        for (type in listOf("00", "03", "05", "06")) {
+            val fake = FakeSaqueRepository(type = type, tracksFailure = SaqueFailure("PINPAD_ERROR", "command"), closeFailure = true)
+            val owner = SaqueJourney(fake, backgroundScope) {}
+            owner.load(); runCurrent(); owner.onEvent(SaqueEvent.Value("100")); owner.onEvent(SaqueEvent.Begin); runCurrent()
+            assertFalse(fake.calls.contains("gox")); assertFalse(fake.calls.contains("pin"))
+            assertEquals("PINPAD_ERROR", owner.state.value.failureCode)
+            assertEquals("command", owner.state.value.failurePhase)
+            assertEquals(SaqueResultado.UNKNOWN, owner.state.value.result)
+            assertTrue(owner.state.value.cleanupFailed)
+            assertEquals("close", fake.calls.last())
+        }
+    }
+
+    @Test fun `tipo desconhecido interrompe sem assumir tarja`() = runTest {
+        val fake = FakeSaqueRepository(type = "99")
+        val owner = SaqueJourney(fake, backgroundScope) {}
+        owner.load(); runCurrent(); owner.onEvent(SaqueEvent.Value("100")); owner.onEvent(SaqueEvent.Begin); runCurrent()
+        assertFalse(fake.calls.contains("tracks")); assertFalse(fake.calls.contains("pin")); assertFalse(fake.calls.contains("gox"))
+        assertEquals("PROTOCOL_ERROR", owner.state.value.failureCode)
+    }
+
+    @Test fun `GOX negado nao envia FCX e close nao confirmado torna resultado indeterminado`() = runTest {
+        for (closeFails in listOf(false, true)) {
+            val fake = FakeSaqueRepository(type = "06", gox = '1', closeFailure = closeFails)
+            val owner = SaqueJourney(fake, backgroundScope) {}
+            owner.load(); runCurrent(); owner.onEvent(SaqueEvent.Value("100")); owner.onEvent(SaqueEvent.Begin); runCurrent()
+            assertFalse(fake.calls.contains("fcx")); assertFalse(fake.calls.contains("pin"))
+            assertEquals(if (closeFails) SaqueResultado.UNKNOWN else SaqueResultado.DENIED, owner.state.value.result)
+            assertEquals(closeFails, owner.state.value.cleanupFailed)
+        }
+    }
+
     @Test fun `colagem invalida nao vira compra positiva ou truncada`() = runTest {
         val fake = FakeSaqueRepository()
         val owner = SaqueJourney(fake, backgroundScope) {}
@@ -61,7 +105,7 @@ class SaqueJourneyTest {
         }
     }
 
-    @Test fun `tarja captura PIN antes de GTK e nao envia EMV`() = runTest {
+    @Test fun `tarja captura PIN depois de GTK e nao envia EMV`() = runTest {
         val fake = FakeSaqueRepository()
         val owner = SaqueJourney(fake, backgroundScope) {}
         owner.load(); runCurrent()
@@ -72,7 +116,7 @@ class SaqueJourneyTest {
         assertEquals(15801L, owner.state.value.summary!!.totalCents)
         assertEquals(listOf("open", "capabilities", "table",
             "display", "key",
-            "capture", "pin", "tracks", "cancel", "close"), fake.calls)
+            "capture", "tracks", "pin", "close"), fake.calls)
         assertEquals(2, fake.ids.distinct().size)
         assertEquals(1, fake.ids.take(3).distinct().size)
         assertEquals(1, fake.ids.drop(3).distinct().size)
@@ -85,16 +129,20 @@ class SaqueJourneyTest {
         owner.load(); runCurrent(); owner.onEvent(SaqueEvent.Value("100")); owner.onEvent(SaqueEvent.Begin); runCurrent()
         assertEquals(SaqueResultado.DENIED, owner.state.value.result)
         assertFalse(fake.calls.contains("pin"))
-        assertEquals(listOf("tracks", "gox", "fcx", "cancel", "close"), fake.calls.takeLast(5))
+        assertEquals(listOf("tracks", "gox", "fcx", "close"), fake.calls.takeLast(4))
     }
 
-    @Test fun `EMV offline nao envia FCX e CTLS simulado nao exige PIN`() = runTest {
+    @Test fun `EMV offline nao envia FCX e CTLS simulado usa GPN depois de GTK`() = runTest {
         for (type in listOf("03", "05", "06")) {
             val fake = FakeSaqueRepository(type = type, gox = '0')
             val owner = SaqueJourney(fake, backgroundScope) {}
             owner.load(); runCurrent(); owner.onEvent(SaqueEvent.Value("100")); owner.onEvent(SaqueEvent.Begin); runCurrent()
-            assertFalse(fake.calls.contains("fcx")); assertFalse(fake.calls.contains("pin"))
-            assertEquals(if (type == "06") SaqueResultado.CAPTURED else SaqueResultado.APPROVED, owner.state.value.result)
+            assertFalse(fake.calls.contains("fcx"))
+            assertEquals(type == "05", fake.calls.contains("pin"))
+            assertEquals(type != "05", fake.calls.contains("gox"))
+            assertEquals(if (type == "05") SaqueResultado.CAPTURED else SaqueResultado.APPROVED, owner.state.value.result)
+            assertFalse(fake.calls.contains("cancel"))
+            if (type == "05") assertTrue(fake.calls.indexOf("tracks") < fake.calls.indexOf("pin"))
         }
     }
 
@@ -209,6 +257,7 @@ class SaqueJourneyTest {
             Triple("MISSING", "Perfil de homologação não provisionado", 10534L),
             Triple("TABLE_MISSING", "Tabela EMV não provisionada", 10534L),
             Triple("CONFIGURATION", "Configuração de homologação inválida", 10534L),
+            Triple("CRYPTO_MISSING", "Configuração de criptografia não provisionada", 10534L),
         )
         for ((code, message, total) in expected) {
             val fake = FakeSaqueRepository(profileFailure = code)
@@ -244,7 +293,8 @@ class SaqueJourneyTest {
         assertEquals("R$ 1,00", ready.state.value.feeLabel)
         ready.onEvent(SaqueEvent.Value("0")); assertNull(ready.state.value.summary)
         ready.onEvent(SaqueEvent.Return); runCurrent(); assertTrue(returned)
-        assertEquals(listOf("cancel", "close"), fake.calls.takeLast(2))
+        assertEquals("close", fake.calls.last())
+        assertFalse(fake.calls.contains("cancel"))
     }
 
     @Test fun `carga acontece na entrada e avancar inicia confirmacao sem repetir preparacao`() = runTest {
@@ -275,7 +325,7 @@ class SaqueJourneyTest {
         val fake = FakeSaqueRepository(tableFailure = SaqueFailure("PINPAD_ERROR", "command"))
         val owner = SaqueJourney(fake, backgroundScope) {}
         owner.load(); runCurrent()
-        assertEquals(listOf("open", "capabilities", "table", "cancel", "close"), fake.calls)
+        assertEquals(listOf("open", "capabilities", "table", "close"), fake.calls)
         assertEquals(0, owner.state.value.step)
         assertFalse(owner.state.value.configReady)
         assertFalse(owner.state.value.busy)
@@ -288,7 +338,7 @@ class SaqueJourneyTest {
         val fake = FakeSaqueRepository(openFailure = SaqueFailure("SERIAL_UNAVAILABLE", "serial"))
         val owner = SaqueJourney(fake, backgroundScope) {}
         owner.load(); runCurrent()
-        assertEquals(listOf("open", "cancel", "close"), fake.calls)
+        assertEquals(listOf("open", "close"), fake.calls)
         assertFalse(owner.state.value.configReady)
         assertEquals("SERIAL_UNAVAILABLE", owner.state.value.failureCode)
     }
@@ -334,6 +384,7 @@ internal class FakeSaqueRepository(
     private val profileFailure: String? = null,
     private val openFailure: Exception? = null,
     private val tableFailure: Exception? = null,
+    private val tracksFailure: Exception? = null,
     private val maximumBase: Long = 100000,
     private val displayFailure: Exception? = null,
     val pendingDisplay: CompletableDeferred<Unit>? = null,
@@ -369,13 +420,16 @@ internal class FakeSaqueRepository(
         record("page", operationId)
     }
     override suspend fun waitKey(operationId: String, timeoutSeconds: Int): Int { record("key", operationId); return key }
-    override suspend fun capture(profile: SaquePerfil, summary: SaqueResumo, operationId: String): String {
+    override suspend fun capture(profile: SaquePerfil, summary: SaqueResumo, operationId: String): SaqueModoCartao {
         capturedSummary = summary
         capturedApplicationTypes = profile.applicationTypes(summary.modalidade)
-        record("capture", operationId); captureFailure?.let { throw it }; return pendingCapture?.await() ?: type
+        record("capture", operationId); captureFailure?.let { throw it }
+        return SaqueModoCartao.fromCardType(pendingCapture?.await() ?: type)
     }
     override suspend fun capturePin(operationId: String) { record("pin", operationId) }
-    override suspend fun tracks(profile: SaquePerfil, operationId: String) { record("tracks", operationId) }
+    override suspend fun tracks(profile: SaquePerfil, operationId: String) {
+        record("tracks", operationId); tracksFailure?.let { throw it }
+    }
     override suspend fun continueEmv(profile: SaquePerfil, summary: SaqueResumo, operationId: String): Char { record("gox", operationId); return gox }
     override suspend fun finalizeEmv(profile: SaquePerfil, operationId: String): Char { record("fcx", operationId); return fcx }
     override suspend fun cancel(operationId: String) { record("cancel", operationId) }

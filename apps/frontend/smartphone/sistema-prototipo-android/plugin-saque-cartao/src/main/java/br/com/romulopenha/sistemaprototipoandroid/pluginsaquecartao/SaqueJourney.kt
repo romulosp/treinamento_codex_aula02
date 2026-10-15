@@ -77,8 +77,9 @@ internal class SaqueJourney(
                 update(state.value.copy(busy = false, configReady = false,
                     failureCode = code, failurePhase = phase, cleanupFailed = failed,
                     message = if (!openingAttempted) configurationMessage(code)
-                    else if (failed) "Não foi possível confirmar o encerramento da sessão. Verifique o terminal."
-                    else "Não foi possível preparar o pinpad. Saia e tente novamente."))
+                    else operationFailureMessage(code) + if (failed)
+                        " Não foi possível confirmar o encerramento da sessão. Verifique o terminal."
+                    else " Não foi possível preparar o pinpad. Saia e tente novamente."))
             } finally {
                 if (!prepared) activeId = null
                 if (disposed) scope.cancel()
@@ -131,6 +132,7 @@ internal class SaqueJourney(
     private fun configurationMessage(code: String?): String = when (code) {
         "MISSING" -> "Perfil de homologação não provisionado. Execute o launcher para provisionar perfil e tabela."
         "TABLE_MISSING" -> "Tabela EMV não provisionada para esta homologação."
+        "CRYPTO_MISSING" -> "Configuração de criptografia não provisionada. Execute o launcher de homologação."
         else -> "Configuração de homologação inválida. Revise o perfil provisionado."
     }
 
@@ -160,14 +162,14 @@ internal class SaqueJourney(
                 checkpoint()
                 update(state.value.copy(step = 4,
                     message = "Siga as instruções no pinpad; digite a senha se solicitada."))
-                if (type == "00") {
+                repository.tracks(config, id)
+                checkpoint()
+                if (!type.emv) {
                     update(state.value.copy(message = "Peça ao cliente que digite a senha no pinpad."))
                     repository.capturePin(id)
                     checkpoint()
                 }
-                repository.tracks(config, id)
-                checkpoint()
-                result = if (type in setOf("03", "05")) {
+                result = if (type.emv) {
                     when (repository.continueEmv(config, summary, id)) {
                         '0' -> SaqueResultado.APPROVED
                         '1' -> SaqueResultado.DENIED
@@ -191,11 +193,13 @@ internal class SaqueJourney(
                 }
             } finally {
                 val failed = cleanup(id)
-                update(state.value.copy(step = 5, busy = false, result = result,
+                update(state.value.copy(step = 5, busy = false,
+                    result = if (failed && sentCapture) SaqueResultado.UNKNOWN else result,
                     failureCode = failureCode, failurePhase = failurePhase,
-                    cleanupFailed = failed, message = if (failed)
-                        "Não foi possível confirmar o encerramento da sessão. Verifique o terminal antes de nova operação."
-                    else "Homologação de teste. Não autoriza entrega de dinheiro. Retire o cartão, se inserido."))
+                    cleanupFailed = failed, message =
+                        (failureCode?.let { operationFailureMessage(it) + " " } ?: "") + if (failed)
+                            "Não foi possível confirmar o encerramento da sessão. Verifique o terminal antes de nova operação."
+                        else "Homologação de teste. Não autoriza entrega de dinheiro. Retire o cartão, se inserido."))
                 activeId = null
                 if (disposed) scope.cancel()
             }
@@ -263,13 +267,23 @@ internal class SaqueJourney(
         }
     }
 
-    /** Prazo limitado inclui cancel e close; falha não substitui resultado principal. */
+    /** Close cancela chamadas pendentes no core e confirma CLO; não envia Cancel após comando concluído. */
     private suspend fun cleanup(id: String): Boolean = withContext(NonCancellable) {
         runCatching {
             withTimeout((profile?.timeoutMillis ?: 5000L) * 2) {
-                try { repository.cancel(id) } finally { repository.close(id) }
+                repository.close(id)
             }
         }.isFailure
+    }
+
+    /** Mantém explicação da falha principal visível junto do resultado separado de cleanup. */
+    private fun operationFailureMessage(code: String?): String = when (code) {
+        "CANCELED" -> "Operação cancelada."
+        "TIMEOUT" -> "O tempo para concluir a operação esgotou."
+        "PINPAD_ERROR" -> "O pinpad recusou o processamento da operação."
+        "PIN_KEY_MISSING" -> "O pinpad não possui chave DUKPT TDES de PIN carregada. Verifique a carga de chaves."
+        "DISCONNECTED", "BRIDGE_UNREACHABLE" -> "A comunicação com o pinpad foi interrompida."
+        else -> "Não foi possível concluir a operação."
     }
 
     /** Respostas de proprietário desanexado nunca publicam estado. */

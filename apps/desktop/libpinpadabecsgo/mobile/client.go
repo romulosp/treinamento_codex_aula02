@@ -88,6 +88,8 @@ func (c *Client) Close(operationID string) (err error) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), c.operationTimeout())
 	defer cancel()
+	ctx = service.WithOperationID(ctx, operationID)
+	c.service.InvalidatePaymentContext()
 	c.mu.Lock()
 	if c.closing {
 		c.mu.Unlock()
@@ -208,6 +210,7 @@ func (c *Client) Cancel(operationID string) (err error) {
 	if cancel == nil {
 		return fmt.Errorf("operation not found")
 	}
+	c.service.InvalidatePaymentContext()
 	cancel()
 	return nil
 }
@@ -221,6 +224,7 @@ func (c *Client) run(operationID string, operation func(context.Context) error) 
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), c.operationTimeout())
 	defer cancel()
+	ctx = service.WithOperationID(ctx, operationID)
 	c.mu.Lock()
 	if c.closing {
 		c.mu.Unlock()
@@ -251,7 +255,11 @@ func (c *Client) run(operationID string, operation func(context.Context) error) 
 		c.transport.SetCorrelationID("")
 		c.transport.SetOperationContext(nil)
 	}()
-	return publicFailure("command", operation(ctx))
+	callErr := operation(ctx)
+	if callErr != nil || ctx.Err() != nil {
+		c.service.InvalidatePaymentContext()
+	}
+	return publicFailure("command", callErr)
 }
 
 // gateLocked inicializa a admissão serializada sob mu; não bloqueia o cancelamento.

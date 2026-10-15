@@ -121,6 +121,12 @@ type Service struct {
 	fcxEligible            bool
 	secureSession          *protocol.SecureSession
 	traceSensitive         map[command.Type]bool
+	paymentMu              sync.Mutex
+	payment                *paymentContext
+	paymentEpoch           uint64
+	paymentStarted         bool
+	paymentRecords         []string
+	paymentPINSelection    *paymentPINSelection
 }
 
 // SetQRCodeGenerator instala o gerador usado por DisplayQRCode.
@@ -278,6 +284,10 @@ func (s *Service) Open(ctx context.Context) error {
 	}
 	s.opening = true
 	s.state = model.StateBusy
+	s.clearPaymentLocked()
+	s.paymentStarted = false
+	s.paymentRecords = nil
+	s.paymentPINSelection = nil
 	if err := s.port.Open(); err != nil {
 		s.opening = false
 		s.state = model.StateClosed
@@ -380,12 +390,18 @@ func (s *Service) OpenSecure(ctx context.Context, privateKey *rsa.PrivateKey) er
 // Close encerra o diálogo ABECS por CLO032 + S32 antes de liberar a porta.
 // Ele recusa uma operação normal enquanto comandos já aceitos estiverem ativos.
 func (s *Service) Close(ctx context.Context) error {
+	s.InvalidatePaymentContext()
 	if err := ctx.Err(); err != nil {
 		return err
 	}
 	s.mu.Lock()
+	s.paymentPINSelection = nil
 	if s.state == model.StateClosed {
+		unconfirmed := s.paymentStarted && s.protocolDesynchronized
 		s.mu.Unlock()
+		if unconfirmed {
+			return domainerror.ErrPinpadDesynchronized
+		}
 		return nil
 	}
 	if s.state == model.StateBusy || s.inFlight > 0 || s.opening || s.closing {
@@ -393,15 +409,24 @@ func (s *Service) Close(ctx context.Context) error {
 		return domainerror.ErrPinpadBusy
 	}
 	desynchronized := s.protocolDesynchronized
+	unconfirmedPayment := s.paymentStarted
 	s.closing = true
 	s.state = model.StateBusy
 	s.mu.Unlock()
 
 	var protocolErr error
 	if !desynchronized {
-		_, protocolErr = s.submit(ctx, command.Command{Type: command.CommandCLO, Execute: func(operationContext context.Context) (*model.Response, error) {
+		started := time.Now()
+		var closed *model.Response
+		closed, protocolErr = s.submit(ctx, command.Command{Type: command.CommandCLO, Execute: func(operationContext context.Context) (*model.Response, error) {
 			return s.exchangePayload(operationContext, command.CommandCLO, command.BuildPacketPayload(command.CommandCLO, fmt.Sprintf("%-32s", "")))
 		}})
+		s.mu.RLock()
+		logger := s.logger
+		s.mu.RUnlock()
+		s.recordCommand(ctx, logger, command.CommandCLO, closed, protocolErr, time.Since(started))
+	} else if unconfirmedPayment {
+		protocolErr = domainerror.ErrPinpadDesynchronized
 	}
 	s.mu.Lock()
 	closeErr := error(nil)
@@ -410,7 +435,7 @@ func (s *Service) Close(ctx context.Context) error {
 	}
 	s.state = model.StateClosed
 	s.closing = false
-	s.protocolDesynchronized = false
+	s.protocolDesynchronized = unconfirmedPayment && (protocolErr != nil || closeErr != nil)
 	s.stream = newByteStream(s.port)
 	if s.secureSession != nil {
 		s.secureSession.Close()
@@ -432,7 +457,9 @@ func (s *Service) Close(ctx context.Context) error {
 // Shutdown interrompe a fila, cancela a operação em andamento e fecha a porta.
 // É idempotente e impede novas submissões antes de iniciar o encerramento.
 func (s *Service) Shutdown() {
+	s.InvalidatePaymentContext()
 	s.mu.Lock()
+	s.paymentPINSelection = nil
 	if s.stopping {
 		s.mu.Unlock()
 		return
@@ -617,6 +644,12 @@ func (s *Service) CloseVisual(ctx context.Context, request command.CLXRequest) (
 // GetTracks executa GTK uma única vez após GCX elegível. O retorno contém
 // dados sensíveis e a fachada não o registra nem o adiciona a GCXResponse.
 func (s *Service) GetTracks(ctx context.Context, request command.GTKRequest) (*model.GTKResponse, error) {
+	s.InvalidatePaymentContext()
+	return s.getTracks(ctx, request)
+}
+
+// getTracks é compartilhado pela API genérica e pela jornada privada de pagamento.
+func (s *Service) getTracks(ctx context.Context, request command.GTKRequest) (*model.GTKResponse, error) {
 	s.mu.Lock()
 	if !s.tracksEligible {
 		s.mu.Unlock()
@@ -639,6 +672,12 @@ func (s *Service) GetTracks(ctx context.Context, request command.GTKRequest) (*m
 
 // ContinueEMV envia GOX somente depois de uma captura GCX ICC ou CTLS EMV.
 func (s *Service) ContinueEMV(ctx context.Context, request command.GOXRequest) (*model.GOXResponse, error) {
+	s.InvalidatePaymentContext()
+	return s.continueEMV(ctx, request)
+}
+
+// continueEMV mantém o processamento do kernel sem alterar a ABI genérica.
+func (s *Service) continueEMV(ctx context.Context, request command.GOXRequest) (*model.GOXResponse, error) {
 	s.mu.Lock()
 	if !s.goxEligible {
 		s.mu.Unlock()
@@ -666,8 +705,22 @@ func (s *Service) ContinueEMV(ctx context.Context, request command.GOXRequest) (
 
 // FinalizeEMV envia FCX depois de GOX e mantém Issuer Script Results no
 // modelo próprio da finalização.
-func (s *Service) FinalizeEMV(ctx context.Context, request command.FCXRequest) (*model.FCXResponse, error) {
+func (s *Service) FinalizeEMV(ctx context.Context, request command.FCXRequest) (result *model.FCXResponse, err error) {
+	// Falha de finalização não mantém dados de autorização de uma operação inválida.
+	defer func() {
+		if err != nil {
+			s.InvalidatePaymentContext()
+		}
+	}()
 	s.mu.Lock()
+	if s.paymentStarted {
+		id, _ := ctx.Value(operationIDKey{}).(string)
+		if s.payment == nil || s.payment.operationID != id || s.payment.phase != "done" {
+			s.clearPaymentLocked()
+			s.mu.Unlock()
+			return nil, domainerror.ErrInvalidCommandSequence
+		}
+	}
 	if !s.fcxEligible {
 		s.mu.Unlock()
 		return nil, domainerror.ErrInvalidCommandSequence
@@ -681,7 +734,7 @@ func (s *Service) FinalizeEMV(ctx context.Context, request command.FCXRequest) (
 	if err != nil {
 		return nil, err
 	}
-	result, err := parser.ValidateFCXResponse(response, request)
+	result, err = parser.ValidateFCXResponse(response, request)
 	if err != nil {
 		return nil, err
 	}
@@ -745,6 +798,12 @@ func (s *Service) SendGCXCommand(ctx context.Context, amount, date, clock string
 
 // sendGCXPayload compartilha parser e elegibilidade entre captura simples e filtrada.
 func (s *Service) sendGCXPayload(ctx context.Context, payload []byte) (*model.GCXResponse, error) {
+	s.InvalidatePaymentContext()
+	return s.readGCXPayload(ctx, payload)
+}
+
+// readGCXPayload valida a captura sem substituir o contexto da jornada aditiva.
+func (s *Service) readGCXPayload(ctx context.Context, payload []byte) (*model.GCXResponse, error) {
 	r, err := s.sendBlockingPayload(ctx, command.CommandGCX, payload)
 	if err != nil {
 		return nil, err
@@ -948,6 +1007,7 @@ func (s *Service) purchaseGCX(ctx context.Context, enableCTLS, hideAmount bool, 
 	}
 	ctlsOptions := options | command.GCXOptionWaitContactless
 	sameInterfaceRetries := 0
+	consecutiveCommunicationErrors := 0
 	for {
 		response, err := capture(ctlsOptions)
 		if err == nil {
@@ -957,16 +1017,31 @@ func (s *Service) purchaseGCX(ctx context.Context, enableCTLS, hideAmount bool, 
 		if !errors.As(err, &statusErr) {
 			return nil, err
 		}
+		if statusErr.Code != state.StatusContactlessCommunicationError {
+			consecutiveCommunicationErrors = 0
+		}
 		switch statusErr.Code {
 		case state.StatusContactlessCommunicationError:
+			consecutiveCommunicationErrors++
 			if sameInterfaceRetries == 0 {
 				sameInterfaceRetries++
+				s.logFallback(ctx, statusErr.Code, sameInterfaceRetries+1, "ctls")
 				continue
 			}
+			if consecutiveCommunicationErrors < 2 {
+				return nil, err
+			}
+			s.logFallback(ctx, statusErr.Code, 3, "icc_magnetic")
 			return capture(options)
 		case state.StatusContactlessMultipleCards, state.StatusContactlessExternalCVM:
 			if sameInterfaceRetries == 0 {
 				sameInterfaceRetries++
+				if statusErr.Code == state.StatusContactlessExternalCVM {
+					if _, displayErr := s.DisplayDEX(ctx, "SIGA INSTRUCOES NO TELEFONE"); displayErr != nil {
+						return nil, displayErr
+					}
+				}
+				s.logFallback(ctx, statusErr.Code, sameInterfaceRetries+1, "ctls")
 				continue
 			}
 			return nil, err
@@ -975,6 +1050,7 @@ func (s *Service) purchaseGCX(ctx context.Context, enableCTLS, hideAmount bool, 
 			state.StatusContactlessApplicationNotAllowed,
 			state.StatusContactlessApplicationNotAuthorized,
 			state.StatusContactlessInterfaceChange:
+			s.logFallback(ctx, statusErr.Code, sameInterfaceRetries+2, "icc_magnetic")
 			return capture(options)
 		default:
 			return nil, err
@@ -993,6 +1069,7 @@ func (s *Service) LoadMultimediaPath(ctx context.Context, path, name string, pro
 
 // SendGPNCommandMK captura PIN com chave de trabalho MK/WK e devolve PIN block e KSN.
 func (s *Service) SendGPNCommandMK(ctx context.Context, keyIndex int, encryptedWorkingKey []byte, pan, message string) ([]byte, []byte, error) {
+	s.InvalidatePaymentContext()
 	payload, err := command.BuildGPNCommandMK(keyIndex, encryptedWorkingKey, pan, message)
 	if err != nil {
 		return nil, nil, err
@@ -1006,6 +1083,7 @@ func (s *Service) SendGPNCommandMK(ctx context.Context, keyIndex int, encryptedW
 
 // SendGPNCommandDUKPT captura PIN e devolve PIN block e KSN como dados sensíveis.
 func (s *Service) SendGPNCommandDUKPT(ctx context.Context, keyIndex int, pan, message string) ([]byte, []byte, error) {
+	s.InvalidatePaymentContext()
 	payload, err := command.BuildGPNCommandDUKPT(keyIndex, pan, message)
 	if err != nil {
 		return nil, nil, err
@@ -1023,6 +1101,9 @@ func (s *Service) SendCommand(ctx context.Context, cmd command.Command) (*model.
 }
 
 func (s *Service) sendCommand(ctx context.Context, cmd command.Command, useConfigTimeout bool) (*model.Response, error) {
+	if cmd.Type == command.CommandCAN {
+		s.InvalidatePaymentContext()
+	}
 	startedAt := time.Now()
 	s.mu.Lock()
 	state := s.state
@@ -1083,12 +1164,9 @@ func (s *Service) sendCommand(ctx context.Context, cmd command.Command, useConfi
 	s.mu.RLock()
 	logger := s.logger
 	s.mu.RUnlock()
-	if logger != nil {
-		status := ""
-		if response != nil {
-			status = response.StatusCode
-		}
-		logger.Info("comando ABECS concluido", slog.String("comando", string(cmd.Type)), slog.String("status", status), slog.Duration("duracao", time.Since(startedAt)), slog.Bool("sucesso", err == nil))
+	s.recordCommand(ctx, logger, cmd.Type, response, err, time.Since(startedAt))
+	if err != nil && cmd.Type != command.CommandGCX {
+		s.InvalidatePaymentContext()
 	}
 	return response, err
 }
@@ -1227,6 +1305,7 @@ func (s *Service) reconnectProtocol(parent context.Context) error {
 	s.tracksEligible = false
 	s.goxEligible = false
 	s.fcxEligible = false
+	s.clearPaymentLocked()
 	if s.secureSession != nil {
 		s.secureSession.Close()
 		s.secureSession = nil

@@ -1,0 +1,30 @@
+// Diagnóstico DES: apenas OPN/GIX/CLO e metadados da escolha. Sem captura.
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "os"
+
+    "br.com.romulopenha/lib-pinpad-abecs-go/mobile"
+)
+
+func main() {
+    raw, err := os.ReadFile(`D:\desenvolvimento\chave_des\informacoes_critografia_pinpad.properties`)
+    if err != nil { panic("source_missing") }
+    source, err := mobile.ParsePaymentPINConfiguration(string(raw))
+    clear(raw)
+    if err != nil { panic("source_invalid") }
+    client, err := mobile.NewClient("127.0.0.1",39100,5000)
+    if err != nil { panic("client_invalid") }
+    defer client.Close("diagnostic-10016-cleanup")
+    if err := client.Open("diagnostic-10016-open"); err != nil { fmt.Println("open_failed",mobile.ErrorCode(err.Error()));return }
+    selected,err := client.ResolvePaymentPINConfiguration("diagnostic-10016-discover",source.Method(),source.KeyIndex(),source.WorkingKey())
+    if err != nil { fmt.Println("discovery_failed",mobile.ErrorCode(err.Error()));return }
+    cached,err := client.ResolvePaymentPINConfiguration("diagnostic-10016-cached",source.Method(),source.KeyIndex(),source.WorkingKey())
+    if err != nil { fmt.Println("cache_failed",mobile.ErrorCode(err.Error()));return }
+    output,_:=json.Marshal(map[string]any{"method":selected.Method(),"configuredIndex":source.KeyIndex(),
+        "selectedIndex":selected.KeyIndex(),"cachedRepeatSame":selected.KeyIndex()==cached.KeyIndex()})
+    fmt.Println(string(output))
+    if client.Close("diagnostic-10016-close") != nil { fmt.Println("close_unconfirmed") } else { fmt.Println("close_confirmed") }
+}

@@ -25,6 +25,10 @@ func (s *Service) PurchaseGCXFiltered(ctx context.Context, request command.Filte
 // LoadFormattedEMVTable valida toda a tabela antes de TLI e preserva TAB_LEN.
 // Nenhum bloco parcialmente inválido inicia uma carga física.
 func (s *Service) LoadFormattedEMVTable(ctx context.Context, acquirer, version string, records []string) error {
+	s.InvalidatePaymentContext()
+	s.mu.Lock()
+	s.paymentRecords = nil
+	s.mu.Unlock()
 	if _, err := command.BuildTLICommand(acquirer, version); err != nil {
 		return err
 	}
@@ -62,5 +66,10 @@ func (s *Service) LoadFormattedEMVTable(ctx context.Context, acquirer, version s
 		}
 	}
 	_, err = s.TableLoadEnd(ctx, version)
+	if err == nil {
+		s.mu.Lock()
+		s.paymentRecords = append([]string{}, records...)
+		s.mu.Unlock()
+	}
 	return err
 }

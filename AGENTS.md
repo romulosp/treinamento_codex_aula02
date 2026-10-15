@@ -1,5 +1,12 @@
 # Instruções do projeto
 
+## Memória operacional de continuidade
+
+Para trabalho de pinpad, leitura de cartão, PIN ou integração Go/Android da Change
+10011, leia antes de retomar a [memória operacional](specs/changes/10011-corrigir-leitura-cartao-pinpad/AGENTS-MEMORY.md).
+Continue das evidências e pendências registradas, atualize a memória a cada marco
+e mantenha os gates formais e os limites de dados sensíveis deste documento.
+
 ## Processo obrigatório
 
 1. Toda alteração começa em `specs/changes/<id>-<nome>/` e segue `specs/shared/process/workflow.md`.

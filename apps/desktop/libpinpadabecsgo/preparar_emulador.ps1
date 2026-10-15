@@ -1,18 +1,22 @@
 <#
 .SYNOPSIS
-Prepara somente o reverse da porta Bridge no emulador selecionado.
+Prepara reverse; opcionalmente provisiona as três fontes DES no host debug instalado.
 .DESCRIPTION
-Nao instala APK, nao inicia/encerra processos e nao modifica outros reverses.
+Nao instala APK, nao inicia/encerra Bridge/Activity e nao modifica outros reverses.
+ProvisionarPagamentoCartao usa o launcher de arquivos e exige host debug instalado.
 ADB ausente ou selecao ambigua devolve codigo 1; o BAT ainda pode iniciar o host.
 .PARAMETER EmulatorSerial
 Serial online explicito; por padrao usa ANDROID_SERIAL ou unico emulador online.
 .PARAMETER BridgePort
 Porta TCP; por padrao PINPAD_BRIDGE_PORT ou 39100.
+.PARAMETER ProvisionarPagamentoCartao
+Provisiona perfil/tabela/PIN DES com hashes; sem a opcao, prepara somente reverse.
 #>
 [CmdletBinding()]
 param(
     [string]$EmulatorSerial = $env:ANDROID_SERIAL,
-    [string]$BridgePort = $env:PINPAD_BRIDGE_PORT
+    [string]$BridgePort = $env:PINPAD_BRIDGE_PORT,
+    [switch]$ProvisionarPagamentoCartao
 )
 $ErrorActionPreference = 'Stop'
 try {
@@ -44,9 +48,17 @@ try {
     $reverseOutput = & $adbPath -s $EmulatorSerial reverse --list
     if ($LASTEXITCODE -ne 0 -or -not ($reverseOutput | Where-Object { $_ -match "(^|\s)$mapping\s+$mapping(\s|$)" })) { throw 'Mapeamento reverse nao confirmado.' }
     Write-Host "emulator_prepared serial=$EmulatorSerial port=$portNumber (nao comprova listener ou OPN)"
+    if ($ProvisionarPagamentoCartao) {
+        $launcher = Join-Path $PSScriptRoot '..\..\frontend\smartphone\sistema-prototipo-android\scripts\iniciar-saque-cartao.ps1'
+        if (-not (Test-Path -LiteralPath $launcher)) { throw 'Launcher de provisionamento ausente.' }
+        $sdkRoot = Split-Path -Parent (Split-Path -Parent $adbPath)
+        $env:PINPAD_BRIDGE_PORT = [string]$portNumber
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $launcher -ProvisionOnly -EmulatorSerial $EmulatorSerial -AndroidSdk $sdkRoot
+        if ($LASTEXITCODE -ne 0) { throw 'Reverse pronto; pagamento nao provisionado. Revise fontes DES e host debug instalado.' }
+    }
     exit 0
 } catch {
     Write-Host "emulator_not_prepared: $($_.Exception.Message)"
-    Write-Host 'Correcao: preparar_emulador.ps1 -EmulatorSerial emulator-5554 -BridgePort 39100'
+    Write-Host 'Correcao: preparar_emulador.ps1 -EmulatorSerial emulator-5554 -BridgePort 39100 -ProvisionarPagamentoCartao'
     exit 1
 }
