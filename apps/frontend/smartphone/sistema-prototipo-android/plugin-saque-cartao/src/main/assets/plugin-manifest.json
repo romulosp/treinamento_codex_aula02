@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "pluginId": "br.com.romulopenha.sistemaprototipoandroid.saquecartao",
+  "displayName": "Saque Cartão",
+  "pluginVersion": "1.1.0",
+  "requiredSharedApiMajor": 1,
+  "requiredSharedApiMinor": 1,
+  "entryClass": "br.com.romulopenha.sistemaprototipoandroid.pluginsaquecartao.PluginSaqueCartaoApp",
+  "declaredPackageName": "br.com.romulopenha.sistemaprototipoandroid.pluginsaquecartao",
+  "priority": 100,
+  "capabilities": ["business-menu"],
+  "dependencies": []
+}

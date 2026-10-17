@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+
+<menuXml>
+	<itemMenuXml nome="Principal">
+		<itemMenuXml nome="MEGA-SENA" codigoMovimento="702" />
+		<itemMenuXml nome="LOTOFÁCIL" codigoMovimento="708" />
+		<itemMenuXml nome="QUINA" codigoMovimento="703" />
+		<itemMenuXml nome="LOTOMANIA" codigoMovimento="716" />
+		<itemMenuXml nome="LOTECA" codigoMovimento="819" />
+		<itemMenuXml nome="LOTOGOL" codigoMovimento="814" />
+		<itemMenuXml nome="DUPLA-SENA" codigoMovimento="718" />
+		<itemMenuXml nome="RECEIVE CONVENANT" codigoMovimento="850006">
+		</itemMenuXml>
+		<itemMenuXml nome="FINANCIAL SERVICES" tituloPrincipal="FINANCIAL SERVICES">
+			<itemMenuXml nome="PAY BILL CARD" codigoMovimento="850301" />
+			<itemMenuXml nome="WITHDRAW WITH CARD" codigoMovimento="10101" />
+			<itemMenuXml nome="DEPOSIT" codigoMovimento="10201" />
+			<itemMenuXml nome="VERIFY ACCOUNT" codigoMovimento="30301" />
+			<itemMenuXml nome="PAY FGTS" codigoMovimento="40101" />
+			<itemMenuXml nome="PAY SOCIAL BENEFITS " codigoMovimento="40401" />
+			<itemMenuXml nome="PAY PIS" codigoMovimento="40201" tituloSecundario="PAGA PIS" />
+			<itemMenuXml nome="PAY UNEMPLOYMENT SECURE" codigoMovimento="40301" />
+			<itemMenuXml nome="REFUND UNEMPLOYMENT SECURE" codigoMovimento="30101" />
+			<itemMenuXml nome="PAY INSS" codigoMovimento="40402" />
+			<itemMenuXml nome="GPS COLLECT" codigoMovimento="850001" />
+			<itemMenuXml nome="HABITAT INSTALLMENT" codigoMovimento="850502" />
+			<itemMenuXml nome="CELPHONE CARD RECHARGE" codigoMovimento="850031" />
+			<itemMenuXml nome="ACOLLECT BILLS" codigoMovimento="850004" />
+			<itemMenuXml nome="PROCESS CAIXACAP" tituloPrincipal="Processa CAIXACAP">
+				<itemMenuXml nome="COLLECT" codigoMovimento="850105" />
+				<itemMenuXml nome="RESCUE" codigoMovimento="40501" />
+				<itemMenuXml nome="PRIZE PAYMENT" codigoMovimento="40502" />
+			</itemMenuXml>
+			<itemMenuXml nome="CAIXA ELETRONIC PAYMENT " tituloPrincipal="CAIXA ELETRONIC PAYMENT">
+				<itemMenuXml nome="VERIFY AGREEMENTS" codigoMovimento="850211" />
+				<itemMenuXml nome="CARD RECHARGE" codigoMovimento="850250" />
+			</itemMenuXml>
+		</itemMenuXml>
+		<itemMenuXml nome="PRIZE PAYMENT" tituloPrincipal="PRIZE PAYMENT">
+			<itemMenuXml nome="PROGNOSTIC" codigoMovimento="200" />
+			<itemMenuXml nome="FEDERAL LOTTERY" codigoMovimento="210" />
+			<itemMenuXml nome="REAL TIME LOTTERY" codigoMovimento="213" />
+		</itemMenuXml>
+		<itemMenuXml nome="LAST RESULTS" tituloPrincipal="LAST RESULTS">
+			<itemMenuXml nome="MEGA-SENA" codigoMovimento="502" tituloPrincipal="LAST RESULTS">
+				<itemMenuXml nome="AVERAGE RESULT" codigoMovimento="502" opcao="0" />
+				<itemMenuXml nome="LAST RESULTS" codigoMovimento="502" opcao="1" />
+			</itemMenuXml>
+			<itemMenuXml nome="LOTOFÁCIL" codigoMovimento="508" tituloPrincipal="LAST RESULTS">
+				<itemMenuXml nome="AVERAGE RESULT" codigoMovimento="508" opcao="0" />
+				<itemMenuXml nome="LAST RESULTS" codigoMovimento="508" opcao="1" />
+			</itemMenuXml>
+			<itemMenuXml nome="QUINA" codigoMovimento="503" tituloPrincipal="LAST RESULTS">
+				<itemMenuXml nome="AVERAGE RESULT" codigoMovimento="503" opcao="0" />
+				<itemMenuXml nome="LAST RESULTS" codigoMovimento="503" opcao="1" />
+			</itemMenuXml>
+			<itemMenuXml nome="LOTOMANIA" codigoMovimento="516" tituloPrincipal="LAST RESULTS">
+				<itemMenuXml nome="AVERAGE RESULT" codigoMovimento="516" opcao="0" />
+				<itemMenuXml nome="LAST RESULTS" codigoMovimento="516" opcao="1" />
+			</itemMenuXml>
+			<itemMenuXml nome="FEDERAL" codigoMovimento="510" />
+			<itemMenuXml nome="LOTOGOL" codigoMovimento="514" tituloPrincipal="LAST RESULTS">
+				<itemMenuXml nome="AVERAGE RESULT" codigoMovimento="514" opcao="0" />
+				<itemMenuXml nome="LAST RESULTS" codigoMovimento="514" opcao="1" />
+			</itemMenuXml>
+			<itemMenuXml nome="DUPLA-SENA" codigoMovimento="518" tituloPrincipal="LAST RESULTS">
+				<itemMenuXml nome="AVERAGE RESULT" codigoMovimento="518" opcao="0" />
+				<itemMenuXml nome="LAST RESULTS" codigoMovimento="518" opcao="1" />
+			</itemMenuXml>
+			<itemMenuXml nome="LOTECA" codigoMovimento="519" tituloPrincipal="LAST RESULTS">
+				<itemMenuXml nome="AVERAGE RESULT" codigoMovimento="519" opcao="0" />
+				<itemMenuXml nome="LAST RESULTS" codigoMovimento="519" opcao="1" />
+			</itemMenuXml>
+		</itemMenuXml>
+		<itemMenuXml nome="REPORTS" tituloPrincipal="REPORTS">
+			<itemMenuXml nome="SESSION RESUME" codigoMovimento="80203" />
+			<itemMenuXml nome="EFL RESUME" tituloPrincipal="REPORT OF EFL RESUME" codigoMovimento="80202">
+				<itemMenuXml nome="TODAY" codigoMovimento="80202" opcao="1" />
+				<itemMenuXml nome="MONDAY" codigoMovimento="80202" opcao="2" />
+				<itemMenuXml nome="TUESDAY" codigoMovimento="80202" opcao="3" />
+				<itemMenuXml nome="WEDNESDAY" codigoMovimento="80202" opcao="4" />
+				<itemMenuXml nome="THURSDAY" codigoMovimento="80202" opcao="5" />
+				<itemMenuXml nome="FRIDAY" codigoMovimento="80202" opcao="6" />
+				<itemMenuXml nome="SATURDAY" codigoMovimento="80202" opcao="7" />
+				<itemMenuXml nome="SUNDAY" codigoMovimento="80202" opcao="8" />
+			</itemMenuXml>
+			<itemMenuXml nome="LOTERY CHARGING" tituloPrincipal="REPORT OF DAILY LOTTERY CHARGING" codigoMovimento="80211">
+				<itemMenuXml nome="TODAY" codigoMovimento="80211" opcao="1" />
+				<itemMenuXml nome="MONDAY" codigoMovimento="80211" opcao="2" />
+				<itemMenuXml nome="TUESDAY" codigoMovimento="80211" opcao="3" />
+				<itemMenuXml nome="WEDNESDAY" codigoMovimento="80211" opcao="4" />
+				<itemMenuXml nome="THURSDAY" codigoMovimento="80211" opcao="5" />
+				<itemMenuXml nome="FRIDAY" codigoMovimento="80211" opcao="6" />
+				<itemMenuXml nome="SATURDAY" codigoMovimento="80211" opcao="7" />
+				<itemMenuXml nome="SUNDAY" codigoMovimento="80211" opcao="8" />
+			</itemMenuXml>
+			<itemMenuXml nome="LOTOGOL GAMES" codigoMovimento="614" />
+			<itemMenuXml nome="LOTECA GAMES" codigoMovimento="619" />
+			<itemMenuXml nome="DAILY LOTTERY CHARGING" tituloPrincipal="REPORT OF DAILY LOTTERY CHARGING">
+				<itemMenuXml nome="AUDIT LOG" codigoMovimento="80220" tituloPrincipal="REPORT - AUDIT LOG">
+					<itemMenuXml nome="TODAY" codigoMovimento="80220" opcao="1" />
+					<itemMenuXml nome="MONDAY" codigoMovimento="80220" opcao="2" />
+					<itemMenuXml nome="TUESDAY" codigoMovimento="80220" opcao="3" />
+					<itemMenuXml nome="WEDNESDAY" codigoMovimento="80220" opcao="4" />
+					<itemMenuXml nome="THURSDAY" codigoMovimento="80220" opcao="5" />
+					<itemMenuXml nome="FRIDAY" codigoMovimento="80220" opcao="6" />
+					<itemMenuXml nome="SATURDAY" codigoMovimento="80220" opcao="7" />
+					<itemMenuXml nome="SUNDAY" codigoMovimento="80220" opcao="8" />
+				</itemMenuXml>
+				<itemMenuXml nome="FINANCIAL DAY RESUME" codigoMovimento="80210"
+					tituloPrincipal="REPORT - FINANCIAL DAY RESUME">
+					<itemMenuXml nome="TODAY" codigoMovimento="80210" opcao="1" />
+					<itemMenuXml nome="MONDAY" codigoMovimento="80210" opcao="2" />
+					<itemMenuXml nome="TUESDAY" codigoMovimento="80210" opcao="3" />
+					<itemMenuXml nome="WEDNESDAY" codigoMovimento="80210" opcao="4" />
+					<itemMenuXml nome="THURSDAY" codigoMovimento="80210" opcao="5" />
+					<itemMenuXml nome="FRIDAY" codigoMovimento="80210" opcao="6" />
+					<itemMenuXml nome="SATURDAY" codigoMovimento="80210" opcao="7" />
+					<itemMenuXml nome="SUNDAY" codigoMovimento="80210" opcao="8" />
+				</itemMenuXml>
+				<itemMenuXml nome="BILLS AND FINANCIAL SERVICES TAXES" codigoMovimento="80215"
+					tituloPrincipal="REPORT - BILLS AND FINANCIAL SERVICES TAXES">
+					<itemMenuXml nome="LAST" codigoMovimento="80215" opcao="1" />
+					<itemMenuXml nome="PENULTIMATE" codigoMovimento="80215" opcao="2" />
+					<itemMenuXml nome="ANTEPENULTIMATE" codigoMovimento="80215" opcao="3" />		
+				</itemMenuXml>
+				<itemMenuXml nome="DAILY CHARGING OF BILLS AND SERVICES" codigoMovimento="80222"
+					tituloPrincipal="REPORT - DAILY CHARGING OF BILLS AND SERVICES">
+					<itemMenuXml nome="LAST" codigoMovimento="80222" opcao="1" />
+					<itemMenuXml nome="PENULTIMATE" codigoMovimento="80222" opcao="2" />
+					<itemMenuXml nome="ANTEPENULTIMATE" codigoMovimento="80222" opcao="3" />
+					<itemMenuXml nome="SELECT DATE" codigoMovimento="80222" />
+				</itemMenuXml>
+			</itemMenuXml>
+		</itemMenuXml>
+		<itemMenuXml nome="SUPPORT" tituloPrincipal="SUPPORT">
+			<itemMenuXml nome="INPUT" tituloPrincipal="INSUMO">
+				<itemMenuXml nome="REQUEST" codigoMovimento="80601" />
+				<itemMenuXml nome="RECEPTION" codigoMovimento="80602" />
+				<itemMenuXml nome="CONSULT" codigoMovimento="80603" />
+			</itemMenuXml>
+			<itemMenuXml nome="CALL CENTER" tituloPrincipal="CALL CENTER">
+				<itemMenuXml nome="REQUEST SUPPORT" codigoMovimento="-1" />
+				<itemMenuXml nome="CONSULTS" codigoMovimento="-1" />
+			</itemMenuXml>
+			<itemMenuXml nome="READ NOTIFICATIONS" codigoMovimento="120101" />
+			<itemMenuXml nome="USER MANAGEMENT" tituloPrincipal="USER MANAGEMENT">
+				<itemMenuXml nome="ADD" codigoMovimento="100701" />
+				<itemMenuXml nome="REMOVE" codigoMovimento="100702" />
+				<itemMenuXml nome="ALTER" codigoMovimento="100704" />
+				<itemMenuXml nome="ALTER PASSWORD" codigoMovimento="100705" />
+			</itemMenuXml>
+			<itemMenuXml nome="EQUIPAMENT ANALYSE" tituloPrincipal="EQUIPAMENT ANALYSE">
+				<itemMenuXml nome="PRINTER" codigoMovimento="-1" />
+				<itemMenuXml nome="MARK READER" codigoMovimento="-1" />
+				<itemMenuXml nome="BAR CODE READER" codigoMovimento="-1" />
+			</itemMenuXml>
+			<itemMenuXml nome="DECLARATION OF INCOME TAX EXEMPTION" codigoMovimento="850005" />
+			<itemMenuXml nome="REPRINT" tituloPrincipal="REPRINT ">
+				<itemMenuXml nome="TRANSACTION" codigoMovimento="80301" />
+				<itemMenuXml nome="BET" codigoMovimento="80306" />
+				<itemMenuXml nome="PRIZE PAYMENT PROGNÓSTIC" codigoMovimento="80308" />
+				<itemMenuXml nome="PRIZE PAYMENT FEDERAL" codigoMovimento="80309" />
+				<itemMenuXml nome="PRIZE PAYMENT REAL TIME" codigoMovimento="80310" />
+				<itemMenuXml nome="CHANGER TICKET" codigoMovimento="80311" />
+				<itemMenuXml nome="STRAND FEDERAL TICKET" codigoMovimento="80312" />
+				<itemMenuXml nome="REVERSAL OF BILLS" codigoMovimento="80313" />
+				<itemMenuXml nome="REVERSAL OF FINANCIAL TRANSACTION" codigoMovimento="80314" ></itemMenuXml>
+				<itemMenuXml nome="INVALIDATION" codigoMovimento="80307" ></itemMenuXml>
+				<itemMenuXml nome="DECLARATION OF INCOME TAX EXEMPTION" codigoMovimento="80345" />
+				<itemMenuXml nome="ACCOUNTS" codigoMovimento="80315" />
+				<itemMenuXml nome="FINANCIAL TRANSACTION" codigoMovimento="80302" />
+			</itemMenuXml>
+			<itemMenuXml nome="TRANSACTION REVERSAL" tituloPrincipal="TRANSACTION REVERSAL" codigoMovimento="990101">
+				<itemMenuXml nome="BETS " tituloPrincipal="TRANSACTION REVERSAL - BETS">
+					<itemMenuXml nome="MEGA-SENA" codigoMovimento="990101" opcao="2" />
+					<itemMenuXml nome="QUINA" codigoMovimento="990101" opcao="3" />
+					<itemMenuXml nome="LOTOFÁCIL" codigoMovimento="990101" opcao="8" />
+					<itemMenuXml nome="LOTOGOL" codigoMovimento="990101" opcao="14" />
+					<itemMenuXml nome="LOTOMANIA" codigoMovimento="990101" opcao="16" />
+					<itemMenuXml nome="DUPLA-SENA" codigoMovimento="990101" opcao="18" />
+					<itemMenuXml nome="LOTECA" codigoMovimento="990101" opcao="19" />
+				</itemMenuXml>
+				<itemMenuXml nome="OTHER TRANSACTIONS" codigoMovimento="990201" />
+			</itemMenuXml>
+		</itemMenuXml>
+		<itemMenuXml nome="OTHERS" tituloPrincipal="OTHERS">
+			<itemMenuXml nome="UNEMPLOYMENT SECURE" codigoMovimento="40120" />
+			<itemMenuXml nome="EMIT CHANGER TICKET" codigoMovimento="400" />
+			<itemMenuXml nome="STRAND" codigoMovimento="1710" />
+			<itemMenuXml nome="PENDING TRANSACTIONS CONSULT" codigoMovimento="100901" />
+			<itemMenuXml nome="PENDING TRANSACTIONS SOLVE" codigoMovimento="100902" />
+			<itemMenuXml nome="FOME ZERO DONATION" tituloPrincipal="FOME ZERO DONATION">
+				<itemMenuXml nome="CPF" codigoMovimento="8501041" />
+				<itemMenuXml nome="CNPJ" codigoMovimento="8501042" />
+			</itemMenuXml>
+		</itemMenuXml>
+		<itemMenuXml nome="TOTALIZE TRANSACTION" codigoMovimento="100706" />
+	</itemMenuXml>
+</menuXml>
