@@ -88,19 +88,22 @@ class MainActivity : ComponentActivity() {
                 onLogout = { established ->
                     if (!logoutInProgress) {
                         logoutInProgress = true
+                        businessPluginManager.clear()
+                        selectedBusinessItemId = null
                         pluginManager.logout(established.sessionId) {
                             logoutInProgress = false
                             session = null
                             businessFatalMessage = null
                             selectedBusinessItemId = null
-                            businessPluginManager.clear()
                         }
                     }
                 },
                 onRuntimeFailure = pluginManager::reportRuntimeFailure,
                 onBusinessFatalAcknowledged = ::finish,
                 onBusinessItemSelected = { selectedBusinessItemId = it },
-                onBusinessBack = { selectedBusinessItemId = null },
+                onBusinessBack = {
+                    if (!businessPluginManager.cancelComponent()) selectedBusinessItemId = null
+                },
                     modifier = Modifier.fillMaxSize(),
                 )
             }

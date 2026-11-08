@@ -29,6 +29,9 @@ if not defined PINPAD_BAUDRATE set "PINPAD_BAUDRATE=19200"
 if not defined PINPAD_TIMEOUT set "PINPAD_TIMEOUT=30"
 if not defined PINPAD_BRIDGE_PORT set "PINPAD_BRIDGE_PORT=39100"
 if not defined PINPAD_LOG_FILE set "PINPAD_LOG_FILE=%~dp0logs\LogPinpadAbecs.txt"
+rem Este launcher de laboratorio usa o diagnostico semantico por padrao.
+rem O operador pode definir PINPAD_LOG_FORMAT=LEGACY antes de iniciar.
+if not defined PINPAD_LOG_FORMAT set "PINPAD_LOG_FORMAT=DETAILED"
 
 rem Transporte scripted e removido: este BAT usa a porta fisica configurada.
 set "PINPAD_BRIDGE_TRANSPORT="
@@ -36,7 +39,7 @@ set "PINPAD_BRIDGE_TRANSPORT="
 echo ==========================================
 echo Bridge Windows - teste com pinpad fisico
 echo ==========================================
-powershell -NoProfile -Command "foreach ($key in @('PORTA_PINPAD','PINPAD_BAUDRATE','PINPAD_TIMEOUT','PINPAD_BRIDGE_PORT','PINPAD_LOG_FILE')) { Write-Host ($key + '=' + [Environment]::GetEnvironmentVariable($key)) }"
+powershell -NoProfile -Command "foreach ($key in @('PORTA_PINPAD','PINPAD_BAUDRATE','PINPAD_TIMEOUT','PINPAD_BRIDGE_PORT','PINPAD_LOG_FILE','PINPAD_LOG_FORMAT')) { Write-Host ($key + '=' + [Environment]::GetEnvironmentVariable($key)) }"
 echo.
 
 rem Reverse e opcional para iniciar o host; o helper informa indisponibilidade.

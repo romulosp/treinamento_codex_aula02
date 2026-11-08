@@ -101,6 +101,11 @@ internal object LoginPluginLoader {
     private val HostApi = SharedApi.version
     internal val LoginRequest = PluginLoadingRequest(PluginId, StartupAuthCapability)
     internal val BusinessRequest = PluginLoadingRequest(requiredCapability = "business-menu")
+    /** Consulta exata da nova capacidade, sem aceitar APKs legados de menu. */
+    internal val ComponentRequest = PluginLoadingRequest(
+        "br.com.romulopenha.sistemaprototipoandroid.saquecartao",
+        "card-withdrawal-component",
+    )
 
     /**
      * Move semanticamente um candidato para quarentena, valida-o e o promove.
@@ -320,8 +325,8 @@ internal object LoginPluginLoader {
         require(descriptor.requiredMajor == HostApi.major) { "Major da API incompatível" }
         require(descriptor.requiredMinor <= HostApi.minor) { "Minor da API incompatível" }
         if (request.requiredCapability == "startup-auth") {
-            require(descriptor.requiredMinor == HostApi.minor) {
-                "Plugin de autenticação exige a minor vigente da API"
+            require(descriptor.requiredMinor >= 2) {
+                "Plugin de autenticação exige o evento de perfil da API 1.2 ou superior"
             }
         }
         require(descriptor.priority >= 0) { "Prioridade inválida" }
@@ -373,7 +378,7 @@ internal object LoginPluginLoader {
     }
 
     /** Impede que a instância carregada declare identidade diferente do arquivo validado. */
-    private fun validateRuntimeManifest(runtime: PluginManifest, descriptor: PluginDescriptor) {
+    internal fun validateRuntimeManifest(runtime: PluginManifest, descriptor: PluginDescriptor) {
         require(runtime.pluginId == descriptor.pluginId)
         require(runtime.displayName == descriptor.displayName)
         require(runtime.pluginVersion == descriptor.pluginVersion)

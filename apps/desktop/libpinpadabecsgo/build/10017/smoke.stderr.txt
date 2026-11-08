@@ -1,0 +1,4 @@
+2026/10/15 12:18:51 rastro serial: formato=DETAILED destino=D:\desenvolvimento\ia\aula02\specs\changes\10017-logging-semantico-abecs\evidence\2026-10-15-bridge-detailed-synthetic.txt; payloads sensiveis permanecem redigidos
+2026/10/15 12:18:51 configuracao: COM=COM99 origem=environment baud=19200 origem=default timeout=30s origem=default TCP=51737 origem=environment modo=scripted log=D:\desenvolvimento\ia\aula02\specs\changes\10017-logging-semantico-abecs\evidence\2026-10-15-bridge-detailed-synthetic.txt origem=environment
+2026/10/15 12:18:51 bridge_listening endpoint=127.0.0.1:51737 pid=26604 modo=scripted COM=COM99 log=D:\desenvolvimento\ia\aula02\specs\changes\10017-logging-semantico-abecs\evidence\2026-10-15-bridge-detailed-synthetic.txt
+2026/10/15 12:18:52 bridge session ended: cause=DISCONNECTED

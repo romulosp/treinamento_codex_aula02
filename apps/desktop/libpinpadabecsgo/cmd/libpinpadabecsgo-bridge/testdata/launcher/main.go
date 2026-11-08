@@ -46,7 +46,7 @@ func main() {
 		}
 		os.Exit(3)
 	}
-	for _, key := range []string{"PORTA_PINPAD", "PINPAD_BAUDRATE", "PINPAD_TIMEOUT", "PINPAD_BRIDGE_PORT", "PINPAD_BRIDGE_TRANSPORT"} {
+	for _, key := range []string{"PORTA_PINPAD", "PINPAD_BAUDRATE", "PINPAD_TIMEOUT", "PINPAD_BRIDGE_PORT", "PINPAD_BRIDGE_TRANSPORT", "PINPAD_LOG_FORMAT"} {
 		fmt.Printf("fake_go %s=%s\n", key, os.Getenv(key))
 	}
 	code, _ := strconv.Atoi(os.Getenv("FAKE_GO_EXIT"))

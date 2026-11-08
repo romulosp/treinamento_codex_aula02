@@ -1,0 +1,3 @@
+2026/10/15 12:19:29 rastro serial: formato=DETAILED destino=D:\desenvolvimento\ia\aula02\apps\desktop\libpinpadabecsgo\logs\LogPinpadAbecs.txt; payloads sensiveis permanecem redigidos
+2026/10/15 12:19:29 configuracao: COM=COM7 origem=environment baud=19200 origem=environment timeout=30s origem=environment TCP=39100 origem=environment modo=physical log=D:\desenvolvimento\ia\aula02\apps\desktop\libpinpadabecsgo\logs\LogPinpadAbecs.txt origem=environment
+2026/10/15 12:19:29 bridge_listening endpoint=127.0.0.1:39100 pid=4828 modo=physical COM=COM7 log=D:\desenvolvimento\ia\aula02\apps\desktop\libpinpadabecsgo\logs\LogPinpadAbecs.txt

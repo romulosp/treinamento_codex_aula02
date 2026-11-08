@@ -1,9 +1,195 @@
 # Memória operacional para agentes — Change 10011
 
-Atualizada em 2026-10-14. Leia este arquivo antes de retomar trabalho de leitura,
+Atualizada em 2026-11-08. Leia este arquivo antes de retomar trabalho de leitura,
 PIN, criptografia, Go/ABECS ou plugin `:plugin-saque-cartao` nesta Change.
 
+## Marco 2026-11-08 — entrega visual 10027 com provisionamento final
+
+Plugin ingressos1.2.1/versionCode4 melhora resumo no tablet, sem alterar cartão,
+API, preços ou protocolo. Após todos os testes de UI e instalação final do host,
+launcher ProvisionOnly/ValidateOnly PASS e ProvisionOnly exit0: três snapshots
+privados/hashes confirmados. Teste individual de existência não vazia de perfil,
+tabela e criptografia exit0. Host aberto COLD. Nenhuma preparação física, OPN,
+leitura, PIN ou compra automática executada. Preservar esse provisionamento;
+reinstalação/instrumentação posterior exige nova restauração. Evidências 10027/validation.md.
+
+## Marco 2026-11-08 — recuperação do perfil após entrega 10026
+
+Usuário reportou MISSING/preflight no pagamento. ADB confirmou ausência completa
+ de files/saque-cartao no host após testes instrumentados/instalação da 10026;
+a entrega anterior não reprovisionou os arquivos externos. Launcher existente da
+SPEC10012 executado em ProvisionOnly/ValidateOnly PASS e depois ProvisionOnly
+exit0: três snapshots privados restaurados, hashes confirmados. ADB confirmou
+perfil/tabela/criptografia presentes, sem publicar conteúdos. Não alterar algoritmo,
+valor, chaves, índices ou componente para contornar ausência de configuração.
+Nenhum Bridge/processo/listener39100 estava ativo nessa verificação. Usuário deve
+iniciar o launcher Bridge e usar SAIR/nova abertura; não reproduzir preparação
+física automaticamente. Nenhum OPN/leitura/PIN/compra realizado. Recuperação não
+prova sucesso físico. Detalhes: 10026/validation.md, incidente pós-entrega.
+
+Obrigatório na próxima entrega local: terminar instrumentação e instalação FINAL,
+executar launcher -ProvisionOnly, verificar três snapshots/hashes e disponibilidade
+do listener antes de anunciar prontidão. Testes/reinstalação podem remover o sandbox;
+se ocorrerem depois, reprovisionar novamente. Não ler credenciais gerais ou PRD.
+
+## Marco 2026-11-08 — retorno visual personalizado implementado (10025)
+
+Usuário mostrou componente parado em Captura de homologação concluída/VOLTAR e
+pediu retorno à tela de sucesso da bilheteria. Confirmou explicitamente concluir
+somente a venda demonstrativa também para CAPTURED, mantendo aviso de simulação.
+SPEC10025 aprovada/ADR001: facetas aditivas API1.5 e opções separadas do pedido;
+ingressos solicita CALLER, legado1.3/1.4 mantém retorno manual. Componente deve
+devolver APPROVED/CAPTURED somente após close confirmado, sem converter status,
+duplicar callback/close ou aceitar falha como sucesso. Ingressos mantém guard por
+ID, confirmação de3s e novo atendimento com estoque conservado. Testes novos devem
+cobrir fábrica real do componente com repository inteiramente sintético, além de
+owner/host. Implementação concluída para teste humano: API1.5 aditiva com
+CardPaymentOptions e facetas novas; ingresso/componente manifestos minor5,
+compatibilidade1.3/1.4 preservada. 71JVM +43instrumentados =114 testes PASS;
+fábrica real do componente com repository sintético prova CAPTURED automático
+pós-close único e caminho1.4 manual. Host prova opções CALLER, status CAPTURED
+preservado, tela própria de sucesso e novo atendimento em3s com estoque mantido.
+Coberturas componente293/300 e ingressos80/80; lint sem erros, builds PASS.
+Host final instalado/aberto no emulator-5554; JSONs/APKs embutidos conferidos.
+AAR e adapter Go inalterados por hash. Gate estrutural local.properties e gates
+formais/teste humano permanecem pendentes. Nenhuma aprovação financeira real
+foi provada, nenhuma compra/PIN/comando de protocolo físico repetido ou mudança
+de Go/Bridge, perfil ou chave. Ver 10025/validation.md e ADR001 antes de retomar.
+
+## Marco 2026-11-07 — resultado indeterminado após teste da tarifa
+
+Usuário testou total R$84,27 (base R$80,00, tarifa R$4,27) e relatou
+`BINDING_ERROR:command` e resultado indeterminado. UI/Journey indicam que
+a captura foi iniciada, sem provar que o cartão foi lido ou que houve uma
+decisão financeira. Log da última sessão registra aquisição e posterior
+liberação, mas não identifica com segurança o comando/status que falhou:
+os pacotes estão redigidos e a sessão não contém os marcadores de diagnóstico
+semântico da 10017. Listener PID9756 usa executável raiz que não contém o
+marcador do observador detalhado presente no executável build/10017; isso
+limita o diagnóstico, não demonstra causa da falha.
+
+AAR do componente instalado corresponde ao SHA256 da baseline 10016/10019;
+host instalado corresponde ao APK local da 10021 r2. A alteração de tarifa usa
+o calculateSaque existente; R$80,00 + R$4,27 = R$84,27 está aritmeticamente
+correto, mas isso não prova ausência de impacto em todas as etapas. Logcat
+inspecionado por categorias não revelou stack ou evento útil. Nenhum payload
+real, criptograma, PIN ou dado de cartão foi exibido, nem compra ou operação
+física repetida. Resultado permanece desconhecido; requer conciliação antes de
+nova tentativa e coleta de evidência sanitizada com o Bridge adequado.
+
+## Marco 2026-11-07 — tarifa restaurada no valor bloqueado
+
+O usuário identificou que a 10021 havia eliminado a tarifa por hipótese errada.
+SPEC10021 r2 aprovada restaura cálculo da 10004 para base imutável: crédito
+5,34% + 0,80 ponto por parcela adicional, débito R$1,00/1x; HALF_UP e
+total=base+tarifa. Correção implementada reutilizando calculateSaque; UI mantém
+base somente leitura e confirmação/captura usam total calculado. 43 testes JVM,
+20 instrumentados, cobertura elegível283/290, lint/build PASS; gate estrutural
+local.properties segue reprovado. Host atualizado no emulator-5554 e três
+snapshots privados reprovisionados. Nenhum OPN/cartão/PIN/compra automática;
+teste humano e gates finais pendentes. Detalhes 10021/validation VAL-006..009.
+
+## Marco 2026-11-07 — valor do pedido bloqueado no cartão
+
+Usuário confirmou abertura do componente e exigiu passar valor da venda sem
+permitir edição; somente modalidade e parcelas são escolhas. Nova Change10021
+SPEC_APROVADA/IMPLEMENTADA: API1.4 aditiva com CardPaymentRequest, facetas
+especializadas no host/provedor e preservação dos métodos1.3. Ingressos envia
+ID/centavos congelados; owner ignora edição e usa total exato sem tarifa do
+legado. Crédito1..12/débito1 não alteram total. Provedor incompatível retorna
+UNAVAILABLE, sem fallback editável. Go/AAR/Bridge/perfil/chaves preservados.
+57JVM PASS; cobertura componente287/294, ingressos57/57; UIcomponente19,
+UIingressos1 e suítehost PASS; teste adicional semfallback PASS. Lint/build PASS,
+gate estrutural local.properties ainda reportado. Host reinstalado, três
+snapshots reprovisionados, perfil10.0.2.2 preservado, app aberto em login.
+Sem compra ou comando físico automático. Teste humano/gates finais pendentes.
+
+## Marco 2026-11-07 — BRIDGE_UNREACHABLE na jornada de ingressos
+
+Atualização após pedido de comparação 074/069/068: componente já contém
+NewClient → Ping → Open → GIX → carga EMV, iniciado por attach/owner.load.
+Teste instrumentado opt-in BridgeConnectivityTest carregou AAR real no
+processo host: localhost sem reverse reproduz BRIDGE_UNREACHABLE/ping;
+10.0.2.2 PASS; localhost com reverse PASS. Perfil externo DES alterado APENAS
+host para 10.0.2.2, com backup sufixo .before-10020-endpoint-20261107; demais
+campos idênticos. Launcher ProvisionOnly reprovisionou três snapshots com
+hashes confirmados. Teste lendo endpoint do perfil privado PASS, GetState
+CLOSED, sem ACQUIRE/OPN/cartão. ADR-002 e VAL-019..025 na 10020. Bridge do
+usuário PID30240 preservado. Override permitido pela 074 é específico do
+emulador. Não alegar finalização física ou autorização financeira validada.
+
+Usuário abriu Bridge físico PID 30240 em 127.0.0.1:39100, COM7/19200/30s,
+e informou tela BRIDGE_UNREACHABLE fase ping. Emulador 5554 estava online
+mas `adb reverse --list` estava vazio e TCP do emulador para localhost:39100
+era recusado. Restaurado `adb -s emulator-5554 reverse tcp:39100 tcp:39100`;
+TCP passou e Hello/Ping PBRG passaram pelo caminho Windows → adb forward
+temporário → emulador → reverse → Bridge. Forward temporário removido.
+Listener existente preservado; perfil privado JSON aponta localhost:39100 e
+os três arquivos privados estão presentes, sem exibir conteúdo. Uma tentativa
+alternativa de teste com `adb exec-out toybox nc` atingiu timeout; o teste
+via forward passou. Nenhum OPN, cartão, PIN ou compra foi executado. Tela de
+erro requer SAIR e nova abertura pelo usuário. Captura física, chaves e
+autorização financeira não foram validadas. `DISCONNECTED` isolado informa
+encerramento da conexão e não comprova o estado de operação física. Usuário
+confirma PORTA_PINPAD=COM7; COM17 é outro dispositivo, não usar.
+
+## Marco 2026-11-07 — correção da integração de ingressos
+
+O usuário apontou que a primeira entrega da 10020 não invocou o componente de
+cartão e rejeitou seu visual. SPEC 10020 r3 exige chamada mediada pelo host e
+UI de cinema com mapa de assentos. API 1.3 não recebe valor/modalidade e não
+autoriza financeiramente; nenhum hardware deve ser iniciado automaticamente
+pelo agente, nem dados sensíveis registrados. Correção implementada e APK de
+ingressos chama componente sintético pelo host em teste instrumentado PASS;
+6 testes JVM, cobertura elegível 56/56, lint/build e UI PASS. Host reinstalado,
+três snapshots privados provisionados e reverse 39100 preparado; Hello/Ping
+Bridge PASS sem OPN, leitura ou cartão. COM7 consta como dispositivo serial USB;
+identidade física e chaves não comprovadas. Teste humano e gates formais da
+10020 e 10019 permanecem pendentes.
+
+## Marco 2026-10-30 — implementação 10019 para teste humano
+
+Contrato da 10019 corrigido e SPEC_APROVADA nas revisões r2/r3, com ADR-001 e plano.
+Implementados API aditiva 1.3, capacidade card-withdrawal-component, exclusão
+do saque antigo do menu, mediação pelo host e consumidor em Operações.
+Retorno aguarda cleanup; detach/logout invalidam callback; cleanup falho bloqueia
+nova sessão até reinício. Go/AAR/perfis/chaves preservados; AAR mantém hash
+383259f6095ca25a079fc0ed388027c47f61b5369f31bbde51485e8501e875eb.
+56 JVM e 45 instrumentados PASS, cobertura elegível 97,54%, lint sem erros,
+builds PASS. Conferência encontrou e corrigiu asset legado incremental de negócio;
+Sete testes focais no APK corrigido PASS. Rótulo VOLTAR conferido por 13 testes de UI.
+Regressão final encontrou duplicidade legítima de revisões: seleção de digest
+recém-verificado agora persiste atomicamente; 27 testes de host PASS após correção.
+Host debug no emulator-5554, três snapshots
+privados provisionados com hashes confirmados e reverse39100 preparado.
+PORTA_PINPAD=COM7 permanece configurada, mas COM7 ausente. COM17 identificada como
+QuickScan-QW2500; NÃO usar para pinpad. Nenhum Bridge iniciado ou hardware aberto.
+Continuar com roteiro teste-manual.md da10019. Estado IMPLEMENTADA para teste humano;
+sem revisão formal de implementação/validação/aprovação final/commit/archive.
+
+## Histórico — proposta 10019
+
+Criada `../10019-saque-cartao-componente/` para remover a entrada própria do saque no menu e permitir chamada da jornada por plugins via host. Proposta/SPEC estão `EM_REVISAO_SPEC`; revisão inicial `REPROVADA` por contrato, lifecycle, descoberta/migração e fixture ainda insuficientemente definidos. Nenhum código de produção, teste, perfil ou hardware foi alterado; não iniciar implementação antes de nova revisão `SPEC_APROVADA` em ambos os documentos. Continuar preservando as restrições e evidências vigentes do pinpad abaixo.
+
 ## Pedido vigente
+
+Marco mais recente 2026-10-15: Change10017 revisão3 integra DETAILED no BAT/Bridge.
+Go all/integration/vet/build PASS; smoke exe com8blocos sintéticos PASS; logging82,3%.
+Bridge novo PID4828,127.0.0.1:39100,COM7/19200/30s,DETAILED,loghabitual append.
+Reverse emulator-5554 PASS. Sem OPN/compra automática ou mudanças Android/perfil.
+Ler memória10017/ADR001/validation para hashes, testes e retomada. Próximo: teste
+humano pelo usuário; verificar listener antes de iniciar outro. Estado IMPLEMENTADA.
+
+
+Marco 2026-10-15: execução do prompt implementar-mudanca-para-teste para todas
+as SPECs pendentes. Inventário encontrou 17 Changes com contrato já IMPLEMENTADA
+ou IMPLEMENTACAO_APROVADA; 10009 contém apenas reviews/, sem contrato.
+10017 já possui código local de logging semântico e estado IMPLEMENTADA.
+Go 1.26.5 windows/386: go test ./... -count=1, go vet ./... e go build ./...
+PASS/exit 0 nesta retomada. Evidências em validation.md da 10017, inclusive
+ausência preexistente de implementation-plan.md. Nenhum código de produto
+alterado nesta retomada, nenhum teste físico, revisão formal, commit ou archive.
+Continuar respeitando o limite do prompt: teste humano antes dos próximos gates.
 
 MARCO MAIS RECENTE: usuário testou aplicação e confirmou “funcionou!!!”. Enviou
 LogPinpadAbecs.txt para conferir. Bridge terminou comsession_released/

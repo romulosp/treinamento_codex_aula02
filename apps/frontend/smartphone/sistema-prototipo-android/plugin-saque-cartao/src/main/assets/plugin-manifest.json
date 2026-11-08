@@ -2,12 +2,12 @@
   "schemaVersion": 1,
   "pluginId": "br.com.romulopenha.sistemaprototipoandroid.saquecartao",
   "displayName": "Pagamento com Cartão",
-  "pluginVersion": "1.1.0",
+  "pluginVersion": "1.5.0",
   "requiredSharedApiMajor": 1,
-  "requiredSharedApiMinor": 1,
+  "requiredSharedApiMinor": 5,
   "entryClass": "br.com.romulopenha.sistemaprototipoandroid.pluginsaquecartao.PluginSaqueCartaoApp",
   "declaredPackageName": "br.com.romulopenha.sistemaprototipoandroid.pluginsaquecartao",
   "priority": 100,
-  "capabilities": ["business-menu"],
+  "capabilities": ["card-withdrawal-component"],
   "dependencies": []
 }

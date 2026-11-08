@@ -34,7 +34,7 @@ class PluginContractsTest {
             profile = profile,
         )
 
-        assertEquals(SharedApiVersion(1, 2, 0), event.contractVersion)
+        assertEquals(SharedApiVersion(1, 5, 0), event.contractVersion)
         assertEquals(profile, event.profile)
     }
 }

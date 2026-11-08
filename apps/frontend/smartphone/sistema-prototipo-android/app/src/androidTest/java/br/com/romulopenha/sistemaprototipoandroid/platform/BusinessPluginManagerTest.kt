@@ -24,7 +24,7 @@ class BusinessPluginManagerTest {
     }
 
     @Test
-    fun descobrePagamentoCartaoECriaSuaView() {
+    fun descobreConsumidorESaqueSomenteComoComponente() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val loaded = CountDownLatch(1)
         var items = emptyList<BusinessMenuItem>()
@@ -40,20 +40,25 @@ class BusinessPluginManagerTest {
 
         assertTrue("Discovery não terminou", loaded.await(20, TimeUnit.SECONDS))
         assertTrue("Falha fatal: $fatal", fatal == null)
-        val outrosServicos = items.singleOrNull { it.titulo == "Outros Serviços" }
-        assertNotNull("Caminho declarado pelo plugin não gerou o agrupador", outrosServicos)
-        val saque = requireNotNull(outrosServicos).filhos.singleOrNull { it.titulo == "Pagamento com Cartão" }
-        assertNotNull("Pagamento com Cartão não encontrado no menu", saque)
-        assertEquals("principal-outros-serviços-pagamento-com-cartão", requireNotNull(saque).id)
+        assertTrue("Saque não pode aparecer no menu", items.none { it.titulo == "Outros Serviços" })
+        val consumer = requireNotNull(items.singleOrNull { it.titulo == "Operações" })
         var view: View? = null
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            view = manager!!.createScreen(saque.id, context)
+            view = manager!!.createScreen(consumer.id, context)
         }
         assertNotNull("View do plugin não foi criada", view)
-        val verified = LoginPluginLoader.findVerified(context, {}, LoginPluginLoader.BusinessRequest)
-            .distinctBy { it.descriptor.pluginId }
-            .single { it.descriptor.pluginId.endsWith("saquecartao") }
+        val expectedDigest = context.assets.open("plugins/components/plugin-saque-cartao.apk").use {
+            java.security.MessageDigest.getInstance("SHA-256").digest(it.readBytes())
+                .joinToString("") { byte -> "%02x".format(byte) }
+        }
+        assertEquals(expectedDigest, File(context.filesDir, "plugins/components/selected.sha256").readText())
+        val verified = LoginPluginLoader.findVerified(context, {}, LoginPluginLoader.ComponentRequest)
+            .single { it.digestSha256 == expectedDigest }
         val optimized = File(context.codeCacheDir, "plugins/${verified.digestSha256}")
+        java.util.zip.ZipFile(verified.apk).use { zip ->
+            assertNotNull(zip.getEntry("META-INF/services/br.com.romulopenha.sistemaprototipoandroid.sharedapi.ICardWithdrawalComponent"))
+            assertTrue(zip.getEntry("META-INF/services/br.com.romulopenha.sistemaprototipoandroid.sharedapi.IPluginNegocioApp") == null)
+        }
         val native = Build.SUPPORTED_ABIS.map { File(optimized, "native/$it") }.first { it.isDirectory }
         assertTrue("libgojni não extraída", File(native, "libgojni.so").isFile)
         val loader = DexClassLoader(verified.apk.absolutePath, optimized.absolutePath, native.absolutePath, context.classLoader)

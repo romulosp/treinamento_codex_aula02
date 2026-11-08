@@ -28,6 +28,11 @@ abstract class StagePluginApkTask : DefaultTask() {
     /** Copia o APK para o caminho estável esperado pelo bootstrap do host. */
     @TaskAction
     fun stage() {
+        // Migração 10019: remover somente o asset legado deste diretório gerado.
+        if (assetName.get() == "components/plugin-saque-cartao.apk") {
+            val legacy = outputDirectory.file("plugins/business/plugin-saque-cartao.apk").get().asFile
+            if (legacy.isFile) check(legacy.delete())
+        }
         val target = outputDirectory.file("plugins/${assetName.get()}").get().asFile
         check(target.parentFile.mkdirs() || target.parentFile.isDirectory)
         pluginApk.get().asFile.copyTo(target, overwrite = true)
@@ -48,11 +53,18 @@ val stageDebugBusinessPlugin = tasks.register<StagePluginApkTask>("stageDebugBus
     assetName.set("business/plugin-negocio.apk")
 }
 
+val stageDebugIngressosPlugin = tasks.register<StagePluginApkTask>("stageDebugIngressosPlugin") {
+    dependsOn(":plugin-ingressos:assembleDebug")
+    pluginApk.set(project(":plugin-ingressos").layout.buildDirectory.file("outputs/apk/debug/plugin-ingressos-debug.apk"))
+    outputDirectory.set(layout.buildDirectory.dir("generated/ingressosPluginAssets/debug"))
+    assetName.set("business/plugin-ingressos.apk")
+}
+
 val stageDebugSaqueCartaoPlugin = tasks.register<StagePluginApkTask>("stageDebugSaqueCartaoPlugin") {
     dependsOn(":plugin-saque-cartao:assembleDebug")
     pluginApk.set(project(":plugin-saque-cartao").layout.buildDirectory.file("outputs/apk/debug/plugin-saque-cartao-debug.apk"))
     outputDirectory.set(layout.buildDirectory.dir("generated/saqueCartaoPluginAssets/debug"))
-    assetName.set("business/plugin-saque-cartao.apk")
+    assetName.set("components/plugin-saque-cartao.apk")
 }
 
 android {
@@ -87,6 +99,10 @@ androidComponents {
         )
         variant.sources.assets?.addGeneratedSourceDirectory(
             stageDebugBusinessPlugin,
+            StagePluginApkTask::outputDirectory,
+        )
+        variant.sources.assets?.addGeneratedSourceDirectory(
+            stageDebugIngressosPlugin,
             StagePluginApkTask::outputDirectory,
         )
         variant.sources.assets?.addGeneratedSourceDirectory(

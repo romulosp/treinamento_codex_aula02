@@ -32,7 +32,7 @@ func fixtureTools(t *testing.T) string {
 
 func fixtureEnvironment(tools string, overrides map[string]string) []string {
 	overrides["PATH"] = tools + ";" + os.Getenv("SystemRoot") + "\\System32;" + os.Getenv("SystemRoot") + "\\System32\\WindowsPowerShell\\v1.0"
-	for _, key := range []string{"PORTA_PINPAD", "PINPAD_BAUDRATE", "PINPAD_TIMEOUT", "PINPAD_BRIDGE_PORT", "PINPAD_LOG_FILE", "PINPAD_BRIDGE_TRANSPORT", "ANDROID_SERIAL", "ANDROID_HOME", "ANDROID_SDK_ROOT"} {
+	for _, key := range []string{"PORTA_PINPAD", "PINPAD_BAUDRATE", "PINPAD_TIMEOUT", "PINPAD_BRIDGE_PORT", "PINPAD_LOG_FILE", "PINPAD_BRIDGE_TRANSPORT", "PINPAD_LOG_FORMAT", "ANDROID_SERIAL", "ANDROID_HOME", "ANDROID_SDK_ROOT"} {
 		if _, ok := overrides[key]; !ok {
 			overrides[key] = ""
 		}
@@ -57,20 +57,27 @@ func TestLauncherPreservesEnvironmentAndExitCode(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, tc := range []struct {
-		name, port, exit string
-		wantCode         int
+		name, port, exit, format string
+		wantCode                 int
 	}{
-		{"COM14", "COM14", "0", 0}, {"otherCOM", "COM22", "17", 17}, {"missing", "", "0", 1}, {"spaces", "   ", "0", 1}, {"invalid", "not-a-port", "0", 1},
+		{"COM14", "COM14", "0", "", 0}, {"otherCOM", "COM22", "17", "", 17}, {"legacy", "COM14", "0", "LEGACY", 0}, {"missing", "", "0", "", 1}, {"spaces", "   ", "0", "", 1}, {"invalid", "not-a-port", "0", "", 1},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			cmd := exec.Command("cmd.exe", "/d", "/c", filepath.Join(root, "testar_bridge_pinpad.bat"))
-			cmd.Env = fixtureEnvironment(tools, map[string]string{"PORTA_PINPAD": tc.port, "PINPAD_BAUDRATE": "38400", "PINPAD_TIMEOUT": "45", "PINPAD_BRIDGE_PORT": "39272", "PINPAD_BRIDGE_TRANSPORT": "scripted", "FAKE_ADB_CASE": "single", "FAKE_ADB_PORT": "39272", "FAKE_GO_EXIT": tc.exit})
+			cmd.Env = fixtureEnvironment(tools, map[string]string{"PORTA_PINPAD": tc.port, "PINPAD_BAUDRATE": "38400", "PINPAD_TIMEOUT": "45", "PINPAD_BRIDGE_PORT": "39272", "PINPAD_BRIDGE_TRANSPORT": "scripted", "PINPAD_LOG_FORMAT": tc.format, "FAKE_ADB_CASE": "single", "FAKE_ADB_PORT": "39272", "FAKE_GO_EXIT": tc.exit})
 			cmd.Stdin = strings.NewReader("\n")
 			output, _ := cmd.CombinedOutput()
 			if cmd.ProcessState.ExitCode() != tc.wantCode {
 				t.Fatalf("exit=%d: %s", cmd.ProcessState.ExitCode(), output)
 			}
 			if tc.wantCode != 1 {
+				wantFormat := tc.format
+				if wantFormat == "" {
+					wantFormat = "DETAILED"
+				}
+				if !strings.Contains(string(output), "fake_go PINPAD_LOG_FORMAT="+wantFormat) {
+					t.Fatalf("launcher format: %s", output)
+				}
 				for _, want := range []string{"fake_go PORTA_PINPAD=" + tc.port, "fake_go PINPAD_BAUDRATE=38400", "fake_go PINPAD_TIMEOUT=45", "fake_go PINPAD_BRIDGE_PORT=39272", "fake_go PINPAD_BRIDGE_TRANSPORT=", "emulator_prepared"} {
 					if !strings.Contains(string(output), want) {
 						t.Fatalf("missing %s: %s", want, output)

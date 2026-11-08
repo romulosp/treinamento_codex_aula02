@@ -15,14 +15,22 @@ import kotlinx.coroutines.withTimeout
  * Proprietário de uma jornada por View, com eventos serializados na main thread.
  * Não salva nem reenvia transações em recriação. Cancelamento alcança o Go;
  * detach invalida a UI e aguarda cleanup antes de liberar o proprietário.
+ * @param returnCompletedToCaller devolve APPROVED/CAPTURED após cleanup, somente no contrato opt-in 1.5
  */
 internal class SaqueJourney(
     private val repository: SaqueRepository,
     private val scope: CoroutineScope,
+    private val fixedAmountCents: Long? = null,
+    private val returnCompletedToCaller: Boolean = false,
     private val onReturn: () -> Unit,
 ) {
     private val mutableState = MutableStateFlow(SaqueState(step = 0, busy = true,
+        valueInput = fixedAmountCents?.toString().orEmpty(), amountLocked = fixedAmountCents != null,
         message = "Preparando o terminal..."))
+    init {
+        require(fixedAmountCents == null || fixedAmountCents in 1..MaxAmountCents)
+        require(!returnCompletedToCaller || fixedAmountCents != null)
+    }
     /** Snapshot somente de dados permitidos; não contém respostas brutas do pinpad. */
     val state = mutableState.asStateFlow()
     private var profile: SaquePerfil? = null
@@ -34,6 +42,11 @@ internal class SaqueJourney(
     private var activeId: String? = null
     private var disposed = false
     private var cancelSent = false
+    private var returnRequested = false
+    private var returnDelivered = false
+    /** Snapshot terminal publicado somente após término do cleanup, inclusive no detach. */
+    var closedState: SaqueState? = null
+        private set
 
     /**
      * Prepara uma vez por proprietário: valida perfil/tabela, abre sessão,
@@ -80,9 +93,11 @@ internal class SaqueJourney(
                     else operationFailureMessage(code) + if (failed)
                         " Não foi possível confirmar o encerramento da sessão. Verifique o terminal."
                     else " Não foi possível preparar o pinpad. Saia e tente novamente."))
+                if (disposed) finishDisposal(state.value.copy(
+                    result = SaqueResultado.CANCELED, cleanupFailed = failed))
             } finally {
                 if (!prepared) activeId = null
-                if (disposed) scope.cancel()
+                if (disposed && closedState == null) finishDisposal(state.value)
             }
         }
     }
@@ -91,13 +106,13 @@ internal class SaqueJourney(
     fun onEvent(event: SaqueEvent) {
         if (disposed) return
         when (event) {
-            is SaqueEvent.Value -> edit { copy(valueInput = normalizePurchaseInput(event.value)) }
+            is SaqueEvent.Value -> if (fixedAmountCents == null) edit { copy(valueInput = normalizePurchaseInput(event.value)) }
             is SaqueEvent.Installments -> edit { copy(installmentsInput = event.value.filter(Char::isDigit).take(2)) }
             is SaqueEvent.Modalidade -> edit { copy(modalidade = event.value,
                 installmentsInput = if (event.value == SaqueModalidade.DEBITO) "1" else installmentsInput) }
             SaqueEvent.Begin -> begin()
             SaqueEvent.Cancel -> cancel()
-            SaqueEvent.Return -> if (!state.value.busy) { dispose(); onReturn() }
+            SaqueEvent.Return -> if (!state.value.busy) requestReturn()
         }
     }
 
@@ -106,8 +121,37 @@ internal class SaqueJourney(
         if (disposed) return
         disposed = true
         if (operation?.isActive == true) cancel() else scope.launch {
-            cleanup(activeId ?: UUID.randomUUID().toString())
-            scope.cancel()
+            val failed = activeId?.let { cleanup(it) } ?: state.value.cleanupFailed
+            finishDisposal(state.value.copy(
+                result = state.value.result ?: if (state.value.failureCode != null)
+                    SaqueResultado.ERROR else SaqueResultado.CANCELED,
+                cleanupFailed = failed))
+        }
+    }
+
+    /** Solicita saída inclusive durante captura; só retorna ao chamador após cleanup. */
+    fun requestReturn() {
+        returnRequested = true
+        if (closedState != null) {
+            deliverReturn()
+            return
+        }
+        dispose()
+    }
+
+    /** Finaliza uma única vez e impede callback em detach sem solicitação de retorno. */
+    private fun finishDisposal(terminal: SaqueState) {
+        if (closedState != null) return
+        closedState = terminal
+        deliverReturn()
+        scope.cancel()
+    }
+
+    /** Permite cancelamento do host após detach sem repetir o retorno terminal. */
+    private fun deliverReturn() {
+        if (returnRequested && !returnDelivered) {
+            returnDelivered = true
+            onReturn()
         }
     }
 
@@ -117,7 +161,8 @@ internal class SaqueJourney(
         val edited = state.value.change()
         val installments = edited.installmentsInput.toIntOrNull() ?: 0
         val summary = runCatching {
-            calculateSaque(purchaseCents(edited.valueInput), edited.modalidade, installments, profile)
+            calculateSaque(fixedAmountCents ?: purchaseCents(edited.valueInput),
+                edited.modalidade, installments, profile)
         }.getOrNull()
         update(edited.copy(summary = summary,
             feeLabel = feeLabelFor(edited.modalidade, installments),
@@ -193,15 +238,24 @@ internal class SaqueJourney(
                 }
             } finally {
                 val failed = cleanup(id)
-                update(state.value.copy(step = 5, busy = false,
+                val terminal = state.value.copy(step = 5, busy = false,
                     result = if (failed && sentCapture) SaqueResultado.UNKNOWN else result,
                     failureCode = failureCode, failurePhase = failurePhase,
                     cleanupFailed = failed, message =
                         (failureCode?.let { operationFailureMessage(it) + " " } ?: "") + if (failed)
                             "Não foi possível confirmar o encerramento da sessão. Verifique o terminal antes de nova operação."
-                        else "Homologação de teste. Não autoriza entrega de dinheiro. Retire o cartão, se inserido."))
+                        else "Homologação de teste. Não autoriza entrega de dinheiro. Retire o cartão, se inserido.")
+                update(terminal)
                 activeId = null
-                if (disposed) scope.cancel()
+                if (disposed) finishDisposal(terminal)
+                else if (returnCompletedToCaller && !terminal.cleanupFailed &&
+                    terminal.failureCode == null && !terminal.cancelRequested &&
+                    terminal.result in setOf(SaqueResultado.APPROVED, SaqueResultado.CAPTURED)) {
+                    // O close já terminou: publicar retorno sem iniciar outro cleanup no detach.
+                    returnRequested = true
+                    disposed = true
+                    finishDisposal(terminal)
+                }
             }
         }
     }

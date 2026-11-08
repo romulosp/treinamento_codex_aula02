@@ -97,6 +97,7 @@ func run(ctx context.Context) (result error) {
 		physical.SetOpaqueTrace(true)
 		serialPort = physical
 	}
+	serialPort = diagnosticTransport(serialPort, tracer)
 	server, err := bridge.New(bridge.Config{
 		Port:       portNumber,
 		SerialName: serialConfig.Port,
@@ -128,6 +129,9 @@ func configureTracer(tracer *logging.Tracer) (string, error) {
 }
 
 func configureTracerFor(tracer *logging.Tracer, configured string) (string, error) {
+	if _, err := tracer.SetFormat(os.Getenv("PINPAD_LOG_FORMAT")); err != nil {
+		return "", err
+	}
 	destination, err := resolveLogDestination(configured)
 	if err != nil {
 		return "", err
@@ -142,7 +146,21 @@ func configureTracerFor(tracer *logging.Tracer, configured string) (string, erro
 	if !active {
 		return "", fmt.Errorf("PINPAD_LOG_FILE nao ativou o rastro")
 	}
+	format, err := tracer.SetFormat(os.Getenv("PINPAD_LOG_FORMAT"))
+	if err != nil {
+		return "", err
+	}
+	log.Printf("rastro serial: formato=%s destino=%s; payloads sensiveis permanecem redigidos", format, destination)
 	return destination, nil
+}
+
+// diagnosticTransport habilita somente o observador adicional; a serial
+// original permanece com SetOpaqueTrace(true), também no modo DETAILED.
+func diagnosticTransport(transport port.Transport, tracer *logging.Tracer) port.Transport {
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("PINPAD_LOG_FORMAT")), "DETAILED") {
+		return logging.NewDetailedTransport(transport, tracer)
+	}
+	return transport
 }
 
 func resolveLogDestination(configured string) (string, error) {

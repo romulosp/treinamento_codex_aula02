@@ -156,6 +156,8 @@ internal data class SaqueState(
     val modalidade: SaqueModalidade = SaqueModalidade.CREDITO,
     /** Dígitos monetários da compra em centavos, como digitados pelo operador. */
     val valueInput: String = "",
+    /** Valor veio do pedido e não aceita edição, inclusive por eventos diretos. */
+    val amountLocked: Boolean = false,
     val installmentsInput: String = "1",
     val feeLabel: String = "5,34%",
     /** Prontidão publicada somente após sessão aberta e carga EMV confirmada. */

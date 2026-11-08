@@ -33,7 +33,7 @@ afterEvaluate {
                 from(components["release"])
                 groupId = "br.com.romulopenha.sistemaprototipoandroid"
                 artifactId = "shared-api"
-                version = "1.1.0"
+                version = "1.5.0"
             }
         }
         repositories {

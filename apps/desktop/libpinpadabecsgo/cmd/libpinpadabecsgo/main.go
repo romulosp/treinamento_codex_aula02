@@ -103,6 +103,9 @@ func configureTracer(tracer *logging.Tracer) (string, error) {
 	if !active {
 		return "", fmt.Errorf("PINPAD_LOG_FILE nao ativou o rastro")
 	}
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("PINPAD_LOG_FORMAT")), "DETAILED") {
+		tracer.SetDetailed(true)
+	}
 	return destination, nil
 }
 

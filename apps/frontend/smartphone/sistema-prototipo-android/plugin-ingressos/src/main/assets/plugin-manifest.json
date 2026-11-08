@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "pluginId": "br.com.romulopenha.sistemaprototipoandroid.ingressos",
+  "displayName": "Venda de ingressos",
+  "pluginVersion": "1.2.1",
+  "requiredSharedApiMajor": 1,
+  "requiredSharedApiMinor": 5,
+  "entryClass": "br.com.romulopenha.sistemaprototipoandroid.pluginingressos.PluginIngressosApp",
+  "declaredPackageName": "br.com.romulopenha.sistemaprototipoandroid.pluginingressos",
+  "priority": 110,
+  "capabilities": ["business-menu"],
+  "dependencies": []
+}

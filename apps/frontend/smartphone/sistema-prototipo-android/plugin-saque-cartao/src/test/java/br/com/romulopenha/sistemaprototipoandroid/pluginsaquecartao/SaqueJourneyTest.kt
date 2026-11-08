@@ -1,15 +1,191 @@
 package br.com.romulopenha.sistemaprototipoandroid.pluginsaquecartao
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.TestScope
 import org.junit.Assert.*
 import org.junit.Test
 
 /** Cenários sintéticos: não representam evidência de hardware. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class SaqueJourneyTest {
+    @Test fun `retorno opt in aguarda close e nao repete callback ou cleanup`() = runTest {
+        val closing = CompletableDeferred<Unit>()
+        val fake = FakeSaqueRepository(pendingClose = closing)
+        var returns = 0
+        val owner = SaqueJourney(fake, isolatedScope(), 1000L, true) { returns++ }
+        owner.load(); runCurrent()
+        owner.onEvent(SaqueEvent.Begin); runCurrent()
+        assertEquals(0, returns)
+        assertNull(owner.closedState)
+        closing.complete(Unit); runCurrent()
+        assertEquals(1, returns)
+        assertEquals(SaqueResultado.CAPTURED, owner.closedState!!.result)
+        assertFalse(owner.closedState!!.cleanupFailed)
+        owner.requestReturn(); owner.dispose(); runCurrent()
+        assertEquals(1, returns)
+        assertEquals(1, fake.calls.count { it == "close" })
+    }
+
+    @Test fun `aprovacao opt in retorna automaticamente mas captura legada espera voltar`() = runTest {
+        var approvedReturns = 0
+        val approved = SaqueJourney(FakeSaqueRepository(type = "03"), isolatedScope(), 1000L, true) { approvedReturns++ }
+        approved.load(); runCurrent(); approved.onEvent(SaqueEvent.Begin); runCurrent()
+        assertEquals(1, approvedReturns)
+        assertEquals(SaqueResultado.APPROVED, approved.closedState!!.result)
+        var legacyReturns = 0
+        val legacy = SaqueJourney(FakeSaqueRepository(), isolatedScope(), 1000L) { legacyReturns++ }
+        legacy.load(); runCurrent(); legacy.onEvent(SaqueEvent.Begin); runCurrent()
+        assertEquals(SaqueResultado.CAPTURED, legacy.state.value.result)
+        assertEquals(0, legacyReturns)
+        assertNull(legacy.closedState)
+        legacy.onEvent(SaqueEvent.Return); runCurrent()
+        assertEquals(1, legacyReturns)
+    }
+
+    @Test fun `falhas recusa e cleanup nao retornam sucesso automaticamente`() = runTest {
+        val repositories = listOf(
+            FakeSaqueRepository(type = "03", gox = '1'),
+            FakeSaqueRepository(closeFailure = true),
+            FakeSaqueRepository(captureFailure = SaqueFailure("TIMEOUT")),
+            FakeSaqueRepository(key = 13),
+        )
+        repositories.forEach { fake ->
+            var returns = 0
+            val owner = SaqueJourney(fake, isolatedScope(), 1000L, true) { returns++ }
+            owner.load(); runCurrent(); owner.onEvent(SaqueEvent.Begin); runCurrent()
+            assertEquals(0, returns)
+            assertNull(owner.closedState)
+            owner.requestReturn(); runCurrent()
+            assertEquals(1, returns)
+        }
+    }
+
+    @Test fun `detach durante close suprime retorno automatico ao consumidor destruido`() = runTest {
+        val closing = CompletableDeferred<Unit>()
+        val fake = FakeSaqueRepository(pendingClose = closing)
+        var returns = 0
+        val owner = SaqueJourney(fake, isolatedScope(), 1000L, true) { returns++ }
+        owner.load(); runCurrent(); owner.onEvent(SaqueEvent.Begin); runCurrent()
+        owner.dispose(); runCurrent()
+        closing.complete(Unit); runCurrent()
+        assertEquals(0, returns)
+        assertNotNull(owner.closedState)
+        assertEquals(1, fake.calls.count { it == "close" })
+    }
+
+    @Test fun `valor base recebido permanece bloqueado e tarifa acompanha modalidade e parcelas`() = runTest {
+        val fake = FakeSaqueRepository()
+        val owner = SaqueJourney(fake, backgroundScope, 1000L) {}
+        owner.load(); runCurrent()
+        owner.onEvent(SaqueEvent.Value("999999"))
+        assertTrue(owner.state.value.amountLocked)
+        assertEquals("1000", owner.state.value.valueInput)
+        assertEquals(53L, owner.state.value.summary!!.feeCents)
+        assertEquals(1053L, owner.state.value.summary!!.totalCents)
+        owner.onEvent(SaqueEvent.Installments("7"))
+        assertEquals(101L, owner.state.value.summary!!.feeCents)
+        assertEquals(1101L, owner.state.value.summary!!.totalCents)
+        assertEquals("10,14%", owner.state.value.feeLabel)
+        assertEquals(7, owner.state.value.summary!!.installments)
+        owner.onEvent(SaqueEvent.Modalidade(SaqueModalidade.DEBITO))
+        assertEquals(1, owner.state.value.summary!!.installments)
+        assertEquals(100L, owner.state.value.summary!!.feeCents)
+        assertEquals(1100L, owner.state.value.summary!!.totalCents)
+        owner.onEvent(SaqueEvent.Begin); runCurrent()
+        assertEquals(1000L, fake.capturedSummary!!.baseCents)
+        assertEquals(1100L, fake.capturedSummary!!.totalCents)
+        assertEquals("000000001100", fake.capturedSummary!!.amountN12())
+        assertTrue(fake.displayMessages.single().contains("11,00"))
+    }
+
+    @Test fun `credito parcelado envia para captura o total com tarifa`() = runTest {
+        val fake = FakeSaqueRepository()
+        val owner = SaqueJourney(fake, backgroundScope, 1000L) {}
+        owner.load(); runCurrent()
+        owner.onEvent(SaqueEvent.Installments("7"))
+        owner.onEvent(SaqueEvent.Begin); runCurrent()
+        assertEquals(1000L, fake.capturedSummary!!.baseCents)
+        assertEquals(101L, fake.capturedSummary!!.feeCents)
+        assertEquals(1101L, fake.capturedSummary!!.totalCents)
+        assertEquals("000000001101", fake.capturedSummary!!.amountN12())
+        assertTrue(fake.displayMessages.single().contains("11,01"))
+    }
+
+    @Test fun `valor do pedido acima do perfil bloqueia sem truncar`() = runTest {
+        val fake = FakeSaqueRepository(maximumBase = 100)
+        val owner = SaqueJourney(fake, backgroundScope, 3000L) {}
+        owner.load(); runCurrent()
+        assertEquals("3000", owner.state.value.valueInput)
+        assertNull(owner.state.value.summary)
+        owner.onEvent(SaqueEvent.Begin); runCurrent()
+        assertFalse(fake.calls.contains("capture"))
+    }
+
+    @Test fun `cancelamento do host apos detach ainda notifica uma vez depois de cleanup`() = runTest {
+        val closing = CompletableDeferred<Unit>()
+        val fake = FakeSaqueRepository(pendingClose = closing)
+        var returns = 0
+        val owner = SaqueJourney(fake, backgroundScope) { returns++ }
+        owner.load(); runCurrent()
+        owner.dispose(); runCurrent()
+        owner.requestReturn()
+        assertEquals(0, returns)
+        closing.complete(Unit); runCurrent()
+        assertEquals(1, returns)
+        owner.requestReturn()
+        assertEquals(1, returns)
+    }
+
+    @Test fun `retorno aguarda close e nao repete callback`() = runTest {
+        val closing = CompletableDeferred<Unit>()
+        val fake = FakeSaqueRepository(pendingClose = closing)
+        var returns = 0
+        val owner = SaqueJourney(fake, backgroundScope) { returns++ }
+        owner.load(); runCurrent()
+        owner.requestReturn(); runCurrent()
+        assertEquals(0, returns)
+        assertNull(owner.closedState)
+        assertEquals("close", fake.calls.last())
+        closing.complete(Unit); runCurrent()
+        assertEquals(1, returns)
+        assertEquals(SaqueResultado.CANCELED, owner.closedState!!.result)
+        owner.requestReturn(); owner.dispose(); runCurrent()
+        assertEquals(1, returns)
+        assertEquals(1, fake.calls.count { it == "close" })
+    }
+
+    @Test fun `detach limpa sem callback para consumidor destruido`() = runTest {
+        val fake = FakeSaqueRepository()
+        var returns = 0
+        val owner = SaqueJourney(fake, backgroundScope) { returns++ }
+        owner.load(); runCurrent(); owner.dispose(); runCurrent()
+        assertEquals(0, returns)
+        assertNotNull(owner.closedState)
+        assertEquals("close", fake.calls.last())
+    }
+
+    @Test fun `voltar durante captura aguarda cancelamento e preserva cleanup falho`() = runTest {
+        val capture = CompletableDeferred<String>()
+        val fake = FakeSaqueRepository(pendingCapture = capture, closeFailure = true)
+        var returns = 0
+        val owner = SaqueJourney(fake, backgroundScope) { returns++ }
+        owner.load(); runCurrent()
+        owner.onEvent(SaqueEvent.Value("100")); owner.onEvent(SaqueEvent.Begin); runCurrent()
+        owner.requestReturn(); runCurrent()
+        assertEquals(0, returns)
+        assertTrue(fake.calls.contains("cancel"))
+        capture.complete("00"); runCurrent()
+        assertEquals(1, returns)
+        assertEquals(SaqueResultado.UNKNOWN, owner.closedState!!.result)
+        assertTrue(owner.closedState!!.cleanupFailed)
+    }
+
     @Test fun `GIX sem chave PIN bloqueia formulario antes de captura`() = runTest {
         val fake = FakeSaqueRepository(openFailure = SaqueFailure("PIN_KEY_MISSING", "preflight"))
         val owner = SaqueJourney(fake, backgroundScope) {}
@@ -390,6 +566,7 @@ internal class FakeSaqueRepository(
     val pendingDisplay: CompletableDeferred<Unit>? = null,
     val pendingTable: CompletableDeferred<Unit>? = null,
     val pendingCapture: CompletableDeferred<String>? = null,
+    val pendingClose: CompletableDeferred<Unit>? = null,
 ) : SaqueRepository {
     val calls = mutableListOf<String>()
     val ids = mutableListOf<String>()
@@ -433,5 +610,14 @@ internal class FakeSaqueRepository(
     override suspend fun continueEmv(profile: SaquePerfil, summary: SaqueResumo, operationId: String): Char { record("gox", operationId); return gox }
     override suspend fun finalizeEmv(profile: SaquePerfil, operationId: String): Char { record("fcx", operationId); return fcx }
     override suspend fun cancel(operationId: String) { record("cancel", operationId) }
-    override suspend fun close(operationId: String) { record("close", operationId); if (closeFailure) throw SaqueFailure("TIMEOUT") }
+    override suspend fun close(operationId: String) {
+        record("close", operationId)
+        pendingClose?.await()
+        if (closeFailure) throw SaqueFailure("TIMEOUT")
+    }
 }
+
+/** Cada View tem escopo próprio; encerrar uma fixture não cancela o escopo da outra. */
+private fun TestScope.isolatedScope() = CoroutineScope(
+    backgroundScope.coroutineContext + SupervisorJob(backgroundScope.coroutineContext[Job]),
+)

@@ -118,8 +118,10 @@ private fun ValuesPanel(state: SaqueState, onEvent: (SaqueEvent) -> Unit, modifi
             Spacer(Modifier.height(4.dp))
             FieldCaption("VALOR DA COMPRA")
             OutlinedTextField(formatPurchaseDigits(state.valueInput), { onEvent(SaqueEvent.Value(it)) }, Modifier.fillMaxWidth(),
-                enabled = !state.busy, label = { Text("Valor da compra") }, prefix = { Text("R$ ") },
+                enabled = !state.busy, readOnly = state.amountLocked,
+                label = { Text(if (state.amountLocked) "Valor do pedido" else "Valor da compra") }, prefix = { Text("R$ ") },
                 singleLine = true, shape = RoundedCornerShape(8.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+            if (state.amountLocked) Text("Valor definido pela venda.", color = Muted, fontSize = 14.sp)
             FieldCaption("PARCELAMENTO")
             InstallmentsPicker(state, onEvent)
             FieldCaption("TAXA APLICADA")
@@ -271,7 +273,7 @@ private fun StagePanel(state: SaqueState, onEvent: (SaqueEvent) -> Unit, modifie
             if (state.step in 2..4) PrimaryAction(if (state.cancelRequested) "CANCELANDO..." else "CANCELAR",
                 { onEvent(SaqueEvent.Cancel) }, state.busy && !state.cancelRequested)
             if (state.step == 0 && !state.busy) PrimaryAction("SAIR", { onEvent(SaqueEvent.Return) }, true, Color(0xFFB42318))
-            if (state.step == 5) PrimaryAction("VOLTAR AO MENU INICIAL", { onEvent(SaqueEvent.Return) }, !state.busy)
+            if (state.step == 5) PrimaryAction("VOLTAR", { onEvent(SaqueEvent.Return) }, !state.busy)
         }
     }
 }

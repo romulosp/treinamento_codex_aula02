@@ -183,7 +183,7 @@ try {
     } else {
         $preparationPhase = 'host'
         & $adb -s $EmulatorSerial shell am start -n "$package/.MainActivity"; Assert-Exit 'host start'
-        Write-Output 'Host aberto após Ping. Faça login e selecione Outros Serviços > Pagamento com Cartão. Ping não comprova OPN/hardware.'
+        Write-Output 'Host aberto após Ping. Faça login, abra Operações e selecione Abrir pagamento com cartão. Ping não comprova OPN/hardware.'
     }
 } catch {
     # Falha de preflight/provisionamento não deixa um snapshot PIN antigo disponível.

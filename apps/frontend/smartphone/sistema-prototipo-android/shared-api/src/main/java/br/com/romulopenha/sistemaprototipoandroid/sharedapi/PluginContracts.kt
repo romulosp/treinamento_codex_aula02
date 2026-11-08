@@ -12,7 +12,8 @@ data class SharedApiVersion(val major: Int, val minor: Int, val patch: Int) {
 
 /** Versão publicada pelo AAR e usada para identificar eventos e rotas. */
 object SharedApi {
-    val version = SharedApiVersion(major = 1, minor = 2, patch = 0)
+    /** API 1.5 de apresentação opcional do resultado; preserva pagamento 1.4 e autenticação 1.2. */
+    val version = SharedApiVersion(major = 1, minor = 5, patch = 0)
 }
 
 /**

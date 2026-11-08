@@ -23,15 +23,18 @@ import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IPluginRouter
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IUIRegistry
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.PluginHostContext
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.PluginManifest
+import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IComponentHostContext
+import br.com.romulopenha.sistemaprototipoandroid.sharedapi.CardWithdrawalResult
 
 /** Fornece uma folha demonstrativa de menu sem regra transacional ou dado sensível. */
 class PluginNegocioApp : IPluginNegocioApp {
+    private var componentHost: IComponentHostContext? = null
     override val manifest = PluginManifest(
         pluginId = PluginId,
         displayName = "Menu demonstrativo",
-        pluginVersion = "1.1.0",
+        pluginVersion = "1.2.0",
         requiredSharedApiMajor = 1,
-        requiredSharedApiMinor = 1,
+        requiredSharedApiMinor = 3,
         entryClass = PluginNegocioApp::class.java.name,
         capabilities = setOf("business-menu"),
     )
@@ -43,16 +46,20 @@ class PluginNegocioApp : IPluginNegocioApp {
     /** Declara a posição estável da folha demonstrativa no menu do host. */
     override fun getCaminhoMenu(): String = "Principal > Operações"
 
-    override fun onLoad(host: PluginHostContext) = Unit
+    override fun onLoad(host: PluginHostContext) { componentHost = host as? IComponentHostContext }
 
     override fun onAttach(registry: IUIRegistry, router: IPluginRouter) = Unit
 
     override fun onActivate() = Unit
 
-    override fun onDetach() = Unit
+    override fun onDetach() { componentHost = null }
 
     override fun createBusinessScreen(context: Context): View = ComposeView(context).apply {
-        setContent { DemonstrationMenu(businessMenuItems) }
+        setContent {
+            DemonstrationMenu(businessMenuItems, onLaunch = { callback ->
+                componentHost?.launchCardWithdrawal(callback)
+            })
+        }
     }
 
     private companion object {
@@ -62,16 +69,27 @@ class PluginNegocioApp : IPluginNegocioApp {
 
 /** Exibe uma ação local para a única folha publicada pelo plugin. */
 @Composable
-private fun DemonstrationMenu(items: List<BusinessMenuItem>) {
+private fun DemonstrationMenu(
+    items: List<BusinessMenuItem>,
+    onLaunch: ((CardWithdrawalResult) -> Unit) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     var selected by remember { mutableStateOf<String?>(null) }
+    var result by remember { mutableStateOf<String?>(null) }
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
+        modifier = modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text("Menu demonstrativo")
         items.forEach { item ->
             Button(onClick = { selected = item.titulo }) { Text(item.titulo) }
         }
+        Button(onClick = {
+            onLaunch { outcome -> result = outcome.status.name +
+                if (!outcome.cleanupConfirmed) " — verifique o terminal antes de reiniciar" else "" }
+        }) { Text("Abrir pagamento com cartão") }
+        Text("Homologação de teste. Não autoriza entrega de dinheiro.")
+        result?.let { Text("Resultado local: $it") }
     }
     selected?.let { title ->
         AlertDialog(

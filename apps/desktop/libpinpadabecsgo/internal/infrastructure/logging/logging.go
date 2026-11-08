@@ -27,17 +27,19 @@ func New() *slog.Logger {
 // recém-criado não possui arquivo de destino e, portanto, não produz I/O até
 // SetLogDestination ser chamado. Os métodos são seguros para uso concorrente.
 type Tracer struct {
-	mu          sync.Mutex
-	destination *os.File
-	session     string
-	nextSession uint64
-	lastErr     error
+	mu           sync.Mutex
+	destination  *os.File
+	session      string
+	nextSession  uint64
+	lastErr      error
+	detailed     bool
+	bytesPerLine int
 }
 
 // NewTracer cria um Tracer desabilitado. A composição do executável pode
 // configurá-lo e compartilhá-lo entre Service e Adapter antes de abrir a porta.
 func NewTracer() *Tracer {
-	return &Tracer{}
+	return &Tracer{bytesPerLine: 16}
 }
 
 // SetLogDestination configura o arquivo de rastro em modo append. Um caminho
@@ -196,7 +198,15 @@ func (t *Tracer) RecordSPEFromPolicy(kind command.Type, data []byte, function st
 	if t.destination == nil {
 		return nil
 	}
+	if t.shouldDetailLocked(kind, data, redact, false) {
+		return t.writeDetailedLocked(function, "SPE", kind, data, false)
+	}
+	// Em DETAILED, qualquer conteúdo não aprovado pelo esquema fica opaco.
+	redact = redact || t.detailed
 	payload := tracePayload(kind, data, redact)
+	if t.detailed && controlName(data) != "" {
+		payload += " CONTROLE=" + controlName(data)
+	}
 	if kind == "" {
 		return t.writeLineLocked(function, "[%s] SPE %s", t.sessionIDLocked(""), payload)
 	}
@@ -226,7 +236,15 @@ func (t *Tracer) RecordPPFromPolicy(kind command.Type, data []byte, function str
 	if t.destination == nil {
 		return nil
 	}
-	return t.writeLineLocked(function, "[%s] PP  %s", t.sessionIDLocked(""), tracePayload(kind, data, redact))
+	if t.shouldDetailLocked(kind, data, redact, true) {
+		return t.writeDetailedLocked(function, "PP", kind, data, true)
+	}
+	redact = redact || t.detailed
+	payload := tracePayload(kind, data, redact)
+	if t.detailed && controlName(data) != "" {
+		payload += " CONTROLE=" + controlName(data)
+	}
+	return t.writeLineLocked(function, "[%s] PP  %s", t.sessionIDLocked(""), payload)
 }
 
 // RecordResponse correlaciona uma resposta ABECS já interpretada com o comando

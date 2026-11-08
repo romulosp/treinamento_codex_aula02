@@ -5,6 +5,13 @@ import android.os.Handler
 import android.os.Looper
 import android.os.Build
 import android.view.View
+import android.widget.FrameLayout
+import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IComponentHostContext
+import br.com.romulopenha.sistemaprototipoandroid.sharedapi.ICardPaymentPresentationHostContext
+import br.com.romulopenha.sistemaprototipoandroid.sharedapi.CardPaymentOptions
+import br.com.romulopenha.sistemaprototipoandroid.sharedapi.CardPaymentRequest
+import br.com.romulopenha.sistemaprototipoandroid.sharedapi.CardWithdrawalResult
+import br.com.romulopenha.sistemaprototipoandroid.sharedapi.CardWithdrawalStatus
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.BusinessMenuItem
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IPluginNegocioApp
 import br.com.romulopenha.sistemaprototipoandroid.sharedapi.IPluginRouter
@@ -37,10 +44,13 @@ internal class BusinessPluginManager(
     private val onItems: (List<BusinessMenuItem>) -> Unit,
     private val onFatal: (MenuFatalException) -> Unit,
     private val onNavigateToMenu: () -> Unit,
+    componentOverride: br.com.romulopenha.sistemaprototipoandroid.sharedapi.ICardWithdrawalComponent? = null,
 ) : AutoCloseable {
     private val mainHandler = Handler(Looper.getMainLooper())
     private val executor = Executors.newSingleThreadExecutor()
     private val generation = AtomicLong()
+    private val components = ComponentPluginManager(context, ::prepareNativeLibraries, componentOverride)
+    private var activeScreen: Pair<String, FrameLayout>? = null
 
     @Volatile
     private var handlesByItemId: Map<String, BusinessPluginHandle> = emptyMap()
@@ -51,7 +61,9 @@ internal class BusinessPluginManager(
         executor.execute {
             try {
                 stageAvailablePlugins()
+                components.prepare()
                 val handles = LoginPluginLoader.findVerified(context, {}, LoginPluginLoader.BusinessRequest)
+                    .filterNot { it.descriptor.pluginId == CardComponentId }
                     .distinctBy { it.descriptor.pluginId }
                     .flatMap(::discoverHandles)
                 val items = MenuTreeBuilder.build(handles.map(BusinessPluginHandle::leaf))
@@ -73,12 +85,29 @@ internal class BusinessPluginManager(
     }
 
     /** Cria a tela do item-folha selecionado, mantendo o plugin isolado do host. */
-    fun createScreen(itemId: String, activityContext: Context): View? =
-        handlesByItemId[itemId]?.plugin?.createBusinessScreen(activityContext)
+    fun createScreen(itemId: String, activityContext: Context): View? {
+        val handle = handlesByItemId[itemId] ?: return null
+        return FrameLayout(activityContext).apply {
+            addView(handle.plugin.createBusinessScreen(activityContext), FrameLayout.LayoutParams(-1, -1))
+            activeScreen = handle.plugin.manifest.pluginId to this
+            addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(view: View) = Unit
+                override fun onViewDetachedFromWindow(view: View) {
+                    components.abandon(this@apply)
+                    if (activeScreen?.second === this@apply) activeScreen = null
+                }
+            })
+        }
+    }
+
+    /** Consome Voltar enquanto o componente encerra sua sessão. */
+    fun cancelComponent(): Boolean = components.cancel()
 
     /** Invalida resultados, destaca plugins cooperativamente e limpa o menu. */
     fun clear() {
         generation.incrementAndGet()
+        components.abandon()
+        activeScreen = null
         val handles = handlesByItemId.values.toList()
         handlesByItemId = emptyMap()
         executor.execute { handles.detachAll() }
@@ -88,6 +117,8 @@ internal class BusinessPluginManager(
     /** Encerra o manager e libera referências cooperativas dos plugins. */
     override fun close() {
         generation.incrementAndGet()
+        components.close()
+        activeScreen = null
         handlesByItemId.values.toList().detachAll()
         handlesByItemId = emptyMap()
         executor.shutdownNow()
@@ -127,9 +158,10 @@ internal class BusinessPluginManager(
                 runCatching {
                     val plugin = loader.loadClass(className).getDeclaredConstructor().newInstance() as? IPluginNegocioApp
                         ?: return@runCatching null
+                    LoginPluginLoader.validateRuntimeManifest(plugin.manifest, verified.descriptor)
                     val item = plugin.businessMenuItems.single().also { require(it.filhos.isEmpty()) }
                     val path = MenuPathValidator.validate(plugin.getCaminhoMenu())
-                    plugin.onLoad(EmptyHostContext)
+                    plugin.onLoad(consumerContext(plugin.manifest.pluginId))
                     plugin.onAttach(NoopRegistry, MenuRouter)
                     plugin.onActivate()
                     BusinessPluginHandle(MenuLeaf(path, item, "${verified.apk.name}:$className"), plugin, loader)
@@ -184,8 +216,34 @@ internal class BusinessPluginManager(
 
     private fun Collection<BusinessPluginHandle>.detachAll() = forEach { handle -> runCatching { handle.plugin.onDetach() } }
 
-    private object EmptyHostContext : PluginHostContext {
+    /** Vincula chamadas de componente à identidade e à tela ativa do consumidor. */
+    private fun consumerContext(pluginId: String): IComponentHostContext = object : ICardPaymentPresentationHostContext {
         override fun publish(event: PluginEvent) = Unit
+        override fun launchCardWithdrawal(onResult: (CardWithdrawalResult) -> Unit) {
+            val screen = activeScreen
+            if (screen == null || screen.first != pluginId) {
+                onResult(CardWithdrawalResult(CardWithdrawalStatus.UNAVAILABLE, true))
+                return
+            }
+            components.launch(screen.second, screen.second.getChildAt(0), onResult)
+        }
+        override fun launchCardPayment(request: CardPaymentRequest, onResult: (CardWithdrawalResult) -> Unit) {
+            val screen = activeScreen
+            if (screen == null || screen.first != pluginId) {
+                onResult(CardWithdrawalResult(CardWithdrawalStatus.UNAVAILABLE, true))
+                return
+            }
+            components.launchPayment(screen.second, screen.second.getChildAt(0), request, onResult)
+        }
+        override fun launchCardPayment(request: CardPaymentRequest, options: CardPaymentOptions,
+                                       onResult: (CardWithdrawalResult) -> Unit) {
+            val screen = activeScreen
+            if (screen == null || screen.first != pluginId) {
+                onResult(CardWithdrawalResult(CardWithdrawalStatus.UNAVAILABLE, true))
+                return
+            }
+            components.launchPayment(screen.second, screen.second.getChildAt(0), request, options, onResult)
+        }
     }
 
     private object NoopRegistry : IUIRegistry {
@@ -201,6 +259,7 @@ internal class BusinessPluginManager(
 
     private companion object {
         const val BusinessAssetDirectory = "plugins/business"
+        const val CardComponentId = "br.com.romulopenha.sistemaprototipoandroid.saquecartao"
         const val MenuRoute = "menu-principal"
         const val ServicePath = "META-INF/services/br.com.romulopenha.sistemaprototipoandroid.sharedapi.IPluginNegocioApp"
     }

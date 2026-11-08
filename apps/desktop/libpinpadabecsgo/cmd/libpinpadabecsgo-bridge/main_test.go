@@ -40,3 +40,17 @@ func TestConfigureTracerCreatesConfiguredFile(t *testing.T) {
 		t.Fatalf("trace file does not contain activation record: %q", content)
 	}
 }
+
+func TestConfigureTracerValidatesLogFormat(t *testing.T) {
+	for _, value := range []string{"", "LEGACY", " detailed ", "INVALID"} {
+		t.Run(value, func(t *testing.T) {
+			t.Setenv("PINPAD_LOG_FORMAT", value)
+			tracer := logging.NewTracer()
+			defer tracer.Close()
+			_, err := configureTracerFor(tracer, filepath.Join(t.TempDir(), "trace.txt"))
+			if (err != nil) != (value == "INVALID") {
+				t.Fatalf("format=%q err=%v", value, err)
+			}
+		})
+	}
+}

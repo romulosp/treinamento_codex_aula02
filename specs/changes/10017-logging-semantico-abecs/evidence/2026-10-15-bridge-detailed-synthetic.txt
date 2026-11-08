@@ -1,0 +1,112 @@
+TRACE destination=D:\desenvolvimento\ia\aula02\specs\changes\10017-logging-semantico-abecs\evidence\2026-10-15-bridge-detailed-synthetic.txt enabled FUNC=logging.Tracer.SetLogDestination DATA_HORA=2026-10-15T12:18:51.8930104-03:00
+TRACE FORMAT=DETAILED FUNC=logging.Tracer.SetFormat DATA_HORA=2026-10-15T12:18:51.9020589-03:00
+BRIDGE event="bridge_starting" phase="startup" code="OK" correlationId="" sessionId="" port="" mode="" pid=26604 cause="" endpoint="" baud=0 timeoutMs=0 source="" FUNC=bridge.event DATA_HORA=2026-10-15T12:18:51.9036343-03:00
+BRIDGE event="bridge_starting" phase="startup" code="OK" correlationId="" sessionId="" port="COM99" mode="scripted" pid=26604 cause="" endpoint="127.0.0.1:51737" baud=19200 timeoutMs=30000 source="PORTA_PINPAD=environment;PINPAD_BRIDGE_PORT=environment" FUNC=bridge.event DATA_HORA=2026-10-15T12:18:51.904252-03:00
+BRIDGE event="bridge_listening" phase="listen" code="OK" correlationId="" sessionId="" port="COM99" mode="scripted" pid=26604 cause="" endpoint="127.0.0.1:51737" baud=0 timeoutMs=0 source="" FUNC=bridge.event DATA_HORA=2026-10-15T12:18:51.9059779-03:00
+BRIDGE event="client_connected" phase="connection" code="OK" correlationId="" sessionId="" port="COM99" mode="scripted" pid=26604 cause="" endpoint="127.0.0.1:51737" baud=0 timeoutMs=0 source="" FUNC=bridge.event DATA_HORA=2026-10-15T12:18:52.6088979-03:00
+BRIDGE event="client_connected" phase="connection" code="OK" correlationId="" sessionId="" port="COM99" mode="scripted" pid=26604 cause="" endpoint="127.0.0.1:51737" baud=0 timeoutMs=0 source="" FUNC=bridge.event DATA_HORA=2026-10-15T12:18:52.6094253-03:00
+BRIDGE event="session_error" phase="hello" code="INVALID_FRAME" correlationId="" sessionId="" port="COM99" mode="scripted" pid=26604 cause="DISCONNECTED" endpoint="127.0.0.1:51737" baud=0 timeoutMs=0 source="" FUNC=bridge.event DATA_HORA=2026-10-15T12:18:52.6099498-03:00
+BRIDGE event="hello_ok" phase="hello" code="OK" correlationId="synthetic-open" sessionId="" port="COM99" mode="scripted" pid=26604 cause="" endpoint="127.0.0.1:51737" baud=0 timeoutMs=0 source="" FUNC=bridge.event DATA_HORA=2026-10-15T12:18:52.6104832-03:00
+BRIDGE event="client_disconnected" phase="connection" code="DISCONNECTED" correlationId="" sessionId="" port="COM99" mode="scripted" pid=26604 cause="DISCONNECTED" endpoint="127.0.0.1:51737" baud=0 timeoutMs=0 source="" FUNC=bridge.event DATA_HORA=2026-10-15T12:18:52.6110052-03:00
+BRIDGE event="ping_ok" phase="ping" code="OK" correlationId="synthetic-open" sessionId="" port="COM99" mode="scripted" pid=26604 cause="" endpoint="127.0.0.1:51737" baud=0 timeoutMs=0 source="" FUNC=bridge.event DATA_HORA=2026-10-15T12:18:52.6115247-03:00
+BRIDGE event="client_disconnected" phase="connection" code="" correlationId="synthetic-open" sessionId="" port="COM99" mode="scripted" pid=26604 cause="" endpoint="127.0.0.1:51737" baud=0 timeoutMs=0 source="" FUNC=bridge.event DATA_HORA=2026-10-15T12:18:52.6115247-03:00
+BRIDGE event="client_connected" phase="connection" code="OK" correlationId="" sessionId="" port="COM99" mode="scripted" pid=26604 cause="" endpoint="127.0.0.1:51737" baud=0 timeoutMs=0 source="" FUNC=bridge.event DATA_HORA=2026-10-15T12:18:52.6120368-03:00
+BRIDGE event="hello_ok" phase="hello" code="OK" correlationId="synthetic-open" sessionId="" port="COM99" mode="scripted" pid=26604 cause="" endpoint="127.0.0.1:51737" baud=0 timeoutMs=0 source="" FUNC=bridge.event DATA_HORA=2026-10-15T12:18:52.6125609-03:00
+BRIDGE event="acquire_requested" phase="acquire" code="OK" correlationId="synthetic-open" sessionId="" port="COM99" mode="scripted" pid=26604 cause="" endpoint="127.0.0.1:51737" baud=0 timeoutMs=0 source="" FUNC=bridge.event DATA_HORA=2026-10-15T12:18:52.6130838-03:00
+BRIDGE event="ownership_acquired" phase="ownership" code="OK" correlationId="synthetic-open" sessionId="26604-1" port="COM99" mode="scripted" pid=26604 cause="" endpoint="127.0.0.1:51737" baud=0 timeoutMs=0 source="" FUNC=bridge.event DATA_HORA=2026-10-15T12:18:52.6130838-03:00
+[SCRIPTED#001] open(SCRIPTED,0,8,N,1)=>OK FUNC=serial.Adapter.Open DATA_HORA=2026-10-15T12:18:52.6136153-03:00
+BRIDGE event="session_acquired" phase="acquire" code="OK" correlationId="synthetic-open" sessionId="26604-1" port="COM99" mode="scripted" pid=26604 cause="" endpoint="127.0.0.1:51737" baud=0 timeoutMs=0 source="" FUNC=bridge.event DATA_HORA=2026-10-15T12:18:52.6141354-03:00
+[SCRIPTED#001] SPE 18 CONTROLE=CAN FUNC=serial.ScriptedTransport.Write DATA_HORA=2026-10-15T12:18:52.614655-03:00
+[SCRIPTED#001] PP  04 CONTROLE=EOT FUNC=serial.ScriptedTransport.Read DATA_HORA=2026-10-15T12:18:52.6151769-03:00
+[SCRIPTED#001] SPE **REDACTED(7 bytes)** FUNC=serial.ScriptedTransport.Write DATA_HORA=2026-10-15T12:18:52.6151769-03:00
+[SCRIPTED#001] SPE CMD=OPN FUNC=logging.DetailedTransport.Write DATA_HORA=2026-10-15T12:18:52.6156977-03:00
+  HEX:
+    0000  16 4F 50 4E 17 A8 A9  |.OPN...|
+  COMANDO: OPN - Aloca recursos de hardware/software (PDF §3.2.1/3.2.2)
+  CONTROLE: SYN(16) ... ETB(17); OFFSETS=CORPO_LOGICO; WIRE_BYTES=7 LOGICAL_BYTES=3
+  DC3: SUBSTITUICOES=0 (13 33/36/37); HEX=BYTES_WIRE; CAMPOS=POS_REMOVE_SUBSTITUTION
+    CMD_ID: A3 = "OPN"
+  CRC: RECEBIDO=0xA8A9 CALCULADO=0xA8A9 STATUS=VALIDO
+[SCRIPTED#001] PP  06 CONTROLE=ACK FUNC=serial.ScriptedTransport.Read DATA_HORA=2026-10-15T12:18:52.6162178-03:00
+[SCRIPTED#001] PP  **REDACTED(10 bytes)** FUNC=serial.ScriptedTransport.Read DATA_HORA=2026-10-15T12:18:52.6172574-03:00
+[SCRIPTED#001] PP CMD=OPN FUNC=logging.DetailedTransport.Read DATA_HORA=2026-10-15T12:18:52.6178225-03:00
+  HEX:
+    0000  16 4F 50 4E 30 30 30 17 77 5E  |.OPN000.w^|
+  COMANDO: OPN - Aloca recursos de hardware/software (PDF §3.2.1/3.2.2)
+  CONTROLE: SYN(16) ... ETB(17); OFFSETS=CORPO_LOGICO; WIRE_BYTES=10 LOGICAL_BYTES=6
+  DC3: SUBSTITUICOES=0 (13 33/36/37); HEX=BYTES_WIRE; CAMPOS=POS_REMOVE_SUBSTITUTION
+    RSP_ID: A3 = "OPN"
+    RSP_STAT TIPO=N3 OFFSET_INICIAL=3 OFFSET_FINAL=5 COMPRIMENTO_DECLARADO=3 COMPRIMENTO_EFETIVO=3 HEX=303030 ASCII="000" CODIFICACAO=NUMERICO VALIDACAO=VALIDO VALOR_INTERPRETADO = "000" DESCRICAO="Sucesso"
+  CRC: RECEBIDO=0x775E CALCULADO=0x775E STATUS=VALIDO
+[SCRIPTED#001] SPE **REDACTED(10 bytes)** FUNC=serial.ScriptedTransport.Write DATA_HORA=2026-10-15T12:18:52.6188559-03:00
+[SCRIPTED#001] SPE CMD=GIX FUNC=logging.DetailedTransport.Write DATA_HORA=2026-10-15T12:18:52.6199297-03:00
+  HEX:
+    0000  16 47 49 58 30 30 30 17 7F 4A  |.GIX000..J|
+  COMANDO: GIX - Informações gerais do dispositivo (PDF §3.2.4)
+  CONTROLE: SYN(16) ... ETB(17); OFFSETS=CORPO_LOGICO; WIRE_BYTES=10 LOGICAL_BYTES=6
+  DC3: SUBSTITUICOES=0 (13 33/36/37); HEX=BYTES_WIRE; CAMPOS=POS_REMOVE_SUBSTITUTION
+    CMD_ID: A3 = "GIX"
+    CMD_LEN1: N3 = "000"
+  CRC: RECEBIDO=0x7F4A CALCULADO=0x7F4A STATUS=VALIDO
+[SCRIPTED#001] PP  06 CONTROLE=ACK FUNC=serial.ScriptedTransport.Read DATA_HORA=2026-10-15T12:18:52.6210225-03:00
+[SCRIPTED#001] PP  **REDACTED(10 bytes)** FUNC=serial.ScriptedTransport.Read DATA_HORA=2026-10-15T12:18:52.6220695-03:00
+[SCRIPTED#001] PP CMD=GIX FUNC=logging.DetailedTransport.Read DATA_HORA=2026-10-15T12:18:52.623108-03:00
+  HEX:
+    0000  16 47 49 58 30 30 30 17 7F 4A  |.GIX000..J|
+  COMANDO: GIX - Informações gerais do dispositivo (PDF §3.2.4)
+  CONTROLE: SYN(16) ... ETB(17); OFFSETS=CORPO_LOGICO; WIRE_BYTES=10 LOGICAL_BYTES=6
+  DC3: SUBSTITUICOES=0 (13 33/36/37); HEX=BYTES_WIRE; CAMPOS=POS_REMOVE_SUBSTITUTION
+    RSP_ID: A3 = "GIX"
+    RSP_STAT TIPO=N3 OFFSET_INICIAL=3 OFFSET_FINAL=5 COMPRIMENTO_DECLARADO=3 COMPRIMENTO_EFETIVO=3 HEX=303030 ASCII="000" CODIFICACAO=NUMERICO VALIDACAO=VALIDO VALOR_INTERPRETADO = "000" DESCRICAO="Sucesso"
+  CRC: RECEBIDO=0x7F4A CALCULADO=0x7F4A STATUS=VALIDO
+[SCRIPTED#001] SPE **REDACTED(42 bytes)** FUNC=serial.ScriptedTransport.Write DATA_HORA=2026-10-15T12:18:52.6325083-03:00
+[SCRIPTED#001] SPE CMD=DSP FUNC=logging.DetailedTransport.Write DATA_HORA=2026-10-15T12:18:52.6330299-03:00
+  HEX:
+    0000  16 44 53 50 30 33 32 54 45 53 54 45 20 41 4E 44  |.DSP032TESTE AND|
+    0010  52 4F 49 44 20 20 20 48 4F 53 54 20 43 4F 4D 39  |ROID   HOST COM9|
+    0020  39 20 20 20 20 20 20 17 18 A1  |9      ...|
+  COMANDO: DSP - Mensagem no display (2x16) (PDF §3.3.5)
+  CONTROLE: SYN(16) ... ETB(17); OFFSETS=CORPO_LOGICO; WIRE_BYTES=42 LOGICAL_BYTES=38
+  DC3: SUBSTITUICOES=0 (13 33/36/37); HEX=BYTES_WIRE; CAMPOS=POS_REMOVE_SUBSTITUTION
+    CMD_ID: A3 = "DSP"
+    CMD_LEN1: N3 = "032"
+    DSP_MSG TIPO=S32 OFFSET_INICIAL=6 OFFSET_FINAL=37 COMPRIMENTO_DECLARADO=32 COMPRIMENTO_EFETIVO=32 HEX=544553544520414E44524F4944202020484F535420434F4D3939202020202020 ASCII="TESTE ANDROID   HOST COM99      " CODIFICACAO=ISO-8859-1 VALIDACAO=VALIDO VALOR_INTERPRETADO = "TESTE ANDROID   HOST COM99      "
+  CRC: RECEBIDO=0x18A1 CALCULADO=0x18A1 STATUS=VALIDO
+[SCRIPTED#001] PP  06 CONTROLE=ACK FUNC=serial.ScriptedTransport.Read DATA_HORA=2026-10-15T12:18:52.6335506-03:00
+[SCRIPTED#001] PP  **REDACTED(10 bytes)** FUNC=serial.ScriptedTransport.Read DATA_HORA=2026-10-15T12:18:52.6340748-03:00
+[SCRIPTED#001] PP CMD=DSP FUNC=logging.DetailedTransport.Read DATA_HORA=2026-10-15T12:18:52.6340748-03:00
+  HEX:
+    0000  16 44 53 50 30 30 30 17 39 63  |.DSP000.9c|
+  COMANDO: DSP - Mensagem no display (2x16) (PDF §3.3.5)
+  CONTROLE: SYN(16) ... ETB(17); OFFSETS=CORPO_LOGICO; WIRE_BYTES=10 LOGICAL_BYTES=6
+  DC3: SUBSTITUICOES=0 (13 33/36/37); HEX=BYTES_WIRE; CAMPOS=POS_REMOVE_SUBSTITUTION
+    RSP_ID: A3 = "DSP"
+    RSP_STAT TIPO=N3 OFFSET_INICIAL=3 OFFSET_FINAL=5 COMPRIMENTO_DECLARADO=3 COMPRIMENTO_EFETIVO=3 HEX=303030 ASCII="000" CODIFICACAO=NUMERICO VALIDACAO=VALIDO VALOR_INTERPRETADO = "000" DESCRICAO="Sucesso"
+  CRC: RECEBIDO=0x3963 CALCULADO=0x3963 STATUS=VALIDO
+[SCRIPTED#001] SPE **REDACTED(42 bytes)** FUNC=serial.ScriptedTransport.Write DATA_HORA=2026-10-15T12:18:52.634647-03:00
+[SCRIPTED#001] PP  06 CONTROLE=ACK FUNC=serial.ScriptedTransport.Read DATA_HORA=2026-10-15T12:18:52.6351724-03:00
+[SCRIPTED#001] SPE CMD=CLO FUNC=logging.DetailedTransport.Write DATA_HORA=2026-10-15T12:18:52.6356961-03:00
+  HEX:
+    0000  16 43 4C 4F 30 33 32 20 20 20 20 20 20 20 20 20  |.CLO032         |
+    0010  20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20  |                |
+    0020  20 20 20 20 20 20 20 17 C9 F9  |       ...|
+  COMANDO: CLO - Libera recursos do pinpad (PDF §3.2.6)
+  CONTROLE: SYN(16) ... ETB(17); OFFSETS=CORPO_LOGICO; WIRE_BYTES=42 LOGICAL_BYTES=38
+  DC3: SUBSTITUICOES=0 (13 33/36/37); HEX=BYTES_WIRE; CAMPOS=POS_REMOVE_SUBSTITUTION
+    CMD_ID: A3 = "CLO"
+    CMD_LEN1: N3 = "032"
+    CLO_MSG TIPO=S32 OFFSET_INICIAL=6 OFFSET_FINAL=37 COMPRIMENTO_DECLARADO=32 COMPRIMENTO_EFETIVO=32 HEX=2020202020202020202020202020202020202020202020202020202020202020 ASCII="                                " CODIFICACAO=ISO-8859-1 VALIDACAO=VALIDO VALOR_INTERPRETADO = "                                "
+  CRC: RECEBIDO=0xC9F9 CALCULADO=0xC9F9 STATUS=VALIDO
+[SCRIPTED#001] PP  **REDACTED(10 bytes)** FUNC=serial.ScriptedTransport.Read DATA_HORA=2026-10-15T12:18:52.6356961-03:00
+[SCRIPTED#001] PP CMD=CLO FUNC=logging.DetailedTransport.Read DATA_HORA=2026-10-15T12:18:52.6362182-03:00
+  HEX:
+    0000  16 43 4C 4F 30 30 30 17 9E 03  |.CLO000...|
+  COMANDO: CLO - Libera recursos do pinpad (PDF §3.2.6)
+  CONTROLE: SYN(16) ... ETB(17); OFFSETS=CORPO_LOGICO; WIRE_BYTES=10 LOGICAL_BYTES=6
+  DC3: SUBSTITUICOES=0 (13 33/36/37); HEX=BYTES_WIRE; CAMPOS=POS_REMOVE_SUBSTITUTION
+    RSP_ID: A3 = "CLO"
+    RSP_STAT TIPO=N3 OFFSET_INICIAL=3 OFFSET_FINAL=5 COMPRIMENTO_DECLARADO=3 COMPRIMENTO_EFETIVO=3 HEX=303030 ASCII="000" CODIFICACAO=NUMERICO VALIDACAO=VALIDO VALOR_INTERPRETADO = "000" DESCRICAO="Sucesso"
+  CRC: RECEBIDO=0x9E03 CALCULADO=0x9E03 STATUS=VALIDO
+[SCRIPTED#001] close() FUNC=serial.Adapter.Close DATA_HORA=2026-10-15T12:18:52.737532-03:00
+BRIDGE event="session_released" phase="release" code="" correlationId="synthetic-close" sessionId="26604-1" port="COM99" mode="scripted" pid=26604 cause="" endpoint="127.0.0.1:51737" baud=0 timeoutMs=0 source="" FUNC=bridge.event DATA_HORA=2026-10-15T12:18:52.7382163-03:00
+BRIDGE event="client_disconnected" phase="connection" code="" correlationId="synthetic-close" sessionId="26604-1" port="COM99" mode="scripted" pid=26604 cause="" endpoint="127.0.0.1:51737" baud=0 timeoutMs=0 source="" FUNC=bridge.event DATA_HORA=2026-10-15T12:18:52.7387331-03:00

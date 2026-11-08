@@ -23,6 +23,31 @@ class SaqueCartaoScreenTest {
     @get:Rule val compose = createComposeRule()
     private val summary = calculateSaque(15000, SaqueModalidade.CREDITO, 1)
 
+    @Test fun valorDoPedidoSomenteLeituraMantemSelecaoDeModalidade() {
+        var last: SaqueEvent? = null
+        compose.setContent {
+            SaqueCartaoScreen(SaqueState(valueInput = "3000", amountLocked = true,
+                configReady = true, summary = SaqueResumo(SaqueModalidade.CREDITO, 3000, 0, 3000, 1, null)),
+                { last = it })
+        }
+        compose.onNodeWithText("Valor do pedido").assert(hasSetTextAction().not())
+        compose.onNodeWithText("Débito").performClick()
+        assertEquals(SaqueEvent.Modalidade(SaqueModalidade.DEBITO), last)
+    }
+
+    @Test fun valorBloqueadoMostraTarifaETotalCalculados() {
+        val calculated = calculateSaque(1000, SaqueModalidade.CREDITO, 7)
+        compose.setContent {
+            SaqueCartaoScreen(SaqueState(valueInput = "1000", amountLocked = true,
+                configReady = true, installmentsInput = "7",
+                feeLabel = feeLabelFor(SaqueModalidade.CREDITO, 7), summary = calculated), {})
+        }
+        compose.onNodeWithText("Valor do pedido").assert(hasSetTextAction().not())
+        compose.onNodeWithText("10,14%").assertIsDisplayed()
+        compose.onNodeWithText("R$ 1,01").assertIsDisplayed()
+        compose.onNodeWithText("R$ 11,01").assertIsDisplayed()
+    }
+
     /** Preparação busy (REV-016): somente espera, sem CANCELAR/CANCELANDO/SAIR. */
     @Test fun preparacaoExibeEsperaESoDepoisMostraFormulario() {
         var events = 0
@@ -234,7 +259,7 @@ class SaqueCartaoScreenTest {
         compose.onNodeWithText("CANCELAR").performScrollTo().performClick()
         assertEquals(SaqueEvent.Cancel, last)
         compose.runOnIdle { state = state.copy(step = 5, busy = false, result = SaqueResultado.UNKNOWN) }
-        compose.onNodeWithText("VOLTAR AO MENU INICIAL").performScrollTo().performClick()
+        compose.onNodeWithText("VOLTAR").performScrollTo().performClick()
         assertEquals(SaqueEvent.Return, last)
         compose.onAllNodes(hasSetTextAction()).assertCountEquals(0)
     }

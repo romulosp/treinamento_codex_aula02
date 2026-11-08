@@ -185,6 +185,32 @@ host. Falha ao abrir o log deve aparecer no stderr com código não zero; falha
 de persistência posterior deve ser visível e invalidar a sessão afetada quando
 o rastro obrigatório não puder ser mantido.
 
+## Formato detalhado no Bridge Windows
+
+`testar_bridge_pinpad.bat` usa `PINPAD_LOG_FORMAT=DETAILED` por padrão e compila
+o código atual com `go run`. A inicialização imprime o formato efetivo e o
+arquivo recebe `TRACE FORMAT=DETAILED`. A alteração vale para novos processos;
+um Bridge que já estava aberto precisa encerrar antes de iniciar outro.
+
+No mesmo `logs/LogPinpadAbecs.txt`, o rastro bruto permanece redigido e um
+observador acrescenta blocos para pacotes permitidos, completos e validados:
+`HEX`, ASCII, `COMANDO`, campos com tipo/offsets/comprimentos/codificação,
+`RSP_STAT` com descrição, controles SYN/ETB, substituições DC3 e CRC.
+Chunks serializados são reunidos somente para esse diagnóstico, sem modificar
+os bytes encaminhados ou as regras de comunicação do serviço.
+
+GCX/GTK/GOX/GPN/FCX/MLR/TLR continuam com payload redigido; somente o envelope
+validado (comando/status/tamanho) aparece. Sessão segura é indicada como
+`OPACO/CRIPTOGRAFADO`. Campo desconhecido, sensível ou pacote inválido não
+recebe hexdump. O log anterior não é reprocessado.
+
+Para usar o formato anterior no BAT, defina `PINPAD_LOG_FORMAT=LEGACY` antes de
+iniciá-lo. O executável isolado conserva LEGACY quando a variável não existe.
+Valor diferente de LEGACY/DETAILED é rejeitado antes de iniciar o listener.
+
+Uma amostra gerada pelo binário com transporte sintético, sem cartão real,
+está em [evidence da Change 10017](../../../specs/changes/10017-logging-semantico-abecs/evidence/2026-10-15-bridge-detailed-synthetic.txt).
+
 ## Execução da API RESTful
 
 Para iniciar o servidor HTTP da API REST:
